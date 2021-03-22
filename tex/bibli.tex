@@ -1,0 +1,243 @@
+\documentclass[a4paper,10pt]{article}
+\usepackage[margin=2.5cm]{geometry}
+
+\usepackage{amssymb,amsmath,amsthm}
+\usepackage{color}
+\usepackage{enumitem}
+\usepackage{dsfont}
+\usepackage{bm}
+
+
+\newtheorem{theorem}{Theorem}
+\newtheorem{proposition}{Proposition}
+\newtheorem{cor}{Corollary}
+\theoremstyle{definition}
+\newtheorem{definition}{Definition}
+\newtheorem{remark}{Remark}
+\newtheorem{example}{Example}
+\newtheorem{claim}{Claim}
+\newtheorem{lemma}{Lemma}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Algorithms
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\usepackage{algorithm}
+\usepackage{algorithmic}
+\usepackage[titlenumbered,ruled,noend,algo2e]{algorithm2e}
+\newcommand\mycommfont[1]{\footnotesize\ttfamily\textcolor{blue}{#1}}
+\SetCommentSty{mycommfont}
+\SetEndCharOfAlgoLine{}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Code
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+\usepackage{fancyvrb}                  % for fancy verbatim
+\usepackage{textcomp}
+\usepackage[space=true]{accsupp}
+% requires the latest version of package accsupp
+\newcommand{\copyablespace}{
+    \BeginAccSupp{method=hex,unicode,ActualText=00A0}
+\ %
+    \EndAccSupp{}
+}
+\usepackage[procnames]{listings}
+% \usepackage{setspace} % need for \setstretch{1}
+\lstset{%
+language   = python,%
+ % basicstyle = \ttfamily\setstretch{1},%
+basicstyle = \ttfamily,%
+columns    = flexible,%
+keywordstyle=\color{javared},
+firstnumber=100,
+frame=shadowbox,
+showstringspaces=false,
+morekeywords={import,from,class,def,for,while,if,is,in,elif,
+else,not,and,or,print,break,continue,return,True,False,None,access,
+as,del,except,exec,finally,global,import,lambda,pass,print,raise,try,assert,!=},
+keywordstyle={\color{javared}\bfseries},
+commentstyle=\color{javagreen}, %vsomb_col white comments
+morecomment=[s][\color{javagreen}]{"""}{"""},
+upquote=true,
+%% style for number
+numbers=none,
+resetmargins=true,
+xleftmargin=10pt,
+linewidth= \linewidth,
+numberstyle=\tiny,
+stepnumber=1,
+numbersep=8pt, %
+frame=shadowbox,
+rulesepcolor=\color{black},
+procnamekeys={def,class},
+procnamestyle=\color{oneblue}\textbf,
+literate={á}{{\'a}}1
+{à}{{\`a }}1
+{ã}{{\~a}}1
+{é}{{\'e}}1
+{ê}{{\^e}}1
+{è}{{\`e}}1
+{í}{{\'i}}1
+{î}{{\^i}}1
+{ó}{{\'o}}1
+{õ}{{\~o}}1
+{ô}{{\^o}}1
+{ú}{{\'u}}1
+{ü}{{\"u}}1
+{ç}{{\c{c}}}1
+}
+
+
+\usepackage{times} % use Times
+
+\usepackage{shortcuts_js} % possibly adapted from https://github.com/josephsalmon/OrganizationFiles/sty/shortcuts_js.sty
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% IMAGES
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% Use prebuiltimages/ for images extracted from code (e.g. python)
+% or to share images built from a software not available by the whole team (say matlab .fig, or inskcape .svg).
+% .svg files should be stored in dir srcimages/ and built from moosetex if needed:
+% https://www.charles-deledalle.fr/pages/moosetex.php
+% NEVER (GIT) versions files in images/ : only prebuiltimages/ & srcimages/ !
+
+\usepackage{graphicx} % For figures
+\graphicspath{{images/}, {prebuiltimages/}}
+\usepackage{subcaption}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% For citations
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\usepackage[authoryear]{natbib}
+\usepackage{cleveref} % mandatory for no pbs with hyperlinks theorem etc...
+\crefformat{equation}{Eq.~(#2#1#3)} % format for equations
+\Crefformat{equation}{Equation~(#2#1#3)} % format for equations
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Header and document start
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+\author{Pierre-Antoine}
+\title{Internship - Bibliography}
+
+\begin{document}
+
+\maketitle
+
+\vskip 0.3in
+
+\section{Readings}
+
+\subsection{Implicit differentiation for fast hyperparameter selection in non-smooth convex learning, Bertrand and al.}
+
+\textbf{Goal}: select the best set of hyperparameters to optimize a loss function. \\
+\textbf{Initial solution}: Grid search, Random search, Bayesian optimization. \\
+\textbf{Problem}: they scale poorly with the number of hyperparameters to tune. \\
+\textbf{Solution}: use first-order optimization methods to optimize a problem. \\
+
+\vskip 0.1in
+
+The bilevel optimization problem is the problem consisting in optimizing the loss function w.r.t. the hyperparameters (outer loss)
+with respect to a constraint: minimizing the criterion w.r.t. the parameters  of an estimator (inner loss).
+
+\vskip 0.1in
+
+One \textit{strong} assumption: the regularization path is well-defined and almost everywhere differentiable.\\
+Main challenge in first-order optimization for the outer loss: evaluating the hypergradient (i.e. gradient of the loss w.r.t. the hyperparameters).
+
+\vskip 0.1in 
+
+3 algorithms to compute hypergradients:
+\begin{list}{}{}
+    \item - Implicit differentiation
+    \item - Forward auto differentiation
+    \item - Backward auto differentiation (backprop)
+\end{list}
+
+\vskip 0.1in
+
+\textbf{Contributions}:
+\begin{list}{}{}
+    \item - There exist methods to efficiently compute hypergradients for non-smooth functions.
+    \item - Leveraging the sparsity of the Jacobian matrix, we propose an efficient implicit differentiation algorithm to compute the hypergradients.
+    \item - Implicit differentiation significantly outperforms forward and backward auto differentiation. 
+\end{list}
+
+\vskip 0.1in
+
+\textit{Side notes}: In practice, (proximal) coordinate descent is much faster for solving LASSO-like problems than accelerated (proximal) gradient descent à la Nesterov.
+For more details, see Bertrand and Massias, Anderson acceleration of coordinate descent.
+
+\subsection{Enhancing Sparsity with Reweighted l1 minimization, Candès and al.}
+
+\textbf{Goal}: reconstruct sparse signals (optimization problem). \\
+\textbf{Initial solution}: use a $l_1$ norm. \\
+\textbf{Problem}: larger coefficients are penalized more heavily in the $l_1$-norm than smaller coefficients, unlike the more democractic $l_0$ norm. \\
+\textbf{Better solution}: solve a sequence of weighted $l_1$-minimization problems where the weights used for the next iteration are computed from the value of the current solution.
+
+\vskip 0.1in
+
+For large-dimensional problems ($p >> n$, $p$ is the number of predictors and $n$ the number of samples), there exists an infinite set of solutions. Imposing a structure constraint on 
+the solution form restrains the solution set and tends to yield the right solution.
+
+\vskip 0.1in
+
+Constraining the reconstruction problem (compressive sensing) using a $l_0$-norm yields a NP-hard combinatorial problem. Hence, we rely on the $l_1$-norm that yields a convex yet sparse surrogate optimization
+problem. 
+
+\vskip 0.1in
+
+\textbf{Contributions}:
+\begin{list}{}{}
+    \item - An iterative procedure that solve convex subproblems to solve a concave global problem that emulates even better the initial $l_0$ norm problem. 
+\end{list}
+
+\vskip 0.1in
+
+\textit{1st question: how to select the weights to build a weighted convex problem}?
+
+As a rule of thumb, the weights should relate inversely to the true signal magnitudes.
+
+\textit{Then, how to choose a valid set of weights without knowing a priori the true signal magnitudes?}
+
+There must exist weighting matrices based solely on an approximation $x$ to $x_0$. 
+
+\vskip 0.1in
+
+The weights actually come from the log-sum penalty function. The log-sum penalty function has the potential to be much more sparsity-encouraging than the $l_1$-norm.
+
+\vskip 0.1in
+
+\textit{Question: What is the connection between the chosen weights and the log-sum penalty?}
+
+????
+
+\vskip 0.1in
+
+The concave penalty function $f_{\text{log}, \epsilon}$ has slope at the origin that grows roughly has $\frac{1}{\epsilon}$ when $\epsilon \rightarrow 0$.
+Like the $l_0$-norm, this allows a relatively large penalty to be placed on small nonzero coefficients and more strongly encourages them to be set to zero.
+
+This is a key difference with $l_1$ norm. As $l_1$ norm tends to put smaller penalty on small coefficients than large coefficients, small coefficients are not
+necessarily forced to be zero, thus there remains a residual error when applying $l_1$-norm.
+
+\vskip 0.1in
+
+\textit{Question: How to choose} $\epsilon$?
+
+As $\epsilon \rightarrow 0$, $f_{\text{log}, \epsilon}(t) \rightarrow f_0(t)$, one could be tempted to set $\epsilon$ arbitrarily small. However, as $\epsilon \rightarrow 0$,
+it becomes more likely for the iterative reweighted $l_1$ algorithm to be stuck in an undesirable local minimum.
+In practice, $\epsilon$ must be set slightly smaller than the expected nonzero magnitudes of $x$.
+
+
+
+
+\end{document}

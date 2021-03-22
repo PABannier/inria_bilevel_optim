@@ -1,7 +1,7 @@
 # Fdb version 3
-["pdflatex"] 1616425792 "/Users/pierre-antoine/Desktop/inria_bilevel_optim/tex/bibli.tex" "/Users/pierre-antoine/Desktop/inria_bilevel_optim/tex/bibli.pdf" "bibli" 1616425794
-  "/Users/pierre-antoine/Desktop/inria_bilevel_optim/tex/bibli.aux" 1616425793 502 47e96d2474de80d54558c9c6caaf141d ""
-  "/Users/pierre-antoine/Desktop/inria_bilevel_optim/tex/bibli.tex" 1616425792 8857 213ce5fecb1798eac10f14cd97fedd39 ""
+["pdflatex"] 1616425846 "/Users/pierre-antoine/Desktop/inria_bilevel_optim/tex/bibli.tex" "/Users/pierre-antoine/Desktop/inria_bilevel_optim/tex/bibli.pdf" "bibli" 1616425847
+  "/Users/pierre-antoine/Desktop/inria_bilevel_optim/tex/bibli.aux" 1616425847 502 47e96d2474de80d54558c9c6caaf141d ""
+  "/Users/pierre-antoine/Desktop/inria_bilevel_optim/tex/bibli.tex" 1616425846 8864 3112ff80fd36f064724be133b207bbd7 ""
   "/usr/local/texlive/2019/texmf-dist/fonts/enc/dvips/base/8r.enc" 1165713224 4850 80dc9bab7f31fb78a000ccfed0e27cab ""
   "/usr/local/texlive/2019/texmf-dist/fonts/map/fontname/texfonts.map" 1511824771 3332 103109f5612ad95229751940c61aada0 ""
   "/usr/local/texlive/2019/texmf-dist/fonts/tfm/adobe/symbol/psyr.tfm" 1136768653 1408 5937f58aa508ea2cea4901c07d10f5fe ""
@@ -136,12 +136,12 @@
   "/usr/local/texlive/2019/texmf-var/fonts/map/pdftex/updmap/pdftex.map" 1557342064 3277517 23507ed665b4dd9046f0f2a94bbef2be ""
   "/usr/local/texlive/2019/texmf-var/web2c/pdftex/pdflatex.fmt" 1557342086 4259635 562fc36ec496993777a6c428d8bfb811 ""
   "/usr/local/texlive/2019/texmf.cnf" 1557341546 577 d150fef99ac436ad1156e86b0892f6ef ""
-  "bibli.aux" 1616425793 502 47e96d2474de80d54558c9c6caaf141d "pdflatex"
-  "bibli.tex" 1616425792 8857 213ce5fecb1798eac10f14cd97fedd39 ""
+  "bibli.aux" 1616425847 502 47e96d2474de80d54558c9c6caaf141d "pdflatex"
+  "bibli.tex" 1616425846 8864 3112ff80fd36f064724be133b207bbd7 ""
   "shortcuts_js.sty" 1616402560 8733 0b68697355f07e920cf31d5853e827f7 ""
   (generated)
+  "bibli.aux"
+  "bibli.pdf"
   "bibli.log"
   "/Users/pierre-antoine/Desktop/inria_bilevel_optim/tex/bibli.pdf"
-  "bibli.pdf"
   "/Users/pierre-antoine/Desktop/inria_bilevel_optim/tex/bibli.log"
-  "bibli.aux"

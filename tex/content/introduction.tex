@@ -8,54 +8,65 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-Let us remind first the famous Pythagoras' theorem:
+% Let us remind first the famous Pythagoras' theorem:
 
-\begin{align}\label{eq:pythagore}
-	\norm{x+y}^2 = \norm{x}^2 + \norm{y}^2 \enspace.
-\end{align}
+% \begin{align}\label{eq:pythagore}
+% 	\norm{x+y}^2 = \norm{x}^2 + \norm{y}^2 \enspace.
+% \end{align}
 
-Note that \Cref{eq:pythagore} is ok only under some conditions.
-In terms of visualisation, you can reference a figure easily using the command \Cref{fig:pythagore} or using Fig.~\ref{fig:pythagore}.
+% Note that \Cref{eq:pythagore} is ok only under some conditions.
+% In terms of visualisation, you can reference a figure easily using the command \Cref{fig:pythagore} or using Fig.~\ref{fig:pythagore}.
 
-\begin{figure}[h] % h stands for here
-	\centering
-	\includegraphics[width=0.6\textwidth]{residu_orth}
-	\caption{Illustration of the residual orthogonality in least-squares.}
-	\label{fig:pythagore}
-\end{figure}
-
-
-Also an image that is in the \texttt{prebuiltimages/} directory can also be loaded the same way:
-
-\begin{figure}[h] % h stands for here, ! forces even more...
-	\centering
-	\includegraphics[width=0.2\textwidth]{umontpellier_logo}
-	\caption{Illustration of a prebuiltimage available.}
-	\label{fig:umontpellier_logo}
-\end{figure}
+% \begin{figure}[h] % h stands for here
+% 	\centering
+% 	\includegraphics[width=0.6\textwidth]{residu_orth}
+% 	\caption{Illustration of the residual orthogonality in least-squares.}
+% 	\label{fig:pythagore}
+% \end{figure}
 
 
-For displaying side by side some images one should consider the package \lstinline+subcaptions+, that can be loaded with the \LaTeX command:
+% Also an image that is in the \texttt{prebuiltimages/} directory can also be loaded the same way:
 
-\begin{lstlisting}[language=tex]
-\usepackage{subcaption}
-\end{lstlisting}
+% \begin{figure}[h] % h stands for here, ! forces even more...
+% 	\centering
+% 	\includegraphics[width=0.2\textwidth]{umontpellier_logo}
+% 	\caption{Illustration of a prebuiltimage available.}
+% 	\label{fig:umontpellier_logo}
+% \end{figure}
 
 
-\begin{figure}[t] % t stands for top (up!)
-    \centering
-    \begin{subfigure}[b]{0.33\textwidth}
-    	\centering
-        \includegraphics[width=0.2\textwidth]{umontpellier_logo}%
-        \caption{First example}
-        \label{subfig:pythagore}
-    \end{subfigure}
-    \begin{subfigure}[b]{0.56\textwidth}
-    	\centering
-        \includegraphics[width=0.5\textwidth]{residu_orth}%
-        \caption{Second example}
-        \label{subfig:logo}
-    \end{subfigure}
-    \caption{Exemples of side by side images}
-    \label{fig:double_example}
-\end{figure}
+% For displaying side by side some images one should consider the package \lstinline+subcaptions+, that can be loaded with the \LaTeX command:
+
+% \begin{lstlisting}[language=tex]
+% \usepackage{subcaption}
+% \end{lstlisting}
+
+
+% \begin{figure}[t] % t stands for top (up!)
+%     \centering
+%     \begin{subfigure}[b]{0.33\textwidth}
+%     	\centering
+%         \includegraphics[width=0.2\textwidth]{umontpellier_logo}%
+%         \caption{First example}
+%         \label{subfig:pythagore}
+%     \end{subfigure}
+%     \begin{subfigure}[b]{0.56\textwidth}
+%     	\centering
+%         \includegraphics[width=0.5\textwidth]{residu_orth}%
+%         \caption{Second example}
+%         \label{subfig:logo}
+%     \end{subfigure}
+%     \caption{Exemples of side by side images}
+%     \label{fig:double_example}
+% \end{figure}
+Interesting reading:
+\begin{itemize}
+    \item \citet{Candes_Wakin_Boyd08}
+    \item \citet{Arlot_Celisse10}
+    \item \citet{Pedregosa16}
+\end{itemize}
+%
+Hard paper, to not read
+\begin{itemize}
+    \item \citet{Deledalle_Vaiter_Fadili_Peyre14}
+\end{itemize}

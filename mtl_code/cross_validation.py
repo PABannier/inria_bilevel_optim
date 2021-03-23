@@ -5,24 +5,36 @@ def mtl_cross_val(estimator, criterion, X, Y, n_folds=5):
     """Carries out a cross validation to estimate the performance
        of an multi-task LASSO estimator.
 
-    ..note-to-self: In an inverse problem in neuroscience, partitioning
-    X into folds consists in partitioning with respect to the sensors on the
-    scalp. This is why CV makes less sense in this kind of inverse problem than
-    on vanilla prediction problems. In vanilla prediction problems, samples in X
-    are expected to be i.i.d., while in an inverse problem like this one X represents
-    the geometry of the brain and data fails to be i.i.d.
+    In an inverse problem in neuroscience, partitioning X into
+    folds consists in partitioning with respect to the sensors
+    on the scalp. This is why CV makes less sense in this kind
+    of inverse problem than on vanilla prediction problems. In
+    vanilla prediction problems, samples in X are expected to
+    be i.i.d., while in an inverse problem like this one X
+    represents the geometry of the brain and data fails to be
+    i.i.d.
 
-    As a reminder:
-        n_samples: number of sensors on the scalp
-        n_features: number of areas in the brain
-        n_tasks: time series length
+    Parameters
+    ----------
+    estimator : BaseEstimator
+        Scikit-learn estimator.
 
-    Args:
-        estimator (BaseEstimator): sklearn estimator
-        criterion (callable): CV metric
-        X (np.ndarray): Design matrix (n_samples, n_features)
-        Y (np.ndarray): Target matrix (n_samples, n_tasks)
-        n_folds (int, optional): Defaults to 5.
+    criterion : Callable
+        Cross-validation metric (e.g. SURE).
+
+    X : np.ndarray of shape (n_samples, n_features)
+        Design matrix.
+
+    Y : np.ndarray of shape (n_samples, n_tasks)
+        Target matrix.
+
+    n_folds : int, default=5
+        Number of folds.
+
+    Returns
+    -------
+    loss : float
+        Cross-validation loss.
     """
     Y_oof = np.zeros_like(Y)
     n_samples = X.shape[0]

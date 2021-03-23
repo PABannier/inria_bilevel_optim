@@ -18,7 +18,7 @@ class ReweightedMTL(BaseEstimator, RegressorMixin):
 
     Attributes
     ----------
-    W : np.ndarray of shape (n_features, n_tasks)
+    weights : np.ndarray of shape (n_features, n_tasks)
         Parameter matrix of coefficients for the Multi-Task LASSO.
 
     References
@@ -30,6 +30,8 @@ class ReweightedMTL(BaseEstimator, RegressorMixin):
     def __init__(self, alpha: float = 0.1, verbose: bool = True):
         self.alpha = alpha
         self.verbose = verbose
+
+        self.weights = None
 
     def fit(self, X: np.ndarray, Y: np.ndarray, n_iterations: int = 5):
         """Fits estimator to the data.
@@ -53,7 +55,7 @@ class ReweightedMTL(BaseEstimator, RegressorMixin):
 
         w = np.ones(n_features)
 
-        criterion = lambda W: (1 / (2 * n_samples * n_tasks)) * np.sum(
+        criterion = lambda W: (1 / (2 * n_samples)) * np.sum(
             (Y - X @ W) ** 2
         ) + self.alpha * np.sum(np.sqrt(np.sum(W ** 2, axis=1)))
 
@@ -76,10 +78,18 @@ class ReweightedMTL(BaseEstimator, RegressorMixin):
                 loss = criterion(coef_hat)
                 print(f"Iteration {l}: {loss}")
 
+        self.weights = coef_hat
+
     def predict(self, X: np.ndarray):
-        """Predicts data with X"""
+        """Predicts data with the fitted coefficients.
+
+        Parameters
+        ----------
+        X : np.ndarray of shape (n_samples, n_features)
+            Design matrix for inference.
+        """
 
         check_is_fitted(self)
         X = check_array(X)
 
-        return X @ self.W
+        return X @ self.weights

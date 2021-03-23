@@ -5,7 +5,7 @@ from sklearn.utils import check_random_state
 def simulate_data(
     n_samples=100,
     n_features=1000,
-    n_tasks=100,
+    n_tasks=150,
     nnz=10,
     snr=3,
     random_state=None,

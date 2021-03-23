@@ -1,5 +1,5 @@
-from mtl_code.mtl import ReweightedMTL
-from mtl_code.simulated_data import simulate_data
+from mtl.mtl import ReweightedMTL
+from mtl.simulated_data import simulate_data
 import numpy as np
 
 

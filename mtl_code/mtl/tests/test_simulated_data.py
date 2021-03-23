@@ -1,4 +1,4 @@
-from mtl_code.simulated_data import simulate_data
+from mtl.simulated_data import simulate_data
 import numpy as np
 
 

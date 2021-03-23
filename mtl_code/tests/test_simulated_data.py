@@ -15,4 +15,4 @@ def test_nnz():
 def test_noise():
     """Tests that enough noise has been generated"""
     X, Y, W = simulate_data()
-    assert np.allclose(X @ W, Y, atol=1e-3) == False
+    assert not np.allclose(X @ W, Y, atol=1e-3)

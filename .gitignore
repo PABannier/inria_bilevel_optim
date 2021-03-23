@@ -1,0 +1,10 @@
+__pycache__
+/.pytest_cache
+*.aux
+*.log
+*.pdf
+*.bbl
+*.blg
+*.fdb_latexmk
+*.fls
+*.synctex.gz

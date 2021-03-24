@@ -4,9 +4,22 @@ import numpy as np
 
 
 def test_training_loss_decrease():
-    X, Y, W = simulate_data(n_features=100)
+    X, Y, W = simulate_data(n_samples=10, n_features=20, n_tasks=15)
 
-    regressor = ReweightedMTL(verbose=True)
-    regressor.fit(X, Y, n_iterations=5)
+    regressor = ReweightedMTL()
+    regressor.fit(X, Y)
 
-    assert False
+    start_loss = regressor.loss_history_[0]
+    final_loss = regressor.loss_history_[-1]
+
+    assert start_loss > final_loss
+
+
+def test_predict():
+    X_tr, Y_tr, W = simulate_data(n_samples=10, n_features=20, n_tasks=15)
+    X_test, _, _ = simulate_data(n_samples=40, n_features=20, n_tasks=15)
+
+    regressor = ReweightedMTL()
+    regressor.fit(X_tr, Y_tr)
+
+    regressor.predict(X_test)

@@ -22,6 +22,9 @@ class ReweightedMTL(BaseEstimator, RegressorMixin):
     weights : np.ndarray of shape (n_features, n_tasks)
         Parameter matrix of coefficients for the Multi-Task LASSO.
 
+    loss_history : list
+        Contains the training loss history after fitting.
+
     References
     ----------
     .. [1] Candès et al. (2007), Enhancing sparsity by reweighted l1 minimization
@@ -33,6 +36,7 @@ class ReweightedMTL(BaseEstimator, RegressorMixin):
         self.verbose = verbose
 
         self.weights = None
+        self.loss_history_ = []
 
     def fit(self, X: np.ndarray, Y: np.ndarray, n_iterations: int = 5):
         """Fits estimator to the data.
@@ -52,14 +56,13 @@ class ReweightedMTL(BaseEstimator, RegressorMixin):
             Number of reweighting iterations performed during fitting.
         """
         X, Y = check_X_y(X, Y, multi_output=True)
-        n_samples, n_features, n_tasks = X.shape[0], X.shape[1], Y.shape[1]
+        n_samples, n_features = X.shape[0], X.shape[1]
 
         w = np.ones(n_features)
 
-        def get_obj(W):
-            result = np.sum((Y - X @ W) ** 2) / (2 * n_samples)
-            result += self.alpha * np.sum(np.sqrt(norm(W, axis=1)))
-            return result
+        objective = lambda W: np.sum((Y - X @ W) ** 2) / (
+            2 * n_samples
+        ) + self.alpha * np.sum(np.sqrt(norm(W, axis=1)))
 
         for l in range(n_iterations):
             # Trick: rescaling the weights
@@ -76,8 +79,10 @@ class ReweightedMTL(BaseEstimator, RegressorMixin):
             c = np.linalg.norm(coef_hat, axis=1)
             w = 1 / (2 * np.sqrt(c) + np.finfo(float).eps)
 
+            loss = objective(coef_hat)
+            self.loss_history_.append(loss)
+
             if self.verbose:
-                loss = get_obj(coef_hat)
                 print(f"Iteration {l}: {loss}")
 
         self.weights = coef_hat

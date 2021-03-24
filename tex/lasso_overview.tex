@@ -212,13 +212,13 @@ This problem is again solved using proximal coordinate descent. However, we are 
 
 Recall that the $l_1$ norm is a convex surrogate of the $l_0$ norm. However, it has some limitations compared to
 the $l_0$-norm. Indeed, the $l_1$-norm is undemocratic in that it penalizes more heavily coefficients larger coefficients than smaller ones. It turns out that the LASSO penalty exerts less pressure on small coefficients,
-thus letting them being small while not setting them zero. In this vein, \cite{Zou06} proposed the adaptive LASSO as a way for fitting models sparser than \nameref{section_1}, by introducing weights in front of every coefficient that is
+thus letting them being small while not setting them zero. In this vein, the adaptive LASSO has been proposed as a way for fitting models sparser than \nameref{section_1}, by introducing weights in front of every coefficient that is
 penalized. The optimization problem reads:
 
 \begin{equation*}
     x^* = \argmin_{x \in \mathbb{R}^p} \Biggl\{ \frac{1}{2n} \lvert\lvert y - \mathbf{\Phi}x \rvert\rvert_2^2 + \lambda \sum_{j=1}^p w_j \lvert x_j \rvert \Biggr\}
 \end{equation*}
-
+\\
 where $w \in \mathbb{R}^p$ is a weight vector. By placing $w \in \mathbb{R}^p$ on the diagonal of a square matrix $\mathbf{W} \in \mathbb{R}^{p \times p}$, we can rewrite the optimization problem in a matrix form:
 
 \begin{equation*}
@@ -237,7 +237,7 @@ favorable weighting matrices $\mathbf{W} \in \mathbb{R}^{p \times p}$.
 \\
 They propose a majorization-minimization (MM) algoritm to iteratively reweight the coefficients of the LASSO estimator. Recall that a majorization-minimization algorithm works by iteratively minimizing a surrogate function that majorizes the
 objective function. Simply put, first we majorize the objective function by a surrogate, then we minimize this surrogate function \footnote{It is a core idea in optimization, used to derive gradient descent for instance. For a convex $L$-smooth function,
-we majorize it by its quadratic upper bound, then we minimize this quadratic upper bound. For more details, see http://josephsalmon.eu/enseignement/UW/STAT593/MajorizationMinimization.pdf}.
+we majorize it by its quadratic upper bound, then we minimize this quadratic upper bound. The quadratic upper bound is easily minimized since it has a closed-form solution. For more details, see http://josephsalmon.eu/enseignement/UW/STAT593/MajorizationMinimization.pdf}.
 \\
 \\
 Indeed, let's consider the following constrained problem:
@@ -302,15 +302,19 @@ Therefore, it follows an algorithm to iteratively reweight the coefficients of t
     y \in \bbR^{n},
     w \in \bbR^{p},
     n_{\text{iter}} \in \bbN,
-    \epsilon \in \bbR^+
+    \epsilon \in \bbR^+,
+    \lambda \in bbR^+
     $}
 
-    Fill $w^{(0)}$ with ones \\
-    \For{$l = 0,\dots, n_{\text{iter}} - 1$}
+\Init{$w = \ind_{\bbR^p} $}
+
+    \For{$l = 0,\dots, n_{\text{iter}}$}
     {
-        Create a $\mathbf{W}^{(l)} \in \bbR^{p\times p}$ matrix whose diagonal is $w^{(l)}$ \\
-        Solve the weighted $l_1$ minimization problem: $x^{(l)} = \argmin \lvert\lvert y -  \mathbf{\Phi} x\rvert\rvert_2^2 + \lvert\lvert \mathbf{W}^{(l)}x\rvert\rvert_1$ \\
-        Update the weights: for each $i = 1, ..., p, \enspace w_i^{(l+1)} = \frac{1}{\lvert x_i^{(l)} \rvert + \epsilon}$
+        Solve the weighted $l_1$ minimization problem: 
+        $x^{(l)} \leftarrow \argmin \lvert\lvert y -  \mathbf{\Phi} x\rvert\rvert_2^2 + \lambda \lvert\lvert w \cdot x\rvert\rvert_1$
+
+        Update the weights: for each 
+        $i = 1, ..., p, \enspace w_i^{(l+1)} \leftarrow \frac{1}{\lvert x_i^{(l)} \rvert + \epsilon}$
     }
 
 \Return{$x$}
@@ -380,6 +384,8 @@ Therefore, the optimization problems reads:
     \mathbf{X}^* = \argmin_{\mathbf{X} \in \mathbb{R}^{p \times T}} \frac{1}{2n} \lvert\lvert \mathbf{Y} - \mathbf{\Phi X} \rvert\rvert_F^2 + \lambda \sum_{j=1}^p \underbrace{g(\norm{\mathbf{X_{j:}}}_{2})}_{g(x) \leq g(x^{(k)}) + \langle \nabla g (x^{(k)}) \cdot x - x^{(k)} \rangle }
 \end{equation*}
 
+where $g$ is any penalty convex or non-convex. In \cite{Candes_Wakin_Boyd08}, $g(x) = \sum_{i=1}^p \log(\lvert x_i \rvert + \epsilon)$. Algorithm 2 shows the log-concave reweighted $l_1$ minimization.
+
 \vskip 0.2in
 
 {\fontsize{4}{4}\selectfont
@@ -396,7 +402,8 @@ Therefore, the optimization problems reads:
     \mathbf{Y} \in \bbR^{n\times T},
     w \in \bbR^{p},
     n_{\text{iter}} \in \bbN,
-    \epsilon \in \bbR^+
+    \epsilon \in \bbR^+,
+    \lambda \in \bbR^+
     $}
     \Init{$w = \ind_{\bbR^p} $}
 
@@ -404,7 +411,7 @@ Therefore, the optimization problems reads:
     \For{$l = 0,\dots, n_{\text{iter}}$}
     {
         Solve the weighted $l_1$ minimization problem:
-        $\mathbf{X} \leftarrow \argmin \norm{Y -  \mathbf{\Phi} \mathbf{X}}_2^2 + \norm{w \cdot \mathbf{X}}_{2, 1}$
+        $\mathbf{X} \leftarrow \argmin \norm{\mathbf{Y} -  \mathbf{\Phi} \mathbf{X}}_2^2 + \lambda \norm{w \cdot \mathbf{X}}_{2, 1}$
 
         Update the weights: for each
         $j = 1, ..., p, \enspace w_j \leftarrow \frac{1}{\norm{X_{j:}}_2 + \epsilon}$
@@ -413,7 +420,6 @@ Therefore, the optimization problems reads:
 \Return{$\mathbf{X}$}
 \end{algorithm}
 }
-
 
 \newpage
 \bibliographystyle{plainnat}

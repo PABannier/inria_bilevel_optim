@@ -156,12 +156,12 @@ In this section, we assume that $T = 1$ and $p >> n$.
 LASSO consists in solving the following optimization problem:
 
 \begin{equation*}
-    x^* = \argmin_{x \in \mathbb{R}^{p}} \frac{1}{2n}\lvert\lvert y - \mathbf{\Phi} x \rvert\rvert_2^2 + \lambda \lvert\lvert x \rvert\rvert_{1}    
+    x^* = \argmin_{x \in \mathbb{R}^{p}} \frac{1}{2n}\lvert\lvert y - \mathbf{\Phi} x \rvert\rvert_2^2 + \lambda \lvert\lvert x \rvert\rvert_{1}
 \end{equation*}
 
 \vskip 0.1in
 
-LASSO is a useful estimator to reconstruct sparse signals. It acts as a convex regularizer surrogate for the $l_0$ norm. Indeed, the 
+LASSO is a useful estimator to reconstruct sparse signals. It acts as a convex regularizer surrogate for the $l_0$ norm. Indeed, the
 $l_0$ norm yields a $NP$-hard combinatorial non-convex problem to solve. \\
 
 \subsection*{Why do we want sparsity?}
@@ -191,28 +191,28 @@ Then, the optimization problem reads:
     x^* = \argmin_{x \in \mathbb{R}^p} \Biggl\{ \frac{1}{2n} \sum_{i=1}^n (y_i - \sum_{j=1}^J \phi_{(j)}^T x_{(j)})^2 + \lambda \sum_{j=1}^{J} \lvert\lvert x_{(j)} \rvert\rvert_2 \Biggr\}
 \end{equation*}
 
-$\lvert\lvert x_{(j)} \rvert\rvert$ is the Euclidean norm of the vector $x_{(j)}$. We can convince ourselves that if $\forall j \in \{1, ..., J\}, p_j = 1$, then $\lvert\lvert x_{(j)} \rvert\rvert_2 = \lvert x_{(j)} \rvert$, 
+$\lvert\lvert x_{(j)} \rvert\rvert$ is the Euclidean norm of the vector $x_{(j)}$. We can convince ourselves that if $\forall j \in \{1, ..., J\}, p_j = 1$, then $\lvert\lvert x_{(j)} \rvert\rvert_2 = \lvert x_{(j)} \rvert$,
 thus the problem reduces to \nameref{section_1}.
 
 \subsection*{Why is this $l_1 / l_2$-mixed penalty still inducing sparsity?}
 
-The penalty set on the optimization problem is called a $l_1/l_2$-mixed norm. 
+The penalty set on the optimization problem is called a $l_1/l_2$-mixed norm.
 \\
 
 First, we are computing the $l_2$ norm of the coefficients in one group, and then we are summing all of them. Simply put, the $l_1/l_2$-mixed norm can be seen
-as the $l_1$ norm of the $l_2$ norms, which means that there will be few non-zero $l_2$ norms, which in turn creates group sparsity. Indeed, remember that since $\lvert \lvert \cdot \rvert \rvert_2$ is a norm, for any vector $x$, 
-$\lvert\lvert x \rvert\rvert_2 = 0 \Rightarrow x = 0$. 
+as the $l_1$ norm of the $l_2$ norms, which means that there will be few non-zero $l_2$ norms, which in turn creates group sparsity. Indeed, remember that since $\lvert \lvert \cdot \rvert \rvert_2$ is a norm, for any vector $x$,
+$\lvert\lvert x \rvert\rvert_2 = 0 \Rightarrow x = 0$.
 
 \subsection*{How is this optimization problem solved?}
 
-This problem is again solved using proximal coordinate descent. However, we are no longer iterating over features one by one but group by group, leading to the \textbf{proximal block coordinate descent}. 
+This problem is again solved using proximal coordinate descent. However, we are no longer iterating over features one by one but group by group, leading to the \textbf{proximal block coordinate descent}.
 
 \section{Adaptive/Weighted LASSO}
 \label{section_3}
 
 Recall that the $l_1$ norm is a convex surrogate of the $l_0$ norm. However, it has some limitations compared to
 the $l_0$-norm. Indeed, the $l_1$-norm is undemocratic in that it penalizes more heavily coefficients larger coefficients than smaller ones. It turns out that the LASSO penalty exerts less pressure on small coefficients,
-thus letting them being small while not setting them zero. In this vein, \cite{Zou06} proposed the adaptive LASSO as a way for fitting models sparser than \nameref{section_1}, by introducing weights in front of every coefficient that is 
+thus letting them being small while not setting them zero. In this vein, \cite{Zou06} proposed the adaptive LASSO as a way for fitting models sparser than \nameref{section_1}, by introducing weights in front of every coefficient that is
 penalized. The optimization problem reads:
 
 \begin{equation*}
@@ -222,28 +222,28 @@ penalized. The optimization problem reads:
 where $w \in \mathbb{R}^p$ is a weight vector. By placing $w \in \mathbb{R}^p$ on the diagonal of a square matrix $\mathbf{W} \in \mathbb{R}^{p \times p}$, we can rewrite the optimization problem in a matrix form:
 
 \begin{equation*}
-    x^* = \argmin_{x \in \mathbb{R}^p} \frac{1}{2n} \lvert\lvert y - \mathbf{\Phi}x \rvert\rvert_2^2 + \lambda \lvert\vert \mathbf{W}x \rvert\rvert_1 
+    x^* = \argmin_{x \in \mathbb{R}^p} \frac{1}{2n} \lvert\lvert y - \mathbf{\Phi}x \rvert\rvert_2^2 + \lambda \lvert\vert \mathbf{W}x \rvert\rvert_1
 \end{equation*}
 
 \subsection*{How to choose the weight vector?}
 
-The rationale is that large weights could be used to discourage nonzero entries in the recovered signal, while small weights could be used to encourage nonzero entries. As a rule of thumb, the weights should relate inversely 
-to the true signal magnitude (in the context of signal processing, which is of interest here). 
+The rationale is that large weights could be used to discourage nonzero entries in the recovered signal, while small weights could be used to encourage nonzero entries. As a rule of thumb, the weights should relate inversely
+to the true signal magnitude (in the context of signal processing, which is of interest here).
 \\
 \\
-However, we don't have access to the true signal magnitudes. The question remains of how a valid set of weights may be obtained without first knowing the true signal. \cite{Candes_Wakin_Boyd08} argues that there may exist a range of 
+However, we don't have access to the true signal magnitudes. The question remains of how a valid set of weights may be obtained without first knowing the true signal. \cite{Candes_Wakin_Boyd08} argues that there may exist a range of
 favorable weighting matrices $\mathbf{W} \in \mathbb{R}^{p \times p}$.
 \\
 \\
-They propose a majorization-minimization (MM) algoritm to iteratively reweight the coefficients of the LASSO estimator. Recall that a majorization-minimization algorithm works by iteratively minimizing a surrogate function that majorizes the 
-objective function. Simply put, first we majorize the objective function by a surrogate, then we minimize this surrogate function \footnote{It is a core idea in optimization, used to derive gradient descent for instance. For a convex $L$-smooth function, 
-we majorize it by its quadratic upper bound, then we minimize this quadratic upper bound. For more details, see http://josephsalmon.eu/enseignement/UW/STAT593/MajorizationMinimization.pdf}. 
+They propose a majorization-minimization (MM) algoritm to iteratively reweight the coefficients of the LASSO estimator. Recall that a majorization-minimization algorithm works by iteratively minimizing a surrogate function that majorizes the
+objective function. Simply put, first we majorize the objective function by a surrogate, then we minimize this surrogate function \footnote{It is a core idea in optimization, used to derive gradient descent for instance. For a convex $L$-smooth function,
+we majorize it by its quadratic upper bound, then we minimize this quadratic upper bound. For more details, see http://josephsalmon.eu/enseignement/UW/STAT593/MajorizationMinimization.pdf}.
 \\
 \\
 Indeed, let's consider the following constrained problem:
 
 \begin{equation*}
-    \min_{x \in \mathbb{R}^p} \quad  \sum_{i=1}^p \log(\lvert x_i \rvert + \epsilon) \quad \textrm{s.t.} \quad  y = \mathbf{\Phi} x 
+    \min_{x \in \mathbb{R}^p} \quad  \sum_{i=1}^p \log(\lvert x_i \rvert + \epsilon) \quad \textrm{s.t.} \quad  y = \mathbf{\Phi} x
 \end{equation*}
 \\
 
@@ -272,7 +272,7 @@ By removing the terms that do not depend on $u$, it follows that:
     u^{(l+1)} = \argmin_{u \in \mathbb{R}^p} \sum_{i=1}^p \frac{u_i}{ u_i^{(l)} + \epsilon}
 \end{equation*}
 
-And by equivalence, 
+And by equivalence,
 
 \begin{equation*}
     x^{(l+1)} = \argmin_{x \in \mathbb{R}^p} \sum_{i=1}^p \frac{\lvert x_i \rvert}{\lvert x_i^{(l)} \rvert + \epsilon}
@@ -319,13 +319,13 @@ Therefore, it follows an algorithm to iteratively reweight the coefficients of t
 
 \vskip 0.2in
 
-Note that this algorithm minimizes a concave objective (log-sum is concave), by iteratively solving convex subproblems. Hence, due to the concavity of the objective function, we 
+Note that this algorithm minimizes a concave objective (log-sum is concave), by iteratively solving convex subproblems. Hence, due to the concavity of the objective function, we
 are not guaranteed to converge to a global minimum.
 
 \subsection*{Why choosing the log-sum function? How to choose $\epsilon$?}
 
 The log-sum penalty function has the potential to be more sparsity-encouraging than the $l_1$ norm (for a visual explanation, see \cite{Candes_Wakin_Boyd08}). We clearly see
-that the log-sum penalty is much closer from the $l_0$ norm than the $l_1$ norm thus encouraging smaller coefficients to be set to zero. 
+that the log-sum penalty is much closer from the $l_0$ norm than the $l_1$ norm thus encouraging smaller coefficients to be set to zero.
 \\
 \\
 More precisely, the smaller $\epsilon$ the closer the log-sum function is from the $l_0$ norm. However, $\epsilon$ can't be set arbitrarily small since as $\epsilon \rightarrow 0$ it
@@ -342,7 +342,7 @@ In this section, we assume that $T > 1$. Therefore, we are now predicting a mult
 \\
 where $\mathbf{E} \in \mathbb{R}^{n \times T}$ is a matrix of errors (noise), usually simulated with a pre-defined signal-to-noise ratio, when doing compressive sensing. Note that $\mathbf{X} \in \mathbb{R}^{p \times T}$ is a matrix.
 Like in \nameref{section_2}, let's suppose that there exists an unknown subset $S \subset  \{1, ..., p\}$ of the features that are relevant for prediction, and that \textbf{this same subset is preserved across all K components} of the response
-variable. In this case, it is natural to consider a group LASSO penalty, in which the $p$ groups are defined by the rows $\{x_{(j)} \in \mathbb{R}^T, j=1,...,p\}$ of $\mathbf{X}$. 
+variable. In this case, it is natural to consider a group LASSO penalty, in which the $p$ groups are defined by the rows $\{x_{(j)} \in \mathbb{R}^T, j=1,...,p\}$ of $\mathbf{X}$.
 \\
 \\
 Therefore, the optimization problem we need to solve is:
@@ -371,13 +371,13 @@ The Multi-Task Reweighted LASSO is a combination of \nameref{section_3} and \nam
 \\
 \\
 To induce a group-sparsity penalty like in \nameref{section_2}, we compute the $l_2$ norm of the lines of the coefficient matrix $\mathbf{X} \in \mathbb{R}^{p \times T}$, then we apply like in \nameref{section_3} a weighting matrix
-on the resulting vector. 
+on the resulting vector.
 \\
 \\
 Therefore, the optimization problems reads:
 
 \begin{equation*}
-    \mathbf{X}^* = \argmin_{\mathbf{X} \in \mathbb{R}^{p \times T}} \frac{1}{2n} \lvert\lvert \mathbf{Y} - \mathbf{\Phi X} \rvert\rvert_F^2 + \lambda \lvert\lvert \mathbf{WX} \rvert\rvert_{2, 1}
+    \mathbf{X}^* = \argmin_{\mathbf{X} \in \mathbb{R}^{p \times T}} \frac{1}{2n} \lvert\lvert \mathbf{Y} - \mathbf{\Phi X} \rvert\rvert_F^2 + \lambda \sum_{j=1}^p \underbrace{g(\norm{\mathbf{X_{j:}}}_{2})}_{g(x) \leq g(x^{(k)}) + \langle \nabla g (x^{(k)}) \cdot x - x^{(k)} \rangle }
 \end{equation*}
 
 \vskip 0.2in
@@ -398,17 +398,19 @@ Therefore, the optimization problems reads:
     n_{\text{iter}} \in \bbN,
     \epsilon \in \bbR^+
     $}
+    \Init{$w = \ind_{\bbR^p} $}
 
-    Fill $w^{(0)}$ with ones \\
-    \For{$l = 0,\dots, n_{\text{iter}} - 1$}
+    % Fill  with ones \\
+    \For{$l = 0,\dots, n_{\text{iter}}$}
     {
-        Create a $\mathbf{W}^{(l)} \in \bbR^{p\times p}$ matrix whose diagonal is $w^{(l)}$ \\
-        Compute the $l_2$ norm of the lines of $\mathbf{X}$: $\tilde{x} = \lvert\lvert \mathbf{X}_{i,:} \rvert\rvert_2$ \\
-        Solve the weighted $l_1$ minimization problem: $\mathbf{X}^{(l)} = \argmin \lvert\lvert y -  \mathbf{\Phi} \mathbf{X}\rvert\rvert_2^2 + \lvert\lvert \mathbf{W}^{(l)}\tilde{x}\rvert\rvert_1$ \\
-        Update the weights: for each $i = 1, ..., p, \enspace w_i^{(l+1)} = \frac{1}{\lvert \tilde{x_i}^{(l)} \rvert + \epsilon}$
+        Solve the weighted $l_1$ minimization problem:
+        $\mathbf{X} \leftarrow \argmin \norm{Y -  \mathbf{\Phi} \mathbf{X}}_2^2 + \norm{w \cdot X}_{2, 1}$
+
+        Update the weights: for each
+        $j = 1, ..., p, \enspace w_j \leftarrow \frac{1}{\norm{X_{j:}}_2 + \epsilon}$
     }
 
-\Return{$x$}
+\Return{$X$}
 \end{algorithm}
 }
 
@@ -416,7 +418,7 @@ Therefore, the optimization problems reads:
 \newpage
 \bibliographystyle{plainnat}
 \bibliography{references_all}
- 
+
 
 
 \end{document}

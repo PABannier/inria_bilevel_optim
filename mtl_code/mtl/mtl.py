@@ -1,4 +1,5 @@
 import numpy as np
+from numpy.linalg import norm
 from sklearn.base import BaseEstimator, RegressorMixin
 from sklearn.utils.validation import check_X_y, check_is_fitted, check_array
 from sklearn.utils import check_random_state
@@ -55,9 +56,10 @@ class ReweightedMTL(BaseEstimator, RegressorMixin):
 
         w = np.ones(n_features)
 
-        criterion = lambda W: (1 / (2 * n_samples)) * np.sum(
-            (Y - X @ W) ** 2
-        ) + self.alpha * np.sum(np.sqrt(np.sum(W ** 2, axis=1)))
+        def get_obj(W):
+            result = np.sum((Y - X @ W) ** 2) / (2 * n_samples)
+            result += self.alpha * np.sum(np.sqrt(norm(W, axis=1)))
+            return result
 
         for l in range(n_iterations):
             # Trick: rescaling the weights
@@ -72,10 +74,10 @@ class ReweightedMTL(BaseEstimator, RegressorMixin):
 
             # Updating the weights
             c = np.linalg.norm(coef_hat, axis=1)
-            w = 1 / (np.sqrt(c) + np.finfo(float).eps)
+            w = 1 / (2 * np.sqrt(c) + np.finfo(float).eps)
 
             if self.verbose:
-                loss = criterion(coef_hat)
+                loss = get_obj(coef_hat)
                 print(f"Iteration {l}: {loss}")
 
         self.weights = coef_hat

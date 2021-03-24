@@ -71,7 +71,7 @@ class ReweightedMTL(BaseEstimator, RegressorMixin):
             coef_hat = (clf.coef_ / w).T  # (n_features, n_tasks)
 
             # Updating the weights
-            c = np.sum(coef_hat ** 2, axis=1)
+            c = np.linalg.norm(coef_hat, axis=1)
             w = 1 / (np.sqrt(c) + np.finfo(float).eps)
 
             if self.verbose:

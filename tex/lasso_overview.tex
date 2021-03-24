@@ -1,0 +1,381 @@
+\documentclass[a4paper,10pt]{article}
+\usepackage[margin=2.5cm]{geometry}
+
+\usepackage{amssymb,amsmath,amsthm}
+\usepackage{color}
+\usepackage{enumitem}
+\usepackage{dsfont}
+\usepackage{bm}
+
+
+
+
+\newtheorem{theorem}{Theorem}
+\newtheorem{proposition}{Proposition}
+\newtheorem{cor}{Corollary}
+\theoremstyle{definition}
+\newtheorem{definition}{Definition}
+\newtheorem{remark}{Remark}
+\newtheorem{example}{Example}
+\newtheorem{claim}{Claim}
+\newtheorem{lemma}{Lemma}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Cross-referencing
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\usepackage{hyperref}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Algorithms
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\usepackage{algorithm}
+\usepackage{algorithmic}
+\usepackage[titlenumbered,ruled,noend,algo2e]{algorithm2e}
+\newcommand\mycommfont[1]{\footnotesize\ttfamily\textcolor{blue}{#1}}
+\SetCommentSty{mycommfont}
+\SetEndCharOfAlgoLine{}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Code
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+\usepackage{fancyvrb}                  % for fancy verbatim
+\usepackage{textcomp}
+\usepackage[space=true]{accsupp}
+% requires the latest version of package accsupp
+\newcommand{\copyablespace}{
+    \BeginAccSupp{method=hex,unicode,ActualText=00A0}
+\ %
+    \EndAccSupp{}
+}
+\usepackage[procnames]{listings}
+% \usepackage{setspace} % need for \setstretch{1}
+\lstset{%
+language   = python,%
+ % basicstyle = \ttfamily\setstretch{1},%
+basicstyle = \ttfamily,%
+columns    = flexible,%
+keywordstyle=\color{javared},
+firstnumber=100,
+frame=shadowbox,
+showstringspaces=false,
+morekeywords={import,from,class,def,for,while,if,is,in,elif,
+else,not,and,or,print,break,continue,return,True,False,None,access,
+as,del,except,exec,finally,global,import,lambda,pass,print,raise,try,assert,!=},
+keywordstyle={\color{javared}\bfseries},
+commentstyle=\color{javagreen}, %vsomb_col white comments
+morecomment=[s][\color{javagreen}]{"""}{"""},
+upquote=true,
+%% style for number
+numbers=none,
+resetmargins=true,
+xleftmargin=10pt,
+linewidth= \linewidth,
+numberstyle=\tiny,
+stepnumber=1,
+numbersep=8pt, %
+frame=shadowbox,
+rulesepcolor=\color{black},
+procnamekeys={def,class},
+procnamestyle=\color{oneblue}\textbf,
+literate={á}{{\'a}}1
+{à}{{\`a }}1
+{ã}{{\~a}}1
+{é}{{\'e}}1
+{ê}{{\^e}}1
+{è}{{\`e}}1
+{í}{{\'i}}1
+{î}{{\^i}}1
+{ó}{{\'o}}1
+{õ}{{\~o}}1
+{ô}{{\^o}}1
+{ú}{{\'u}}1
+{ü}{{\"u}}1
+{ç}{{\c{c}}}1
+}
+
+
+\usepackage{times} % use Times
+
+\usepackage{shortcuts_js} % possibly adapted from https://github.com/josephsalmon/OrganizationFiles/sty/shortcuts_js.sty
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% IMAGES
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% Use prebuiltimages/ for images extracted from code (e.g. python)
+% or to share images built from a software not available by the whole team (say matlab .fig, or inskcape .svg).
+% .svg files should be stored in dir srcimages/ and built from moosetex if needed:
+% https://www.charles-deledalle.fr/pages/moosetex.php
+% NEVER (GIT) versions files in images/ : only prebuiltimages/ & srcimages/ !
+
+\usepackage{graphicx} % For figures
+\graphicspath{{images/}, {prebuiltimages/}}
+\usepackage{subcaption}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% For citations
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\usepackage[authoryear]{natbib}
+\usepackage{cleveref} % mandatory for no pbs with hyperlinks theorem etc...
+\crefformat{equation}{Eq.~(#2#1#3)} % format for equations
+\Crefformat{equation}{Equation~(#2#1#3)} % format for equations
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Header and document start
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+\author{Pierre-Antoine Bannier}
+\title{A quick guided tour of LASSO-like models}
+
+\begin{document}
+
+\maketitle
+
+\vskip 0.3in
+
+In this memo, $\mathbf{\Phi} \in \mathbb{R}^{n \times p}$ is the design matrix, $x \in \mathbb{R}^{p}$ (resp. $\mathbf{X} \in \mathbb{R}^{p \times T}$) is the coefficient vector (resp. matrix) and $y \in \mathbb{R}^n$
+(resp. $\mathbf{Y} \in \mathbb{R}^{n \times T}$) is the target vector (resp. matrix). Let $n, p, T \in \mathbb{N}^*$ be respectively the number of samples, the number of features and the number of tasks. As we shall see later, LASSO-like models
+are particularly useful for large-dimensional problems \textit{i.e.} when $p >> n$. $\lambda \in \mathbb{R}^+$ is a regularizing hyperparameter.
+
+\section{LASSO}
+\label{section_1}
+
+In this section, we assume that $T = 1$ and $p >> n$.
+
+\vskip 0.2in
+
+LASSO consists in solving the following optimization problem:
+
+\begin{equation*}
+    x^* = \argmin_{x \in \mathbb{R}^{p}} \frac{1}{2n}\lvert\lvert y - \mathbf{\Phi} x \rvert\rvert_2^2 + \lambda \lvert\lvert x \rvert\rvert_{1}    
+\end{equation*}
+
+\vskip 0.1in
+
+LASSO is a useful estimator to reconstruct sparse signals. It acts as a convex regularizer surrogate for the $l_0$ norm. Indeed, the 
+$l_0$ norm yields a $NP$-hard combinatorial non-convex problem to solve. \\
+
+\subsection*{Why do we want sparsity?}
+
+For large-dimensional problems, there exists an infinite set of solutions (overcomplete set).
+Imposing a structure constraint on the solution $x$ is critical to find a unique solution to the problem.
+
+\subsection*{How is this problem solved?}
+
+Unlike unregularized OLS problem, the LASSO estimator does not generally have a closed form solution. Therefore, we need to rely on optimization methods for solving this optimization problem. Actually, this convex problem
+can be recast as a linear pogram. In practice, \textbf{proximal coordinate descent} has proved to be the most efficient method for solving such problems, see \cite{Bertrand_Massias_Anderson}.
+
+\section{Group LASSO}
+\label{section_2}
+
+There are many regression problems where the features have a natural group structure, and it is desirable to have all coefficients within a group become nonzero or zero simulatenously.
+\\
+\\
+Let's consider a partitioning of the features such that we can partition the columns of $\mathbf{\Phi}$ as $\{\phi_{(1)}, ..., \phi_{(J)}\}$ where $\phi_{(j)} \in \mathbb{R}^{n \times p_j}$ and
+$p_j$ is the number of features in group $j$. We can apply the same partition to the coefficients of the coefficient vector $x \in \mathbb{R}^p$. Indeed, $x$ is of the form $(x_{(1)}, ..., x_{(j)})$ where
+$x_{(j)} \in \mathbb{R}^{p_j}$. Note that we have as many unique coefficients in $x$ as there are groups in the partition of the features in the design matrix.
+\\
+
+Then, the optimization problem reads:
+
+\begin{equation*}
+    x^* = \argmin_{x \in \mathbb{R}^p} \Biggl\{ \frac{1}{2n} \sum_{i=1}^n (y_i - \sum_{j=1}^J \phi_{(j)}^T x_{(j)})^2 + \lambda \sum_{j=1}^{J} \lvert\lvert x_{(j)} \rvert\rvert_2 \Biggr\}
+\end{equation*}
+
+$\lvert\lvert x_{(j)} \rvert\rvert$ is the Euclidean norm of the vector $x_{(j)}$. We can convince ourselves that if $\forall j \in \{1, ..., J\}, p_j = 1$, then $\lvert\lvert x_{(j)} \rvert\rvert_2 = \lvert x_{(j)} \rvert$, 
+thus the problem reduces to \nameref{section_1}.
+
+\subsection*{Why is this $l_1 / l_2$-mixed penalty still inducing sparsity?}
+
+The penalty set on the optimization problem is called a $l_1/l_2$-mixed norm. 
+\\
+
+First, we are computing the $l_2$ norm of the coefficients in one group, and then we are summing all of them. Simply put, the $l_1/l_2$-mixed norm can be seen
+as the $l_1$ norm of the $l_2$ norms, which means that there will be few non-zero $l_2$ norms, which in turn creates group sparsity. Indeed, remember that since $\lvert \lvert \cdot \rvert \rvert_2$ is a norm, for any vector $x$, 
+$\lvert\lvert x \rvert\rvert_2 = 0 \Rightarrow x = 0$. 
+
+\subsection*{How is this optimization problem solved?}
+
+This problem is again solved using proximal coordinate descent. However, we are no longer iterating over features one by one but group by group, leading to the \textbf{proximal block coordinate descent}. 
+
+\section{Adaptive/Weighted LASSO}
+\label{section_3}
+
+Recall that the $l_1$ norm is a convex surrogate of the $l_0$ norm. However, it has some limitations compared to
+the $l_0$-norm. Indeed, the $l_1$-norm is undemocratic in that it penalizes more heavily coefficients larger coefficients than smaller ones. It turns out that the LASSO penalty exerts less pressure on small coefficients,
+thus letting them being small while not setting them zero. In this vein, \cite{Zou06} proposed the adaptive LASSO as a way for fitting models sparser than \nameref{section_1}, by introducing weights in front of every coefficient that is 
+penalized. The optimization problem reads:
+
+\begin{equation*}
+    x^* = \argmin_{x \in \mathbb{R}^p} \Biggl\{ \frac{1}{2n} \lvert\lvert y - \mathbf{\Phi}x \rvert\rvert_2^2 + \lambda \sum_{j=1}^p w_j \lvert x_j \rvert \Biggr\}
+\end{equation*}
+
+where $w \in \mathbb{R}^p$ is a weight vector. By placing $w \in \mathbb{R}^p$ on the diagonal of a square matrix $\mathbf{W} \in \mathbb{R}^{p \times p}$, we can rewrite the optimization problem in a matrix form:
+
+\begin{equation*}
+    x^* = \argmin_{x \in \mathbb{R}^p} \frac{1}{2n} \lvert\lvert y - \mathbf{\Phi}x \rvert\rvert_2^2 + \lambda \lvert\vert \mathbf{W}x \rvert\rvert_1 
+\end{equation*}
+
+\subsection*{How to choose the weight vector?}
+
+The rationale is that large weights could be used to discourage nonzero entries in the recovered signal, while small weights could be used to encourage nonzero entries. As a rule of thumb, the weights should relate inversely 
+to the true signal magnitude (in the context of signal processing, which is of interest here). 
+\\
+\\
+However, we don't have access to the true signal magnitudes. The question remains of how a valid set of weights may be obtained without first knowing the true signal. \cite{Candes_Wakin_Boyd08} argues that there may exist a range of 
+favorable weighting matrices $\mathbf{W} \in \mathbb{R}^{p \times p}$.
+\\
+\\
+They propose a majorization-minimization (MM) algoritm to iteratively reweight the coefficients of the LASSO estimator. Recall that a majorization-minimization algorithm works by iteratively minimizing a surrogate function that majorizes the 
+objective function. Simply put, first we majorize the objective function by a surrogate, then we minimize this surrogate function \footnote{It is a core idea in optimization, used to derive gradient descent for instance. For a convex $L$-smooth function, 
+we majorize it by its quadratic upper bound, then we minimize this quadratic upper bound. For more details, see http://josephsalmon.eu/enseignement/UW/STAT593/MajorizationMinimization.pdf}. 
+\\
+\\
+Indeed, let's consider the following constrained problem:
+
+\begin{equation*}
+    \min_{x \in \mathbb{R}^p} \quad  \sum_{i=1}^p \log(\lvert x_i \rvert + \epsilon) \quad \textrm{s.t.} \quad  y = \mathbf{\Phi} x 
+\end{equation*}
+\\
+
+Clearly this problem is equivalent to the following:
+\begin{equation*}
+    \min_{x,u \in \mathbb{R}^p} \quad  \sum_{i=1}^p \log(u_i + \epsilon) \quad \textrm{s.t.} \quad  y = \mathbf{\Phi} x, \quad \lvert x_i \rvert \leq u_i, \enspace i=1,...,p
+\end{equation*}
+
+This problem is easier to solve since we get rid of the absolute value in the minimized term as it is now placed as an additional constraint.
+\\
+\\
+To apply a MM algorithm, we need to majorize the log-sum function. Yet, the log-sum function is concave and therefore below its tangent. Thus by taking a first-order Taylor expansion, we obtain a linearization of
+the log-sum function in a neighborhood of $u$.
+\\
+\\
+More formally, let $g(u) = \sum_{i=1}^p \log(u_i + \epsilon)$. The first-order Taylor expansion in a neighborhood of $u^{(l)} \in \mathbb{R}^p$ yields:
+
+\begin{align*}
+    u^{(l+1)} &= \argmin_{u \in \mathbb{R}^p} g(u^{(l)}) + \nabla g(u^{(l)})\cdot (u - u^{(l)}) \\
+              &= \argmin_{u \in \mathbb{R}^p} \sum_{i=1}^p \log( u_i^{(l)} + \epsilon) + (u - u^{(l)}) \sum_{i=1}^p \frac{1}{ u_i^{(l)}  + \epsilon}
+\end{align*}
+
+By removing the terms that do not depend on $u$, it follows that:
+
+\begin{equation*}
+    u^{(l+1)} = \argmin_{u \in \mathbb{R}^p} \sum_{i=1}^p \frac{u_i}{ u_i^{(l)} + \epsilon}
+\end{equation*}
+
+And by equivalence, 
+
+\begin{equation*}
+    x^{(l+1)} = \argmin_{x \in \mathbb{R}^p} \sum_{i=1}^p \frac{\lvert x_i \rvert}{\lvert x_i^{(l)} \rvert + \epsilon}
+\end{equation*}
+
+By letting $\forall i \in \{1, ..., p\}, w_i^{(l)} = \frac{1}{\lvert x_i^{(l)}\rvert + \epsilon}$, it follows:
+
+\begin{equation*}
+    x^{(l+1)} = \argmin_{x \in \mathbb{R}^p} \sum_{i=1}^p w_i^{(l)} \lvert x_i \rvert
+\end{equation*}
+\\
+Therefore, it follows an algorithm to iteratively reweight the coefficients of the LASSO model.
+
+\vskip 0.2in
+
+{\fontsize{4}{4}\selectfont
+\begin{algorithm}[h]  % again h stands for here
+\SetKwInOut{Input}{input}
+\SetKwInOut{Init}{init}
+\SetKwInOut{Parameter}{param}
+\caption{\textsc{Iterative reweighted l1 minimization}
+}
+%
+\Input{$
+    \Phi \in \bbR^{n \times p},
+    x \in \bbR^{p},
+    y \in \bbR^{n},
+    w \in \bbR^{p},
+    n_{\text{iter}} \in \bbN,
+    \epsilon \in \bbR^+
+    $}
+
+    Fill $w^{(0)}$ with ones \\
+    \For{$l = 0,\dots, n_{\text{iter}} - 1$}
+    {
+        Create a $\mathbf{W}^{(l)} \in \bbR^{p\times p}$ matrix whose diagonal is $w^{(l)}$ \\
+        Solve the weighted $l_1$ minimization problem: $x^{(l)} = \argmin \lvert\lvert y -  \mathbf{\Phi} x\rvert\rvert_2^2 + \lvert\lvert \mathbf{W}^{(l)}x\rvert\rvert_1$ \\
+        Update the weights: for each $i = 1, ..., p, \enspace w_i^{(l+1)} = \frac{1}{\lvert x_i^{(l)} \rvert + \epsilon}$
+    }
+
+\Return{$x$}
+\end{algorithm}
+}
+
+\vskip 0.2in
+
+Note that this algorithm minimizes a concave objective (log-sum is concave), by iteratively solving convex subproblems. Hence, due to the concavity of the objective function, we 
+are not guaranteed to converge to a global minimum.
+
+\subsection*{Why choosing the log-sum function? How to choose $\epsilon$?}
+
+The log-sum penalty function has the potential to be more sparsity-encouraging than the $l_1$ norm (for a visual explanation, see \cite{Candes_Wakin_Boyd08}). We clearly see
+that the log-sum penalty is much closer from the $l_0$ norm than the $l_1$ norm thus encouraging smaller coefficients to be set to zero. 
+\\
+\\
+More precisely, the smaller $\epsilon$ the closer the log-sum function is from the $l_0$ norm. However, $\epsilon$ can't be set arbitrarily small since as $\epsilon \rightarrow 0$ it
+becomes more likely that the iterative reweighted $l_1$ algorithm will be stuck at a local optimum. In practice, note that signal reconstruction is robust to the choice of $\epsilon$.
+
+\section{Multi-Task LASSO}
+\label{section_4}
+
+In this section, we assume that $T > 1$. Therefore, we are now predicting a multivariate response $\mathbf{Y}\in \mathbb{R}^{n \times T}$, and by assuming that the data collected are linear measurements, the model reads:
+
+\begin{equation*}
+    \mathbf{Y} = \mathbf{\Phi}\mathbf{X} + \mathbf{E}
+\end{equation*}
+\\
+where $\mathbf{E} \in \mathbb{R}^{n \times T}$ is a matrix of errors (noise), usually simulated with a pre-defined signal-to-noise ratio, when doing compressive sensing. Note that $\mathbf{X} \in \mathbb{R}^{p \times T}$ is a matrix.
+Like in \nameref{section_2}, let's suppose that there exists an unknown subset $S \subset  \{1, ..., p\}$ of the features that are relevant for prediction, and that \textbf{this same subset is preserved across all K components} of the response
+variable. In this case, it is natural to consider a group LASSO penalty, in which the $p$ groups are defined by the rows $\{x_{(j)} \in \mathbb{R}^T, j=1,...,p\}$ of $\mathbf{X}$. 
+\\
+\\
+Therefore, the optimization problem we need to solve is:
+
+\begin{equation*}
+    \mathbf{X}^* = \argmin_{\mathbf{X} \in \mathbb{R}^{p \times T}} \frac{1}{2n} \lvert\lvert \mathbf{Y} - \mathbf{\Phi X} \rvert\rvert_{\text{F}}^2 + \lambda \Biggl( \sum_{j=1}^p \lvert\lvert x_{(j)} \rvert\rvert_2 \Biggr)
+\end{equation*}
+\\
+Using the $l_1/l_2$ mixed-norm, it reads:
+
+\begin{equation*}
+    \mathbf{X}^* = \argmin_{\mathbf{X} \in \mathbb{R}^{p \times T}} \frac{1}{2n} \lvert\lvert \mathbf{Y} - \mathbf{\Phi X} \rvert\rvert_{\text{F}}^2 + \lambda \lvert\lvert \mathbf{X} \rvert\rvert_{2, 1}
+\end{equation*}
+\\
+Note that the fitting term is now a matrix norm (here the Frobenius norm) since we are dealing with matrices. As stated in \nameref{section_2}, we are using a mixed $l_1/l_2$ norm to enforce group sparsity on the coefficients $\mathbf{X}$. Indeed,
+we are first computing the $l_2$ norm of every line of the coefficient matrix, then we are computing the $l_1$ norm of the remaining vectors full of the $l_2$ norm of the line of the coefficient matrix.
+
+\subsection*{How is this optimization problem solved?}
+
+In scikit-learn, the algorithm used to fit the model is coordinate descent.
+
+\section{Multi-Task Reweighted LASSO}
+\label{section_5}
+
+The Multi-Task Reweighted LASSO is a combination of \nameref{section_3} and \nameref{section_4}. The goal of the model is to predict a multivariate response variable while enforcing a sparser solution than \nameref{section_1}. Therefore, the optimization
+problems reads:
+
+
+
+\newpage
+\bibliographystyle{plainnat}
+\bibliography{references_all}
+ 
+
+
+\end{document}

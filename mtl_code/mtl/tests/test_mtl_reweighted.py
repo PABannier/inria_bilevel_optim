@@ -4,7 +4,7 @@ import numpy as np
 
 
 def test_training_loss_decrease():
-    X, Y, W = simulate_data()
+    X, Y, W = simulate_data(n_features=100)
 
     regressor = ReweightedMTL(verbose=True)
     regressor.fit(X, Y, n_iterations=20)

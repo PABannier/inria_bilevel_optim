@@ -88,7 +88,6 @@ class ReweightedMTL(BaseEstimator, RegressorMixin):
         X : np.ndarray of shape (n_samples, n_features)
             Design matrix for inference.
         """
-
         check_is_fitted(self)
         X = check_array(X)
 

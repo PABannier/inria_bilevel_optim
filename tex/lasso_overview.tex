@@ -404,13 +404,13 @@ Therefore, the optimization problems reads:
     \For{$l = 0,\dots, n_{\text{iter}}$}
     {
         Solve the weighted $l_1$ minimization problem:
-        $\mathbf{X} \leftarrow \argmin \norm{Y -  \mathbf{\Phi} \mathbf{X}}_2^2 + \norm{w \cdot X}_{2, 1}$
+        $\mathbf{X} \leftarrow \argmin \norm{Y -  \mathbf{\Phi} \mathbf{X}}_2^2 + \norm{w \cdot \mathbf{X}}_{2, 1}$
 
         Update the weights: for each
         $j = 1, ..., p, \enspace w_j \leftarrow \frac{1}{\norm{X_{j:}}_2 + \epsilon}$
     }
 
-\Return{$X$}
+\Return{$\mathbf{X}$}
 \end{algorithm}
 }
 

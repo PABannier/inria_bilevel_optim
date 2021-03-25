@@ -180,18 +180,18 @@ can be recast as a linear pogram. In practice, \textbf{proximal coordinate desce
 There are many regression problems where the features have a natural group structure, and it is desirable to have all coefficients within a group become nonzero or zero simulatenously.
 \\
 \\
-Let's consider a partitioning of the features such that we can partition the columns of $\mathbf{\Phi}$ as $\{\phi_{(1)}, ..., \phi_{(J)}\}$ where $\phi_{(j)} \in \mathbb{R}^{n \times p_j}$ and
-$p_j$ is the number of features in group $j$. We can apply the same partition to the coefficients of the coefficient vector $x \in \mathbb{R}^p$. Indeed, $x$ is of the form $(x_{(1)}, ..., x_{(j)})$ where
-$x_{(j)} \in \mathbb{R}^{p_j}$. Note that we have as many unique coefficients in $x$ as there are groups in the partition of the features in the design matrix.
+Let's consider a partitioning of the features such that we can partition the columns of $\mathbf{\Phi}$ as $\{\phi_{1}, ..., \phi_{J}\}$ where $\phi_{j} \in \mathbb{R}^{n \times p_j}$ and
+$p_j$ is the number of features in group $j$. We can apply the same partition to the coefficients of the coefficient vector $x \in \mathbb{R}^p$. Indeed, $x$ is of the form $(x_{1}, ..., x_{j})$ where
+$x_{j} \in \mathbb{R}^{p_j}$. Note that we have as many unique coefficients in $x$ as there are groups in the partition of the features in the design matrix.
 \\
 
 Then, the optimization problem reads:
 
 \begin{equation*}
-    x^* = \argmin_{x \in \mathbb{R}^p} \Biggl\{ \frac{1}{2n} \sum_{i=1}^n (y_i - \sum_{j=1}^J \phi_{(j)}^T x_{(j)})^2 + \lambda \sum_{j=1}^{J} \lvert\lvert x_{(j)} \rvert\rvert_2 \Biggr\}
+    x^* = \argmin_{x \in \mathbb{R}^p} \Biggl\{ \frac{1}{2n} \sum_{i=1}^n (y_i - \sum_{j=1}^J \phi_{j}^T x_{j})^2 + \lambda \sum_{j=1}^{J} \lvert\lvert x_{j} \rvert\rvert_2 \Biggr\}
 \end{equation*}
 
-$\lvert\lvert x_{(j)} \rvert\rvert$ is the Euclidean norm of the vector $x_{(j)}$. We can convince ourselves that if $\forall j \in \{1, ..., J\}, p_j = 1$, then $\lvert\lvert x_{(j)} \rvert\rvert_2 = \lvert x_{(j)} \rvert$,
+$\lvert\lvert x_{j} \rvert\rvert$ is the Euclidean norm of the vector $x_{j}$. We can convince ourselves that if $\forall j \in \{1, ..., J\}, p_j = 1$, then $\lvert\lvert x_{j} \rvert\rvert_2 = \lvert x_{j} \rvert$,
 thus the problem reduces to \nameref{section_1}.
 
 \subsection*{Why is this $l_1 / l_2$-mixed penalty still inducing sparsity?}
@@ -346,13 +346,13 @@ In this section, we assume that $T > 1$. Therefore, we are now predicting a mult
 \\
 where $\mathbf{E} \in \mathbb{R}^{n \times T}$ is a matrix of errors (noise), usually simulated with a pre-defined signal-to-noise ratio, when doing compressive sensing. Note that $\mathbf{X} \in \mathbb{R}^{p \times T}$ is a matrix.
 Like in \nameref{section_2}, let's suppose that there exists an unknown subset $S \subset  \{1, ..., p\}$ of the features that are relevant for prediction, and that \textbf{this same subset is preserved across all K components} of the response
-variable. In this case, it is natural to consider a group LASSO penalty, in which the $p$ groups are defined by the rows $\{x_{(j)} \in \mathbb{R}^T, j=1,...,p\}$ of $\mathbf{X}$.
+variable. In this case, it is natural to consider a group LASSO penalty, in which the $p$ groups are defined by the rows $\{x_{j} \in \mathbb{R}^T, j=1,...,p\}$ of $\mathbf{X}$.
 \\
 \\
 Therefore, the optimization problem we need to solve is:
 
 \begin{equation*}
-    \mathbf{X}^* = \argmin_{\mathbf{X} \in \mathbb{R}^{p \times T}} \frac{1}{2n} \lvert\lvert \mathbf{Y} - \mathbf{\Phi X} \rvert\rvert_{\text{F}}^2 + \lambda \Biggl( \sum_{j=1}^p \lvert\lvert x_{(j)} \rvert\rvert_2 \Biggr)
+    \mathbf{X}^* = \argmin_{\mathbf{X} \in \mathbb{R}^{p \times T}} \frac{1}{2n} \lvert\lvert \mathbf{Y} - \mathbf{\Phi X} \rvert\rvert_{\text{F}}^2 + \lambda \Biggl( \sum_{j=1}^p \lvert\lvert x_{j} \rvert\rvert_2 \Biggr)
 \end{equation*}
 \\
 Using the $l_1/l_2$ mixed-norm, it reads:

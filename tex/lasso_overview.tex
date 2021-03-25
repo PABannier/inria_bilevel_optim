@@ -156,7 +156,7 @@ In this section, we assume that $T = 1$ and $p \gg n$.
 LASSO consists in solving the following optimization problem:
 
 \begin{equation*}
-    x^* = \argmin_{x \in \mathbb{R}^{p}} \frac{1}{2n}\lvert\lvert y - \mathbf{\Phi} x \rvert\rvert_2^2 + \lambda \lvert\lvert x \rvert\rvert_{1}
+    x^* = \argmin_{x \in \mathbb{R}^{p}} \frac{1}{2n}\norm{ y - \mathbf{\Phi} x}_2^2 + \lambda \norm{ x}_{1}
 \end{equation*}
 
 \vskip 0.1in
@@ -187,10 +187,10 @@ $x_{j} \in \mathbb{R}^{p_j}$. Note that we have as many unique coefficients in $
 Then, the optimization problem reads:
 
 \begin{equation*}
-    x^* = \argmin_{x \in \mathbb{R}^p} \Biggl\{ \frac{1}{2n} \sum_{i=1}^n (y_i - \sum_{j=1}^J \phi_{j}^\top x_{j})^2 + \lambda \sum_{j=1}^{J} \lvert\lvert x_{j} \rvert\rvert_2 \Biggr\}
+    x^* = \argmin_{x \in \mathbb{R}^p} \Biggl\{ \frac{1}{2n} \sum_{i=1}^n (y_i - \sum_{j=1}^J \phi_{j}^\top x_{j})^2 + \lambda \sum_{j=1}^{J} \norm{ x_{j}}_2 \Biggr\}
 \end{equation*}
 
-$\lvert\lvert x_{j} \rvert\rvert$ is the Euclidean norm of the vector $x_{j}$. We can convince ourselves that if $\forall j \in \{1, \dots, J\}, p_j = 1$, then $\lvert\lvert x_{j} \rvert\rvert_2 = \lvert x_{j} \rvert$,
+$ \norm{x_{j}}$ is the Euclidean norm of the vector $x_{j}$. We can convince ourselves that if $\forall j \in \{1, \dots, J\}, p_j = 1$, then $\norm{ x_{j}}_2 = \lvert x_{j} \rvert$,
 thus the problem reduces to \nameref{section_1}.
 
 \subsection*{Why is this $l_1 / l_2$-mixed penalty still inducing sparsity?}
@@ -200,7 +200,7 @@ The penalty set on the optimization problem is called a $l_1/l_2$-mixed norm.
 
 First, we are computing the $l_2$ norm of the coefficients in one group, and then we are summing all of them. Simply put, the $l_1/l_2$-mixed norm can be seen
 as the $l_1$ norm of the $l_2$ norms, which means that there will be few non-zero $l_2$ norms, which in turn creates group sparsity. Indeed, remember that since $\lvert \lvert \cdot \rvert \rvert_2$ is a norm, for any vector $x$,
-$\lvert\lvert x \rvert\rvert_2 = 0 \Rightarrow x = 0$.
+$\norm{ x}_2 = 0 \Rightarrow x = 0$.
 
 \subsection*{How is this optimization problem solved?}
 
@@ -215,13 +215,13 @@ thus letting them being small while not setting them zero. In this vein, the ada
 penalized. The optimization problem reads:
 
 \begin{equation*}
-    x^* = \argmin_{x \in \mathbb{R}^p} \Biggl\{ \frac{1}{2n} \lvert\lvert y - \mathbf{\Phi}x \rvert\rvert_2^2 + \lambda \sum_{j=1}^p w_j \lvert x_j \rvert \Biggr\}
+    x^* = \argmin_{x \in \mathbb{R}^p} \Biggl\{ \frac{1}{2n} \norm{ y - \mathbf{\Phi}x}_2^2 + \lambda \sum_{j=1}^p w_j \lvert x_j \rvert \Biggr\}
 \end{equation*}
 \\
 where $w \in \mathbb{R}^p$ is a weight vector. By placing $w \in \mathbb{R}^p$ on the diagonal of a square matrix $\mathbf{W} \in \mathbb{R}^{p \times p}$, we can rewrite the optimization problem in a matrix form:
 
 \begin{equation*}
-    x^* = \argmin_{x \in \mathbb{R}^p} \frac{1}{2n} \lvert\lvert y - \mathbf{\Phi}x \rvert\rvert_2^2 + \lambda \lvert\vert \mathbf{W}x \rvert\rvert_1
+    x^* = \argmin_{x \in \mathbb{R}^p} \frac{1}{2n} \norm{y - \mathbf{\Phi}x}_2^2 + \lambda \norm{\mathbf{W}x}_1
 \end{equation*}
 
 \subsection*{How to choose the weight vector?}
@@ -308,7 +308,7 @@ Therefore, it follows an algorithm to iteratively reweight the coefficients of t
     \For{$l = 0,\dots, n_{\text{iter}}$}
     {
         Solve the weighted $l_1$ minimization problem: 
-        $x^{(l)} \leftarrow \argmin \lvert\lvert y -  \mathbf{\Phi} x\rvert\rvert_2^2 + \lambda \lvert\lvert w \cdot x\rvert\rvert_1$
+        $x^{(l)} \leftarrow \argmin \norm{ y -  \mathbf{\Phi} }_2^2 + \lambda \norm{ w \cdot }_1$
 
         Update the weights: for each 
         $i = 1, \dots, p, \enspace w_i^{(l+1)} \leftarrow \frac{1}{\lvert x_i^{(l)} \rvert + \epsilon}$
@@ -347,13 +347,13 @@ variable. In this case, it is natural to consider a group LASSO penalty, in whic
 Therefore, the optimization problem we need to solve is:
 
 \begin{equation*}
-    \mathbf{X}^* = \argmin_{\mathbf{X} \in \mathbb{R}^{p \times T}} \frac{1}{2n} \lvert\lvert \mathbf{Y} - \mathbf{\Phi X} \rvert\rvert_{\text{F}}^2 + \lambda \Biggl( \sum_{j=1}^p \lvert\lvert x_{j} \rvert\rvert_2 \Biggr)
+    \mathbf{X}^* = \argmin_{\mathbf{X} \in \mathbb{R}^{p \times T}} \frac{1}{2n} \norm{ \mathbf{Y} - \mathbf{\Phi X}}_{\text{F}}^2 + \lambda \Biggl( \sum_{j=1}^p \norm{ x_{j}}_2 \Biggr)
 \end{equation*}
 \\
 Using the $l_1/l_2$ mixed-norm, it reads:
 
 \begin{equation*}
-    \mathbf{X}^* = \argmin_{\mathbf{X} \in \mathbb{R}^{p \times T}} \frac{1}{2n} \lvert\lvert \mathbf{Y} - \mathbf{\Phi X} \rvert\rvert_{\text{F}}^2 + \lambda \lvert\lvert \mathbf{X} \rvert\rvert_{2, 1}
+    \mathbf{X}^* = \argmin_{\mathbf{X} \in \mathbb{R}^{p \times T}} \frac{1}{2n} \norm{ \mathbf{Y} - \mathbf{\Phi X}}_{\text{F}}^2 + \lambda \norm{ \mathbf{X}}_{2, 1}
 \end{equation*}
 \\
 Note that the fitting term is now a matrix norm (here the Frobenius norm) since we are dealing with matrices. As stated in \nameref{section_2}, we are using a mixed $l_1/l_2$ norm to enforce group sparsity on the coefficients $\mathbf{X}$. Indeed,
@@ -374,7 +374,7 @@ on the resulting vector.
 Therefore, the optimization problems reads:
 
 \begin{equation*}
-    \mathbf{X}^* = \argmin_{\mathbf{X} \in \mathbb{R}^{p \times T}} \frac{1}{2n} \lvert\lvert \mathbf{Y} - \mathbf{\Phi X} \rvert\rvert_F^2 + \lambda \sum_{j=1}^p \underbrace{g(\norm{\mathbf{X_{j:}}}_{2})}_{g(x) \leq g(x^{(k)}) + \langle \nabla g (x^{(k)}) \cdot x - x^{(k)} \rangle }
+    \mathbf{X}^* = \argmin_{\mathbf{X} \in \mathbb{R}^{p \times T}} \frac{1}{2n} \norm{ \mathbf{Y} - \mathbf{\Phi X}}_F^2 + \lambda \sum_{j=1}^p \underbrace{g(\norm{\mathbf{X_{j:}}}_{2})}_{g(x) \leq g(x^{(k)}) + \langle \nabla g (x^{(k)}) \cdot x - x^{(k)} \rangle }
 \end{equation*}
 
 where $g$ is any penalty convex or non-convex. In \cite{Candes_Wakin_Boyd08}, $g(x) = \sum_{i=1}^p \log(\lvert x_i \rvert + \epsilon)$. Algorithm 2 shows the log-concave reweighted $l_1$ minimization.

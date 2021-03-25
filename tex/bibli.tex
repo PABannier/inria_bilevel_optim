@@ -135,7 +135,74 @@ literate={á}{{\'a}}1
 
 \vskip 0.3in
 
-\section{Readings}
+\section{Hyperparameter optimization with approximate gradient}
+
+Hyperparameters have a significant impact on model predictive capability. Finding the right set
+of hyperparameters $\lambda \in \mathbb{R}^s$, where $s \in \mathbb{N}^*$ is the number of hyperparameters
+is mostly an empirical process that involves many iterations and does not follow a clearly-defined pathway
+but rather some general guidelines.
+
+Being able to derive an automatic procedure that finds the optimal set of hyperparameters (in terms of generalization
+ability, usually measured using a cross-validated metric like AIC/BIC or SURE) is an active field of research.
+
+\subsection*{Why can't we directly optimize the loss function by including the hyperparameter as the parameter in the loss?}
+
+Because without imposing a constraint (inner loss), the optimization algorithm would always pick the model with no regularization.
+We need to come up with a way to cross-validate the choice of hyperparameters.
+\\
+\\
+In the rest of the section, $f$ is a function with Lipschitz gradient that depends on the model
+parameters that we denote $\mathbf{X}(\lambda)$, where $\lambda \in \mathbb{R}^s$ is a vector of hyperparameters and $\mathbf{X} \in \mathbb{R}^{n\times p}$ a design matrix.
+Those model parameters are typically not available in closed form but can be written as minimizing quantities of a cost function $h(\cdot, \lambda) : \mathbb{R}^p \rightarrow \mathbb{R}$,
+where $p$ is the number of parameters in a model. This enables us to define two nested optimization problems, that we call
+\textbf{bi-level optimization problem}.
+
+\begin{align*}
+    \argmin_{\lambda \in D} \Bigl\{ f(\lambda) \triangleq g(X(\lambda), \lambda) \Bigr\} \\
+    \text{s.t.} \quad X(\lambda) \in \argmin_{x \in \mathbb{R}^p} h(x, \lambda)
+\end{align*}
+\\
+The constraint is called the \textbf{inner} optimization problem, while the minimizing quantity is called the \textbf{outer} optimization problem.
+
+\subsection*{What are the three paradigms of hyperparameter optimization?}
+
+\begin{itemize}
+    \item \textbf{Random and grid search (zero order)}
+    \item \textbf{Sequential model-based optimization (zero order)}: Bayesian optimization essentially consists in evaluating the function in multiple points in the parameter space, and fit a cheap proxy model
+                  (Gaussian processes, kernel methods...) to iteratively estimate the distribution of hyperparameters.
+    \item \textbf{Gradient-based hyperparameter optimization (first order)}: Use local information about the cost function to make informed decision
+                  in the optimization process. It consists in evaluating the hypergradient (the gradient of the loss \textit{w.r.t.} the hyperparameters.)
+\end{itemize}
+
+The major bottleneck (in terms of speed) in first-order methods is to compute the hypergradient.
+Therefore, this paper proposes a first order hyperparameter optimization method based on noisy approximations of the hypergradient.
+
+\subsection*{How to compute the hypergradient in closed-form?}
+
+One approach called \textbf{implicit differentiation} consists in computing the hypergradient in closed-form by differentiating with respect to $\lambda$.
+
+\begin{align*}
+    \nabla f &= \nabla g(\mathbf{X}(\lambda), \lambda) \\
+             &= \nabla_2 g + D\mathbf{X} \cdot \nabla_1 g
+\end{align*}
+\\
+Yet, $\mathbf{X}(\lambda) \in \argmin_{x \in \mathbb{R}^p} h(x, \lambda)$, so $\nabla_1 h(\mathbf{X}(\lambda), \lambda)=0$. Differentiating this equation with respect to $\lambda$
+gives: $\nabla_{1, 2}^2 h + \nabla^2_1 h \cdot D\mathbf{X} = 0$, therefore $D\mathbf{X} = - \nabla^2_{1,2}h \cdot (\nabla_1^2 h)^{-1}$.  Finally, using the previous equation with
+the definition of $D\mathbf{X}$ yields:
+
+\begin{equation*}
+    \nabla f = \nabla_2 g - \nabla^2_{1,2}h \cdot (\nabla_1^2 h)^{-1} \cdot \nabla_1 g
+\end{equation*}
+\\
+In practice, this expression is cumbersome, hence difficult to evaluate. The contribution of this paper is to compute an approximation of the hypergradient using noisy estimates
+of the gradients and the Hessians of $h$ and $g$. In particular, $\nabla_2 g$, $\nabla^2_1 h$ can be
+easily computed in closed form for cheaper models (although in practice we prefer to evaluate
+a matrix-vector product than computing the full Hessian \footnote{In the OLS case for instance, $\mathbf{H} = \mathbf{X^\top X}$. If $\mathbf{X} \in \mathbf{R}^{n \times p}$,
+$\mathbf{H} \in \mathbb{R}^{p \times p}$, which can be expensive to evaluate. We prefer for $v \in \mathbb{R}^{p}$ to evaluate
+first $y=\mathbf{X}v$ then $z=\mathbf{X^\top}y$}) using a conjugate-gradient method.
+\\
+\\
+Besides, the hypergradient can be computed using iterative differentiation.
 
 \subsection{Implicit differentiation for fast hyperparameter selection in non-smooth convex learning, Bertrand and al.}
 
@@ -154,7 +221,7 @@ with respect to a constraint: minimizing the criterion w.r.t. the parameters  of
 One \textit{strong} assumption: the regularization path is well-defined and almost everywhere differentiable.\\
 Main challenge in first-order optimization for the outer loss: evaluating the hypergradient (i.e. gradient of the loss w.r.t. the hyperparameters).
 
-\vskip 0.1in 
+\vskip 0.1in
 
 3 algorithms to compute hypergradients:
 \begin{list}{}{}
@@ -169,7 +236,7 @@ Main challenge in first-order optimization for the outer loss: evaluating the hy
 \begin{list}{}{}
     \item - There exist methods to efficiently compute hypergradients for non-smooth functions.
     \item - Leveraging the sparsity of the Jacobian matrix, we propose an efficient implicit differentiation algorithm to compute the hypergradients.
-    \item - Implicit differentiation significantly outperforms forward and backward auto differentiation. 
+    \item - Implicit differentiation significantly outperforms forward and backward auto differentiation.
 \end{list}
 
 \vskip 0.1in
@@ -186,19 +253,19 @@ For more details, see Bertrand and Massias, Anderson acceleration of coordinate 
 
 \vskip 0.1in
 
-For large-dimensional problems ($p >> n$, $p$ is the number of predictors and $n$ the number of samples), there exists an infinite set of solutions. Imposing a structure constraint on 
+For large-dimensional problems ($p >> n$, $p$ is the number of predictors and $n$ the number of samples), there exists an infinite set of solutions. Imposing a structure constraint on
 the solution form restrains the solution set and tends to yield the right solution.
 
 \vskip 0.1in
 
 Constraining the reconstruction problem (compressive sensing) using a $l_0$-norm yields a NP-hard combinatorial problem. Hence, we rely on the $l_1$-norm that yields a convex yet sparse surrogate optimization
-problem. 
+problem.
 
 \vskip 0.1in
 
 \textbf{Contributions}:
 \begin{list}{}{}
-    \item - An iterative procedure that solve convex subproblems to solve a concave global problem that emulates even better the initial $l_0$ norm problem. 
+    \item - An iterative procedure that solve convex subproblems to solve a concave global problem that emulates even better the initial $l_0$ norm problem.
 \end{list}
 
 \vskip 0.1in
@@ -210,7 +277,7 @@ As a rule of thumb, the weights should relate inversely to the true signal magni
 \textit{Then, how to choose a valid set of weights without knowing a priori the true signal magnitudes?}
 
 
-There must exist weighting matrices based solely on an approximation $x$ to $x_0$. 
+There must exist weighting matrices based solely on an approximation $x$ to $x_0$.
 
 \vskip 0.1in
 

@@ -17,11 +17,18 @@ def test_training_loss_decrease():
     assert start_loss > final_loss
 
 
-def test_sine_waves():
+def test_sparsity_level():
+    """Tests that the sparsity level is (nearly) identical between
+    the original and the reconstructed coefficient matrix.
+
+    The correct hyperparameters have been found in the notebook
+    `Sparse reconstructions signal`, available in the example
+    folder.
+    """
     rng = check_random_state(0)
 
-    n_samples, n_features, n_tasks = 20, 100, 50
-    n_relevant_features = 30
+    n_samples, n_features, n_tasks = 50, 250, 25
+    n_relevant_features = 25
 
     support = rng.choice(n_features, n_relevant_features, replace=False)
 
@@ -35,7 +42,10 @@ def test_sine_waves():
     Y = X @ coef + rng.randn(n_samples, n_tasks)
     Y /= norm(Y, ord="fro")
 
-    regressor = ReweightedMTL()
-    regressor.fit(X, Y)
+    regressor = ReweightedMTL(alpha=0.0009)
+    regressor.fit(X, Y, n_iterations=10)
 
-    np.testing.assert_allclose(regressor.weights, coef, atol=1e-5)
+    nnz_original = np.count_nonzero(np.count_nonzero(coef, axis=1))
+    nnz_reconstructed = np.count_nonzero(np.count_nonzero(regressor.weights, axis=1))
+
+    assert np.abs(nnz_original - nnz_reconstructed) <= 1

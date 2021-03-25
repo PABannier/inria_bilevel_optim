@@ -179,7 +179,6 @@ can be recast as a linear pogram. In practice, \textbf{proximal coordinate desce
 
 There are many regression problems where the features have a natural group structure, and it is desirable to have all coefficients within a group become nonzero or zero simulatenously.
 \\
-\\
 Let's consider a partitioning of the features such that we can partition the columns of $\mathbf{\Phi}$ as $\{\phi_{1}, \dots, \phi_{J}\}$ where $\phi_{j} \in \mathbb{R}^{n \times p_j}$ and
 $p_j$ is the number of features in group $j$. We can apply the same partition to the coefficients of the coefficient vector $x \in \mathbb{R}^p$. Indeed, $x$ is of the form $(x_{1}, \dots, x_{j})$ where
 $x_{j} \in \mathbb{R}^{p_j}$. Note that we have as many unique coefficients in $x$ as there are groups in the partition of the features in the design matrix.
@@ -230,15 +229,12 @@ where $w \in \mathbb{R}^p$ is a weight vector. By placing $w \in \mathbb{R}^p$ o
 The rationale is that large weights could be used to discourage nonzero entries in the recovered signal, while small weights could be used to encourage nonzero entries. As a rule of thumb, the weights should relate inversely
 to the true signal magnitude (in the context of signal processing, which is of interest here).
 \\
-\\
 However, we don't have access to the true signal magnitudes. The question remains of how a valid set of weights may be obtained without first knowing the true signal. \cite{Candes_Wakin_Boyd08} argues that there may exist a range of
 favorable weighting matrices $\mathbf{W} \in \mathbb{R}^{p \times p}$.
-\\
 \\
 They propose a majorization-minimization (MM) algoritm to iteratively reweight the coefficients of the LASSO estimator. Recall that a majorization-minimization algorithm works by iteratively minimizing a surrogate function that majorizes the
 objective function. Simply put, first we majorize the objective function by a surrogate, then we minimize this surrogate function \footnote{It is a core idea in optimization, used to derive gradient descent for instance. For a convex $L$-smooth function,
 we majorize it by its quadratic upper bound, then we minimize this quadratic upper bound. The quadratic upper bound is easily minimized since it has a closed-form solution. For more details, see http://josephsalmon.eu/enseignement/UW/STAT593/MajorizationMinimization.pdf}.
-\\
 \\
 Indeed, let's consider the following constrained problem:
 
@@ -254,10 +250,8 @@ Clearly this problem is equivalent to the following:
 
 This problem is easier to solve since we get rid of the absolute value in the minimized term as it is now placed as an additional constraint.
 \\
-\\
 To apply a MM algorithm, we need to majorize the log-sum function. Yet, the log-sum function is concave and therefore below its tangent. Thus by taking a first-order Taylor expansion, we obtain a linearization of
 the log-sum function in a neighborhood of $u$.
-\\
 \\
 More formally, let $g(u) = \sum_{i=1}^p \log(u_i + \epsilon)$. The first-order Taylor expansion in a neighborhood of $u^{(l)} \in \mathbb{R}^p$ yields:
 
@@ -331,7 +325,6 @@ are not guaranteed to converge to a global minimum.
 The log-sum penalty function has the potential to be more sparsity-encouraging than the $l_1$ norm (for a visual explanation, see \cite{Candes_Wakin_Boyd08}). We clearly see
 that the log-sum penalty is much closer from the $l_0$ norm than the $l_1$ norm thus encouraging smaller coefficients to be set to zero.
 \\
-\\
 More precisely, the smaller $\epsilon$ the closer the log-sum function is from the $l_0$ norm. However, $\epsilon$ can't be set arbitrarily small since as $\epsilon \rightarrow 0$ it
 becomes more likely that the iterative reweighted $l_1$ algorithm will be stuck at a local optimum. In practice, note that signal reconstruction is robust to the choice of $\epsilon$.
 
@@ -347,7 +340,6 @@ In this section, we assume that $T > 1$. Therefore, we are now predicting a mult
 where $\mathbf{E} \in \mathbb{R}^{n \times T}$ is a matrix of errors (noise), usually simulated with a pre-defined signal-to-noise ratio, when doing compressive sensing. Note that $\mathbf{X} \in \mathbb{R}^{p \times T}$ is a matrix.
 Like in \nameref{section_2}, let's suppose that there exists an unknown subset $S \subset  \{1, \dots, p\}$ of the features that are relevant for prediction, and that \textbf{this same subset is preserved across all K components} of the response
 variable. In this case, it is natural to consider a group LASSO penalty, in which the $p$ groups are defined by the rows $\{x_{j} \in \mathbb{R}^T, j=1,\dots,p\}$ of $\mathbf{X}$.
-\\
 \\
 Therefore, the optimization problem we need to solve is:
 
@@ -373,10 +365,8 @@ In scikit-learn, the algorithm used to fit the model is coordinate descent.
 
 The Multi-Task Reweighted LASSO is a combination of \nameref{section_3} and \nameref{section_4}. The goal of the model is to predict a multivariate response variable while enforcing a sparser solution than \nameref{section_1}.
 \\
-\\
 To induce a group-sparsity penalty like in \nameref{section_2}, we compute the $l_2$ norm of the lines of the coefficient matrix $\mathbf{X} \in \mathbb{R}^{p \times T}$, then we apply like in \nameref{section_3} a weighting matrix
 on the resulting vector.
-\\
 \\
 Therefore, the optimization problems reads:
 

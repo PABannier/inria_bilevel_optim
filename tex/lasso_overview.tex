@@ -307,10 +307,10 @@ Therefore, it follows an algorithm to iteratively reweight the coefficients of t
 
     \For{$l = 0,\dots, n_{\text{iter}}$}
     {
-        Solve the weighted $l_1$ minimization problem: 
+        Solve the weighted $l_1$ minimization problem:
         $x^{(l)} \leftarrow \argmin \norm{ y -  \mathbf{\Phi} }_2^2 + \lambda \norm{ w \cdot }_1$
 
-        Update the weights: for each 
+        Update the weights: for each
         $i = 1, \dots, p, \enspace w_i^{(l+1)} \leftarrow \frac{1}{\lvert x_i^{(l)} \rvert + \epsilon}$
     }
 

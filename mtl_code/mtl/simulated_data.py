@@ -1,4 +1,5 @@
 import numpy as np
+from numpy.linalg import norm
 from sklearn.utils import check_random_state
 
 
@@ -7,7 +8,7 @@ def simulate_data(
     n_features=1000,
     n_tasks=150,
     nnz=10,
-    snr=3,
+    snr=1,
     random_state=None,
 ):
     """Generates a simulated dataset and a row-sparse weight
@@ -57,23 +58,13 @@ def simulate_data(
 
     X = rng.randn(n_samples, n_features)
 
-    dense_W = rng.randn(n_features, n_tasks)
-    sparse_mat = np.zeros_like(dense_W)
+    support = rng.choice(n_features, nnz, replace=False)
+    W = np.zeros((n_features, n_tasks))
 
-    for i in range(n_tasks):
-        col = np.array([1] * nnz + [0] * (n_features - nnz)).T
-        rng.shuffle(col)
-        sparse_mat[:, i] = col
+    for k in support:
+        W[k, :] = rng.normal(size=(n_tasks))
 
-    W = dense_W * sparse_mat
-    Y = X @ W
-
-    # Adding a pre-defined SNR to a signal
-    # Source: https://sites.ualberta.ca/~msacchi/SNR_Def.pdf
-    noise = rng.randn(n_samples, n_tasks)
-    noise_std = np.sqrt(
-        (np.linalg.norm(Y, axis=0) ** 2) / (snr * np.linalg.norm(noise, axis=0) ** 2)
-    )
-    Y += noise_std * noise
+    Y = X @ W + rng.normal(0, snr, (n_samples, n_tasks))
+    Y /= norm(Y, ord="fro")
 
     return X, Y, W

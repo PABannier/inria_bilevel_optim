@@ -25,27 +25,12 @@ def test_sparsity_level():
     `Sparse reconstructions signal`, available in the example
     folder.
     """
-    rng = check_random_state(0)
-
-    n_samples, n_features, n_tasks = 50, 250, 25
-    n_relevant_features = 25
-
-    support = rng.choice(n_features, n_relevant_features, replace=False)
-
-    coef = np.zeros((n_features, n_tasks))
-    times = np.linspace(0, 2 * np.pi, n_tasks)
-
-    for k in support:
-        coef[k, :] = np.sin((1.0 + rng.randn(1)) * times + 3 * rng.randn(1))
-
-    X = rng.randn(n_samples, n_features)
-    Y = X @ coef + rng.randn(n_samples, n_tasks)
-    Y /= norm(Y, ord="fro")
+    X, Y, W = simulate_data(50, 250, 25, 25, random_state=0)
 
     regressor = ReweightedMTL(alpha=0.0009)
     regressor.fit(X, Y, n_iterations=10)
 
-    nnz_original = np.count_nonzero(np.count_nonzero(coef, axis=1))
+    nnz_original = np.count_nonzero(np.count_nonzero(W, axis=1))
     nnz_reconstructed = np.count_nonzero(np.count_nonzero(regressor.weights, axis=1))
 
     assert np.abs(nnz_original - nnz_reconstructed) <= 1

@@ -188,7 +188,7 @@ $x_{j} \in \mathbb{R}^{p_j}$. Note that we have as many unique coefficients in $
 Then, the optimization problem reads:
 
 \begin{equation*}
-    x^* = \argmin_{x \in \mathbb{R}^p} \Biggl\{ \frac{1}{2n} \sum_{i=1}^n (y_i - \sum_{j=1}^J \phi_{j}^T x_{j})^2 + \lambda \sum_{j=1}^{J} \lvert\lvert x_{j} \rvert\rvert_2 \Biggr\}
+    x^* = \argmin_{x \in \mathbb{R}^p} \Biggl\{ \frac{1}{2n} \sum_{i=1}^n (y_i - \sum_{j=1}^J \phi_{j}^\top x_{j})^2 + \lambda \sum_{j=1}^{J} \lvert\lvert x_{j} \rvert\rvert_2 \Biggr\}
 \end{equation*}
 
 $\lvert\lvert x_{j} \rvert\rvert$ is the Euclidean norm of the vector $x_{j}$. We can convince ourselves that if $\forall j \in \{1, ..., J\}, p_j = 1$, then $\lvert\lvert x_{j} \rvert\rvert_2 = \lvert x_{j} \rvert$,

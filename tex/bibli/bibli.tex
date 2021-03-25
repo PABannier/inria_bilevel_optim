@@ -204,6 +204,35 @@ first $y=Xv$ then $z=\mathbf{X^\top}y$}) using a conjugate-gradient method.
 \\
 Besides, the hypergradient can be computed using iterative differentiation.
 
+\subsection*{Why choosing projected gradient descent over gradient descent?}
+
+Gradient descent is a standard (easy and simple) way to solve unconstrainted optimization
+problem like $\min_{x \in \bbR^n} f(x)$. However, as soon as we impose a constraint over
+the feasible set like $\min_{\norm{x}_2 \leq 1} \norm{\mathbf{Ax-b}}_2^2$, gradient descent is no longer suited for such problems.
+\\
+\\
+We need to rely on a modified version of gradient descent: $\textbf{projected gradient descent (PGD)}$. PGD adds an addtional step
+in the GD algorithm: the projection step. Let $P_{\mathcal{Q}}$ be a projection operator on some open set $Q$:
+
+\begin{equation*}
+    P_{\mathcal{Q}}(x_0) = \frac{1}{2}\argmin_{x \in \mathcal{Q}} \norm{x - x_0}_2^2
+\end{equation*}
+
+And the projected gradient descent step reads:
+
+\begin{equation*}
+    x_{k+1} = P_{\mathcal{Q}}(x_k - \alpha \nabla f(x_k))
+\end{equation*}
+
+We can convince ouverselves that if $\mathcal{Q}$ is a convex set, the solution to the projection problem is unique. Otherwise, it may
+not be unique. If the next point after a gradient descent step is in $\mathcal{Q}$, the projected point is the point itself. But if $x$
+does not lie in $\mathcal{Q}$, then the projected point lies on the boundary of $\mathcal{Q}$.
+\\
+\\
+Also, note that projected gradient descent is a special case of proximal gradient descent where the
+non-differentiable function is the indicator function.
+
+
 \section{Implicit differentiation for fast hyperparameter selection in non-smooth convex learning, Bertrand and al.}
 
 The bilevel optimization problem is the problem consisting in optimizing the loss function w.r.t. the hyperparameters (outer loss)

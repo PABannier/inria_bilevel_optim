@@ -232,9 +232,12 @@ to the true signal magnitude (in the context of signal processing, which is of i
 However, we don't have access to the true signal magnitudes. The question remains of how a valid set of weights may be obtained without first knowing the true signal. \cite{Candes_Wakin_Boyd08} argues that there may exist a range of
 favorable weighting matrices $\mathbf{W} \in \mathbb{R}^{p \times p}$.
 \\
-They propose a majorization-minimization (MM) algoritm to iteratively reweight the coefficients of the LASSO estimator. Recall that a majorization-minimization algorithm works by iteratively minimizing a surrogate function that majorizes the
-objective function. Simply put, first we majorize the objective function by a surrogate, then we minimize this surrogate function \footnote{It is a core idea in optimization, used to derive gradient descent for instance. For a convex $L$-smooth function,
-we majorize it by its quadratic upper bound, then we minimize this quadratic upper bound. The quadratic upper bound is easily minimized since it has a closed-form solution. For more details, see http://josephsalmon.eu/enseignement/UW/STAT593/MajorizationMinimization.pdf}.
+They propose a majorization-minimization (MM) algoritm to iteratively reweight the coefficients of the LASSO estimator.
+Recall that a majorization-minimization algorithm works by iteratively minimizing a surrogate function that majorizes the objective function.
+Simply put, first we majorize the objective function by a surrogate, then we minimize this surrogate function \footnote{It is a core idea in optimization, used to derive gradient descent for instance.
+For a convex $L$-smooth function, we majorize it by its quadratic upper bound, then we minimize this quadratic upper bound.
+The quadratic upper bound is easily minimized since it has a closed-form solution.
+For more details, see \url{http://josephsalmon.eu/enseignement/UW/STAT593/MajorizationMinimization.pdf}}.
 \\
 Indeed, let's consider the following constrained problem:
 

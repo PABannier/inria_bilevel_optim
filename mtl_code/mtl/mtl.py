@@ -83,7 +83,7 @@ class ReweightedMTL(BaseEstimator, RegressorMixin):
             self.loss_history_.append(loss)
 
             if self.verbose:
-                print(f"Iteration {l}: {loss}")
+                print(f"Iteration {l}: {loss:.4f}")
 
         self.weights = coef_hat
 

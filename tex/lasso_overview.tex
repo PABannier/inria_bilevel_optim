@@ -179,7 +179,7 @@ can be recast as a linear pogram. In practice, \textbf{proximal coordinate desce
 
 There are many regression problems where the features have a natural group structure, and it is desirable to have all coefficients within a group become nonzero or zero simulatenously.
 \\
-Let's consider a partitioning of the features such that we can partition the columns of $\mathbf{\Phi}$ as $\{\phi_{1}, \dots, \phi_{J}\}$ where $\phi_{j} \in \bbR^{n \times p_j}$ and
+Consider a partitioning of the features such that we can partition the columns of $\mathbf{\Phi}$ as $\{\phi_{1}, \dots, \phi_{J}\}$ where $\phi_{j} \in \bbR^{n \times p_j}$ and
 $p_j$ is the number of features in group $j$. We can apply the same partition to the coefficients of the coefficient vector $x \in \bbR^p$. Indeed, $x$ is of the form $(x_{1}, \dots, x_{j})$ where
 $x_{j} \in \bbR^{p_j}$. Note that we have as many unique coefficients in $x$ as there are groups in the partition of the features in the design matrix.
 \\
@@ -211,7 +211,7 @@ This problem is again solved using proximal coordinate descent. However, we are 
 
 Recall that the $l_1$ norm is a convex surrogate of the $l_0$ norm. However, it has some limitations compared to
 the $l_0$-norm. Indeed, the $l_1$-norm is undemocratic in that it penalizes more heavily coefficients larger coefficients than smaller ones. It turns out that the LASSO penalty exerts less pressure on small coefficients,
-thus letting them being small while not setting them zero. In this vein, the adaptive LASSO has been proposed as a way for fitting models sparser than \nameref{section_1}, by introducing weights in front of every coefficient that is
+thus letting them being small while not setting them to zero. In this vein, the adaptive LASSO has been proposed as a way for fitting models sparser than \nameref{section_1}, by introducing weights in front of every coefficient that is
 penalized. The optimization problem reads:
 
 \begin{equation*}
@@ -226,20 +226,19 @@ where $w \in \bbR^p$ is a weight vector. By placing $w \in \bbR^p$ on the diagon
 
 \subsection*{How to choose the weight vector?}
 
-The rationale is that large weights could be used to discourage nonzero entries in the recovered signal, while small weights could be used to encourage nonzero entries. As a rule of thumb, the weights should relate inversely
-to the true signal magnitude (in the context of signal processing, which is of interest here).
+The rationale is that large weights could be used to discourage nonzero entries in the recovered signal, while small weights would encourage them. As a rule of thumb, the weights should relate inversely
+to the true signal magnitude (in the context of signal processing, which is of interest here). However, we don't have access to the true signal magnitudes. The question remains how a valid set of weights
+may be obtained without first knowing the true signal. \cite{Candes_Wakin_Boyd08} argues that there may exist a range of favorable weighting matrices $\mathbf{W} \in \bbR^{p \times p}$.
 \\
-However, we don't have access to the true signal magnitudes. The question remains of how a valid set of weights may be obtained without first knowing the true signal. \cite{Candes_Wakin_Boyd08} argues that there may exist a range of
-favorable weighting matrices $\mathbf{W} \in \bbR^{p \times p}$.
 \\
 They propose a majorization-minimization (MM) algoritm to iteratively reweight the coefficients of the LASSO estimator.
-Recall that a majorization-minimization algorithm works by iteratively minimizing a surrogate function that majorizes the objective function.
+Recall that a MM algorithm works by iteratively minimizing a surrogate function that majorizes the objective function.
 Simply put, first we majorize the objective function by a surrogate, then we minimize this surrogate function \footnote{It is a core idea in optimization, used to derive gradient descent for instance.
 For a convex $L$-smooth function, we majorize it by its quadratic upper bound, then we minimize this quadratic upper bound.
 The quadratic upper bound is easily minimized since it has a closed-form solution.
 For more details, see \url{http://josephsalmon.eu/enseignement/UW/STAT593/MajorizationMinimization.pdf}}.
 \\
-Indeed, let's consider the following constrained problem:
+Indeed, consider the following constrained problem:
 
 \begin{equation*}
     \min_{x \in \bbR^p} \quad  \sum_{i=1}^p \log(\lvert x_i \rvert + \epsilon) \quad \textrm{s.t.} \quad  y = \mathbf{\Phi} x
@@ -308,7 +307,7 @@ Therefore, it follows an algorithm to iteratively reweight the coefficients of t
     \For{$l = 0,\dots, n_{\text{iter}}$}
     {
         Solve the weighted $l_1$ minimization problem:
-        $x^{(l)} \leftarrow \argmin \norm{ y -  \mathbf{\Phi} x}_2^2 + \lambda \norm{ w \cdot }_1$
+        $x^{(l)} \leftarrow \argmin \norm{ y -  \mathbf{\Phi} x}_2^2 + \lambda \norm{ w \cdot x}_1$
 
         Update the weights: for each
         $i = 1, \dots, p, \enspace w_i^{(l+1)} \leftarrow \frac{1}{\lvert x_i^{(l)} \rvert + \epsilon}$
@@ -327,7 +326,7 @@ are not guaranteed to converge to a global minimum.
 \subsection*{Why choosing the log-sum function? How to choose $\epsilon$?}
 
 The log-sum penalty function has the potential to be more sparsity-encouraging than the $l_1$ norm (for a visual explanation, see \cite{Candes_Wakin_Boyd08}). We clearly see
-that the log-sum penalty is much closer from the $l_0$ norm than the $l_1$ norm thus encouraging smaller coefficients to be set to zero.
+that the log-sum penalty is closer from the $l_0$ norm than the $l_1$ norm thus encouraging smaller coefficients to be set to zero.
 \\
 More precisely, the smaller $\epsilon$ the closer the log-sum function is from the $l_0$ norm. However, $\epsilon$ can't be set arbitrarily small since as $\epsilon \rightarrow 0$ it
 becomes more likely that the iterative reweighted $l_1$ algorithm will be stuck at a local optimum. In practice, note that signal reconstruction is robust to the choice of $\epsilon$.
@@ -342,7 +341,7 @@ In this section, we assume that $T > 1$. Therefore, we are now predicting a mult
 \end{equation*}
 \\
 where $\mathbf{E} \in \bbR^{n \times T}$ is a matrix of errors (noise), usually simulated with a pre-defined signal-to-noise ratio, when doing compressive sensing. Note that $\mathbf{X} \in \bbR^{p \times T}$ is a matrix.
-Like in \nameref{section_2}, let's suppose that there exists an unknown subset $S \subset  \{1, \dots, p\}$ of the features that are relevant for prediction, and that \textbf{this same subset is preserved across all K components} of the response
+Like in \nameref{section_2}, suppose that there exists an unknown subset $S \subset  \{1, \dots, p\}$ of the features that are relevant for prediction, and that \textbf{this same subset is preserved across all K components} of the response
 variable. In this case, it is natural to consider a group LASSO penalty, in which the $p$ groups are defined by the rows $\{x_{j} \in \bbR^T, j=1,\dots,p\}$ of $\mathbf{X}$.
 \\
 Therefore, the optimization problem we need to solve is:
@@ -375,7 +374,7 @@ on the resulting vector.
 Therefore, the optimization problems reads:
 
 \begin{equation*}
-    \mathbf{X}^* = \argmin_{\mathbf{X} \in \bbR^{p \times T}} \frac{1}{2n} \norm{ \mathbf{Y} - \mathbf{\Phi X}}_F^2 + \lambda \sum_{j=1}^p \underbrace{g(\norm{\mathbf{X_{j:}}}_{2})}_{g(x) \leq g(x^{(k)}) + \langle \nabla g (x^{(k)}) \cdot x - x^{(k)} \rangle }
+    \mathbf{X}^* = \argmin_{\mathbf{X} \in \bbR^{p \times T}} \frac{1}{2n} \norm{ \mathbf{Y} - \mathbf{\Phi X}}_{\text{F}}^2 + \lambda \sum_{j=1}^p \underbrace{g(\norm{\mathbf{X}_{j:}}_{2})}_{g(x) \leq g(x^{(k)}) + \langle \nabla g (x^{(k)}) , x - x^{(k)} \rangle }
 \end{equation*}
 
 where $g$ is any penalty convex or non-convex. In \cite{Candes_Wakin_Boyd08}, $g(x) = \sum_{i=1}^p \log(\lvert x_i \rvert + \epsilon)$. Algorithm 2 shows the log-concave reweighted $l_1$ minimization.
@@ -396,7 +395,7 @@ where $g$ is any penalty convex or non-convex. In \cite{Candes_Wakin_Boyd08}, $g
     \mathbf{Y} \in \bbR^{n\times T},
     w \in \bbR^{p},
     n_{\text{iter}} \in \bbN,
-    \epsilon \in \bbR^+,
+    \epsilon \in \bbR^+_*,
     \lambda \in \bbR^+
     $}
     \Init{$w = \ind_{\bbR^p} $}
@@ -405,16 +404,15 @@ where $g$ is any penalty convex or non-convex. In \cite{Candes_Wakin_Boyd08}, $g
     \For{$l = 0,\dots, n_{\text{iter}}$}
     {
         Solve the weighted $l_1$ minimization problem:
-        $\mathbf{X} \leftarrow \argmin \norm{\mathbf{Y} -  \mathbf{\Phi} \mathbf{X}}_2^2 + \lambda \norm{w \cdot \mathbf{X}}_{2, 1}$
+        $\mathbf{X} \leftarrow \argmin \norm{\mathbf{Y} -  \mathbf{\Phi} \mathbf{X}}_{\text{F}}^2 + \lambda \norm{\text{diag}(w) \cdot \mathbf{X}}_{2, 1}$
 
         Update the weights: for each
-        $j = 1, \dots, p, \enspace w_j \leftarrow \frac{1}{\norm{X_{j:}}_2 + \epsilon}$
+        $j = 1, \dots, p, \enspace w_j \leftarrow \frac{1}{\norm{\mathbf{X}_{j:}}_2 + \epsilon}$
     }
 
 \Return{$\mathbf{X}$}
 \end{algorithm}
 }
-\jo{to avoid ambiguity you might use $\diag(w)$ for a matrix multiplication in the update formula of the algorithm}
 
 \newpage
 \bibliographystyle{plainnat}

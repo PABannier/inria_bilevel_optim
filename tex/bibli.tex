@@ -135,7 +135,7 @@ literate={á}{{\'a}}1
 
 \vskip 0.3in
 
-\section{Hyperparameter optimization with approximate gradient}
+\section{Hyperparameter optimization with approximate gradient, Pedregosa et al.}
 
 Hyperparameters have a significant impact on model predictive capability. Finding the right set
 of hyperparameters $\lambda \in \mathbb{R}^s$, where $s \in \mathbb{N}^*$ is the number of hyperparameters
@@ -143,7 +143,7 @@ is mostly an empirical process that involves many iterations and does not follow
 but rather some general guidelines.
 
 Being able to derive an automatic procedure that finds the optimal set of hyperparameters (in terms of generalization
-ability, usually measured using a cross-validated metric like AIC/BIC or SURE) is an active field of research.
+ability, usually measured using a cross-validated metric like AIC/BIC or SURE\footnote{For more information, see \cite{Deledalle_Vaiter_Fadili_Peyre14}}) is an active field of research.
 
 \subsection*{Why can't we directly optimize the loss function by including the hyperparameter as the parameter in the loss?}
 
@@ -152,7 +152,7 @@ We need to come up with a way to cross-validate the choice of hyperparameters.
 \\
 \\
 In the rest of the section, $f$ is a function with Lipschitz gradient that depends on the model
-parameters that we denote $\mathbf{X}(\lambda)$, where $\lambda \in \mathbb{R}^s$ is a vector of hyperparameters and $\mathbf{X} \in \mathbb{R}^{n\times p}$ a design matrix.
+parameters that we denote $X(\lambda)$, where $\lambda \in \mathbb{R}^s$ is a vector of hyperparameters.
 Those model parameters are typically not available in closed form but can be written as minimizing quantities of a cost function $h(\cdot, \lambda) : \mathbb{R}^p \rightarrow \mathbb{R}$,
 where $p$ is the number of parameters in a model. This enables us to define two nested optimization problems, that we call
 \textbf{bi-level optimization problem}.
@@ -169,7 +169,7 @@ The constraint is called the \textbf{inner} optimization problem, while the mini
 \begin{itemize}
     \item \textbf{Random and grid search (zero order)}
     \item \textbf{Sequential model-based optimization (zero order)}: Bayesian optimization essentially consists in evaluating the function in multiple points in the parameter space, and fit a cheap proxy model
-                  (Gaussian processes, kernel methods...) to iteratively estimate the distribution of hyperparameters.
+                  (Gaussian processes, kernel methods\dots) to iteratively estimate the distribution of hyperparameters. For more information, see \cite{Brochu_Cora_deFreitas10}.
     \item \textbf{Gradient-based hyperparameter optimization (first order)}: Use local information about the cost function to make informed decision
                   in the optimization process. It consists in evaluating the hypergradient (the gradient of the loss \textit{w.r.t.} the hyperparameters.)
 \end{itemize}
@@ -182,13 +182,13 @@ Therefore, this paper proposes a first order hyperparameter optimization method 
 One approach called \textbf{implicit differentiation} consists in computing the hypergradient in closed-form by differentiating with respect to $\lambda$.
 
 \begin{align*}
-    \nabla f &= \nabla g(\mathbf{X}(\lambda), \lambda) \\
-             &= \nabla_2 g + D\mathbf{X} \cdot \nabla_1 g
+    \nabla f &= \nabla g(X(\lambda), \lambda) \\
+             &= \nabla_2 g + DX \cdot \nabla_1 g
 \end{align*}
 \\
-Yet, $\mathbf{X}(\lambda) \in \argmin_{x \in \mathbb{R}^p} h(x, \lambda)$, so $\nabla_1 h(\mathbf{X}(\lambda), \lambda)=0$. Differentiating this equation with respect to $\lambda$
-gives: $\nabla_{1, 2}^2 h + \nabla^2_1 h \cdot D\mathbf{X} = 0$, therefore $D\mathbf{X} = - \nabla^2_{1,2}h \cdot (\nabla_1^2 h)^{-1}$.  Finally, using the previous equation with
-the definition of $D\mathbf{X}$ yields:
+Yet, $X(\lambda) \in \argmin_{x \in \mathbb{R}^p} h(x, \lambda)$, so $\nabla_1 h(X(\lambda), \lambda)=0$. Differentiating this equation with respect to $\lambda$
+gives: $\nabla_{1, 2}^2 h + \nabla^2_1 h \cdot DX = 0$, therefore $DX = - \nabla^2_{1,2}h \cdot (\nabla_1^2 h)^{-1}$.  Finally, using the previous equation with
+the definition of $DX$ yields:
 
 \begin{equation*}
     \nabla f = \nabla_2 g - \nabla^2_{1,2}h \cdot (\nabla_1^2 h)^{-1} \cdot \nabla_1 g
@@ -199,113 +199,44 @@ of the gradients and the Hessians of $h$ and $g$. In particular, $\nabla_2 g$, $
 easily computed in closed form for cheaper models (although in practice we prefer to evaluate
 a matrix-vector product than computing the full Hessian \footnote{In the OLS case for instance, $\mathbf{H} = \mathbf{X^\top X}$. If $\mathbf{X} \in \mathbf{R}^{n \times p}$,
 $\mathbf{H} \in \mathbb{R}^{p \times p}$, which can be expensive to evaluate. We prefer for $v \in \mathbb{R}^{p}$ to evaluate
-first $y=\mathbf{X}v$ then $z=\mathbf{X^\top}y$}) using a conjugate-gradient method.
+first $y=Xv$ then $z=\mathbf{X^\top}y$}) using a conjugate-gradient method.
 \\
 \\
 Besides, the hypergradient can be computed using iterative differentiation.
 
-\subsection{Implicit differentiation for fast hyperparameter selection in non-smooth convex learning, Bertrand and al.}
-
-\textbf{Goal}: select the best set of hyperparameters to optimize a loss function. \\
-\textbf{Initial solution}: Grid search, Random search, Bayesian optimization. \\
-\textbf{Problem}: they scale poorly with the number of hyperparameters to tune. \\
-\textbf{Solution}: use first-order optimization methods to optimize a problem. \\
-
-\vskip 0.1in
+\section{Implicit differentiation for fast hyperparameter selection in non-smooth convex learning, Bertrand and al.}
 
 The bilevel optimization problem is the problem consisting in optimizing the loss function w.r.t. the hyperparameters (outer loss)
 with respect to a constraint: minimizing the criterion w.r.t. the parameters  of an estimator (inner loss).
-
-\vskip 0.1in
-
 One \textit{strong} assumption: the regularization path is well-defined and almost everywhere differentiable.\\
-Main challenge in first-order optimization for the outer loss: evaluating the hypergradient (i.e. gradient of the loss w.r.t. the hyperparameters).
-
-\vskip 0.1in
 
 3 algorithms to compute hypergradients:
-\begin{list}{}{}
-    \item - Implicit differentiation
-    \item - Forward auto differentiation
-    \item - Backward auto differentiation (backprop)
-\end{list}
+\begin{itemize}
+    \item Implicit differentiation
+    \item Forward auto differentiation
+    \item Backward auto differentiation (backprop)
+\end{itemize}
+
+\subsection*{Contributions}
+
+\begin{itemize}
+    \item There exist methods to efficiently compute hypergradients for non-smooth functions.
+    \item Leveraging the sparsity of the Jacobian matrix, we propose an efficient implicit differentiation algorithm to compute the hypergradients.
+    \item Implicit differentiation significantly outperforms forward and backward auto differentiation.
+\end{itemize}
 
 \vskip 0.1in
 
-\textbf{Contributions}:
-\begin{list}{}{}
-    \item - There exist methods to efficiently compute hypergradients for non-smooth functions.
-    \item - Leveraging the sparsity of the Jacobian matrix, we propose an efficient implicit differentiation algorithm to compute the hypergradients.
-    \item - Implicit differentiation significantly outperforms forward and backward auto differentiation.
-\end{list}
+Note that in practice, (proximal) coordinate descent is much faster for solving LASSO-like problems than accelerated (proximal) gradient descent à la Nesterov.
+For more details, see \cite{Bertrand_Massias_Anderson}.
 
-\vskip 0.1in
+\section{Enhancing Sparsity with Reweighted l1 minimization, Candès and al.}
 
-\textit{Side notes}: In practice, (proximal) coordinate descent is much faster for solving LASSO-like problems than accelerated (proximal) gradient descent à la Nesterov.
-For more details, see Bertrand and Massias, Anderson acceleration of coordinate descent.
-
-\subsection{Enhancing Sparsity with Reweighted l1 minimization, Candès and al.}
-
-\textbf{Goal}: reconstruct sparse signals (optimization problem). \\
-\textbf{Initial solution}: use a $l_1$ norm. \\
-\textbf{Problem}: larger coefficients are penalized more heavily in the $l_1$-norm than smaller coefficients, unlike the more democractic $l_0$ norm. \\
-\textbf{Better solution}: solve a sequence of weighted $l_1$-minimization problems where the weights used for the next iteration are computed from the value of the current solution.
-
-\vskip 0.1in
-
-For large-dimensional problems ($p >> n$, $p$ is the number of predictors and $n$ the number of samples), there exists an infinite set of solutions. Imposing a structure constraint on
-the solution form restrains the solution set and tends to yield the right solution.
-
-\vskip 0.1in
-
-Constraining the reconstruction problem (compressive sensing) using a $l_0$-norm yields a NP-hard combinatorial problem. Hence, we rely on the $l_1$-norm that yields a convex yet sparse surrogate optimization
-problem.
-
-\vskip 0.1in
-
-\textbf{Contributions}:
-\begin{list}{}{}
-    \item - An iterative procedure that solve convex subproblems to solve a concave global problem that emulates even better the initial $l_0$ norm problem.
-\end{list}
-
-\vskip 0.1in
-
-\textit{1st question: how to select the weights to build a weighted convex problem}?
-
-As a rule of thumb, the weights should relate inversely to the true signal magnitudes.
-
-\textit{Then, how to choose a valid set of weights without knowing a priori the true signal magnitudes?}
+See memo on LASSO.
 
 
-There must exist weighting matrices based solely on an approximation $x$ to $x_0$.
-
-\vskip 0.1in
-
-The weights actually come from the log-sum penalty function. The log-sum penalty function has the potential to be much more sparsity-encouraging than the $l_1$-norm.
-
-\vskip 0.1in
-
-\textit{Question: What is the connection between the chosen weights and the log-sum penalty?}
-
-DO THE DEMO
-
-\vskip 0.1in
-
-The concave penalty function $f_{\text{log}, \epsilon}$ has slope at the origin that grows roughly has $\frac{1}{\epsilon}$ when $\epsilon \rightarrow 0$.
-Like the $l_0$-norm, this allows a relatively large penalty to be placed on small nonzero coefficients and more strongly encourages them to be set to zero.
-
-This is a key difference with $l_1$ norm. As $l_1$ norm tends to put smaller penalty on small coefficients than large coefficients, small coefficients are not
-necessarily forced to be zero, thus there remains a residual error when applying $l_1$-norm.
-
-\vskip 0.1in
-
-\textit{Question: How to choose} $\epsilon$?
-
-As $\epsilon \rightarrow 0$, $f_{\text{log}, \epsilon}(t) \rightarrow f_0(t)$, one could be tempted to set $\epsilon$ arbitrarily small. However, as $\epsilon \rightarrow 0$,
-it becomes more likely for the iterative reweighted $l_1$ algorithm to be stuck in an undesirable local minimum.
-In practice, $\epsilon$ must be set slightly smaller than the expected nonzero magnitudes of $x$.
-
-
-
+\newpage
+\bibliographystyle{plainnat}
+\bibliography{references_all}
 
 \end{document}

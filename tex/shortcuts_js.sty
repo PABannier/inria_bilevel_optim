@@ -1,10 +1,3 @@
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% Comments
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-\usepackage{color}
-\newcommand*{\TODO}[1]{\textbf{\textcolor{red}{TO~DO: #1}}}
-\newcommand{\joe}[1]{\textcolor{red}{Joe: #1}}
-\newcommand{\jrs}[1]{\textcolor{red}{#1}}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% Courses / Practicals
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -263,3 +256,17 @@
 
 \newcommand{\norm}[1]{\left \lVert #1 \right \rVert}
 \newcommand{\normin}[1]{\lVert #1 \rVert}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% Comments
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\usepackage{color}
+\usepackage[usenames,dvipsnames,svgnames,table]{xcolor}
+
+% Comment the following part when submitting, margin could have change for making the todo notes in the margin.
+\usepackage[textwidth=1.5cm, textsize=scriptsize]{todonotes}
+%\usepackage[textwidth=2.8cm, textsize=scriptsize,disable]{todonotes}
+\setlength{\marginparwidth}{1.4cm} % to comment if todonotes is not used
+\newcommand{\jo}[1]{\todo[color=green!20]{{\bf Jo:} #1}}
+\newcommand{\hashem}[1]{\textbf{\textcolor{red}{HG: #1}}}

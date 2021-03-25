@@ -142,9 +142,9 @@ literate={á}{{\'a}}1
 
 \vskip 0.3in
 
-In this memo, $\mathbf{\Phi} \in \mathbb{R}^{n \times p}$ is the design matrix, $x \in \mathbb{R}^{p}$ (resp. $\mathbf{X} \in \mathbb{R}^{p \times T}$) is the coefficient vector (resp. matrix) and $y \in \mathbb{R}^n$
-(resp. $\mathbf{Y} \in \mathbb{R}^{n \times T}$) is the target vector (resp. matrix). Let $n, p, T \in \mathbb{N}^*$ be respectively the number of samples, the number of features and the number of tasks. As we shall see later, LASSO-like models
-are particularly useful for large-dimensional problems \textit{i.e.} when $p \gg n$. $\lambda \in \mathbb{R}^+$ is a regularizing hyperparameter.
+In this memo, $\mathbf{\Phi} \in \bbR^{n \times p}$ is the design matrix, $x \in \bbR^{p}$ (resp. $\mathbf{X} \in \bbR^{p \times T}$) is the coefficient vector (resp. matrix) and $y \in \bbR^n$
+(resp. $\mathbf{Y} \in \bbR^{n \times T}$) is the target vector (resp. matrix). Let $n, p, T \in \mathbb{N}^*$ be respectively the number of samples, the number of features and the number of tasks. As we shall see later, LASSO-like models
+are particularly useful for large-dimensional problems \textit{i.e.} when $p \gg n$. $\lambda \in \bbR^+$ is a regularizing hyperparameter.
 
 \section{LASSO}
 \label{section_1}
@@ -156,7 +156,7 @@ In this section, we assume that $T = 1$ and $p \gg n$.
 LASSO consists in solving the following optimization problem:
 
 \begin{equation*}
-    x^* = \argmin_{x \in \mathbb{R}^{p}} \frac{1}{2n}\norm{ y - \mathbf{\Phi} x}_2^2 + \lambda \norm{ x}_{1}
+    x^* = \argmin_{x \in \bbR^{p}} \frac{1}{2n}\norm{ y - \mathbf{\Phi} x}_2^2 + \lambda \norm{ x}_{1}
 \end{equation*}
 
 \vskip 0.1in
@@ -179,15 +179,15 @@ can be recast as a linear pogram. In practice, \textbf{proximal coordinate desce
 
 There are many regression problems where the features have a natural group structure, and it is desirable to have all coefficients within a group become nonzero or zero simulatenously.
 \\
-Let's consider a partitioning of the features such that we can partition the columns of $\mathbf{\Phi}$ as $\{\phi_{1}, \dots, \phi_{J}\}$ where $\phi_{j} \in \mathbb{R}^{n \times p_j}$ and
-$p_j$ is the number of features in group $j$. We can apply the same partition to the coefficients of the coefficient vector $x \in \mathbb{R}^p$. Indeed, $x$ is of the form $(x_{1}, \dots, x_{j})$ where
-$x_{j} \in \mathbb{R}^{p_j}$. Note that we have as many unique coefficients in $x$ as there are groups in the partition of the features in the design matrix.
+Let's consider a partitioning of the features such that we can partition the columns of $\mathbf{\Phi}$ as $\{\phi_{1}, \dots, \phi_{J}\}$ where $\phi_{j} \in \bbR^{n \times p_j}$ and
+$p_j$ is the number of features in group $j$. We can apply the same partition to the coefficients of the coefficient vector $x \in \bbR^p$. Indeed, $x$ is of the form $(x_{1}, \dots, x_{j})$ where
+$x_{j} \in \bbR^{p_j}$. Note that we have as many unique coefficients in $x$ as there are groups in the partition of the features in the design matrix.
 \\
 
 Then, the optimization problem reads:
 
 \begin{equation*}
-    x^* = \argmin_{x \in \mathbb{R}^p} \Biggl\{ \frac{1}{2n} \sum_{i=1}^n (y_i - \sum_{j=1}^J \phi_{j}^\top x_{j})^2 + \lambda \sum_{j=1}^{J} \norm{ x_{j}}_2 \Biggr\}
+    x^* = \argmin_{x \in \bbR^p} \Biggl\{ \frac{1}{2n} \sum_{i=1}^n (y_i - \sum_{j=1}^J \phi_{j}^\top x_{j})^2 + \lambda \sum_{j=1}^{J} \norm{ x_{j}}_2 \Biggr\}
 \end{equation*}
 
 $ \norm{x_{j}}$ is the Euclidean norm of the vector $x_{j}$. We can convince ourselves that if $\forall j \in \{1, \dots, J\}, p_j = 1$, then $\norm{ x_{j}}_2 = \lvert x_{j} \rvert$,
@@ -215,13 +215,13 @@ thus letting them being small while not setting them zero. In this vein, the ada
 penalized. The optimization problem reads:
 
 \begin{equation*}
-    x^* = \argmin_{x \in \mathbb{R}^p} \Biggl\{ \frac{1}{2n} \norm{ y - \mathbf{\Phi}x}_2^2 + \lambda \sum_{j=1}^p w_j \lvert x_j \rvert \Biggr\}
+    x^* = \argmin_{x \in \bbR^p} \Biggl\{ \frac{1}{2n} \norm{ y - \mathbf{\Phi}x}_2^2 + \lambda \sum_{j=1}^p w_j \lvert x_j \rvert \Biggr\}
 \end{equation*}
 \\
-where $w \in \mathbb{R}^p$ is a weight vector. By placing $w \in \mathbb{R}^p$ on the diagonal of a square matrix $\mathbf{W} \in \mathbb{R}^{p \times p}$, we can rewrite the optimization problem in a matrix form:
+where $w \in \bbR^p$ is a weight vector. By placing $w \in \bbR^p$ on the diagonal of a square matrix $\mathbf{W} \in \bbR^{p \times p}$, we can rewrite the optimization problem in a matrix form:
 
 \begin{equation*}
-    x^* = \argmin_{x \in \mathbb{R}^p} \frac{1}{2n} \norm{y - \mathbf{\Phi}x}_2^2 + \lambda \norm{\mathbf{W}x}_1
+    x^* = \argmin_{x \in \bbR^p} \frac{1}{2n} \norm{y - \mathbf{\Phi}x}_2^2 + \lambda \norm{\mathbf{W}x}_1
 \end{equation*}
 
 \subsection*{How to choose the weight vector?}
@@ -230,7 +230,7 @@ The rationale is that large weights could be used to discourage nonzero entries 
 to the true signal magnitude (in the context of signal processing, which is of interest here).
 \\
 However, we don't have access to the true signal magnitudes. The question remains of how a valid set of weights may be obtained without first knowing the true signal. \cite{Candes_Wakin_Boyd08} argues that there may exist a range of
-favorable weighting matrices $\mathbf{W} \in \mathbb{R}^{p \times p}$.
+favorable weighting matrices $\mathbf{W} \in \bbR^{p \times p}$.
 \\
 They propose a majorization-minimization (MM) algoritm to iteratively reweight the coefficients of the LASSO estimator.
 Recall that a majorization-minimization algorithm works by iteratively minimizing a surrogate function that majorizes the objective function.
@@ -242,13 +242,13 @@ For more details, see \url{http://josephsalmon.eu/enseignement/UW/STAT593/Majori
 Indeed, let's consider the following constrained problem:
 
 \begin{equation*}
-    \min_{x \in \mathbb{R}^p} \quad  \sum_{i=1}^p \log(\lvert x_i \rvert + \epsilon) \quad \textrm{s.t.} \quad  y = \mathbf{\Phi} x
+    \min_{x \in \bbR^p} \quad  \sum_{i=1}^p \log(\lvert x_i \rvert + \epsilon) \quad \textrm{s.t.} \quad  y = \mathbf{\Phi} x
 \end{equation*}
 \\
 
 Clearly this problem is equivalent to the following:
 \begin{equation*}
-    \min_{x,u \in \mathbb{R}^p} \quad  \sum_{i=1}^p \log(u_i + \epsilon) \quad \textrm{s.t.} \quad  y = \mathbf{\Phi} x, \quad \lvert x_i \rvert \leq u_i, \enspace i=1,\dots,p
+    \min_{x,u \in \bbR^p} \quad  \sum_{i=1}^p \log(u_i + \epsilon) \quad \textrm{s.t.} \quad  y = \mathbf{\Phi} x, \quad \lvert x_i \rvert \leq u_i, \enspace i=1,\dots,p
 \end{equation*}
 
 This problem is easier to solve since we get rid of the absolute value in the minimized term as it is now placed as an additional constraint.
@@ -256,29 +256,29 @@ This problem is easier to solve since we get rid of the absolute value in the mi
 To apply a MM algorithm, we need to majorize the log-sum function. Yet, the log-sum function is concave and therefore below its tangent. Thus by taking a first-order Taylor expansion, we obtain a linearization of
 the log-sum function in a neighborhood of $u$.
 \\
-More formally, let $g(u) = \sum_{i=1}^p \log(u_i + \epsilon)$. The first-order Taylor expansion in a neighborhood of $u^{(l)} \in \mathbb{R}^p$ yields:
+More formally, let $g(u) = \sum_{i=1}^p \log(u_i + \epsilon)$. The first-order Taylor expansion in a neighborhood of $u^{(l)} \in \bbR^p$ yields:
 
 \begin{align*}
-    u^{(l+1)} &= \argmin_{u \in \mathbb{R}^p} g(u^{(l)}) + \nabla g(u^{(l)})\cdot (u - u^{(l)}) \\
-              &= \argmin_{u \in \mathbb{R}^p} \sum_{i=1}^p \log( u_i^{(l)} + \epsilon) + (u - u^{(l)}) \sum_{i=1}^p \frac{1}{ u_i^{(l)}  + \epsilon}
+    u^{(l+1)} &= \argmin_{u \in \bbR^p} g(u^{(l)}) + \nabla g(u^{(l)})\cdot (u - u^{(l)}) \\
+              &= \argmin_{u \in \bbR^p} \sum_{i=1}^p \log( u_i^{(l)} + \epsilon) + (u - u^{(l)}) \sum_{i=1}^p \frac{1}{ u_i^{(l)}  + \epsilon}
 \end{align*}
 
 By removing the terms that do not depend on $u$, it follows that:
 
 \begin{equation*}
-    u^{(l+1)} = \argmin_{u \in \mathbb{R}^p} \sum_{i=1}^p \frac{u_i}{ u_i^{(l)} + \epsilon}
+    u^{(l+1)} = \argmin_{u \in \bbR^p} \sum_{i=1}^p \frac{u_i}{ u_i^{(l)} + \epsilon}
 \end{equation*}
 
 And by equivalence,
 
 \begin{equation*}
-    x^{(l+1)} = \argmin_{x \in \mathbb{R}^p} \sum_{i=1}^p \frac{\lvert x_i \rvert}{\lvert x_i^{(l)} \rvert + \epsilon}
+    x^{(l+1)} = \argmin_{x \in \bbR^p} \sum_{i=1}^p \frac{\lvert x_i \rvert}{\lvert x_i^{(l)} \rvert + \epsilon}
 \end{equation*}
 
 By letting $\forall i \in \{1, \dots, p\}, w_i^{(l)} = \frac{1}{\lvert x_i^{(l)}\rvert + \epsilon}$, it follows:
 
 \begin{equation*}
-    x^{(l+1)} = \argmin_{x \in \mathbb{R}^p} \sum_{i=1}^p w_i^{(l)} \lvert x_i \rvert
+    x^{(l+1)} = \argmin_{x \in \bbR^p} \sum_{i=1}^p w_i^{(l)} \lvert x_i \rvert
 \end{equation*}
 \\
 Therefore, it follows an algorithm to iteratively reweight the coefficients of the LASSO model.
@@ -300,7 +300,7 @@ Therefore, it follows an algorithm to iteratively reweight the coefficients of t
     w \in \bbR^{p},
     n_{\text{iter}} \in \bbN,
     \epsilon \in \bbR^+,
-    \lambda \in bbR^+
+    \lambda \in \bbR^+
     $}
 
 \Init{$w = \ind_{\bbR^p} $}
@@ -308,7 +308,7 @@ Therefore, it follows an algorithm to iteratively reweight the coefficients of t
     \For{$l = 0,\dots, n_{\text{iter}}$}
     {
         Solve the weighted $l_1$ minimization problem:
-        $x^{(l)} \leftarrow \argmin \norm{ y -  \mathbf{\Phi} }_2^2 + \lambda \norm{ w \cdot }_1$
+        $x^{(l)} \leftarrow \argmin \norm{ y -  \mathbf{\Phi} x}_2^2 + \lambda \norm{ w \cdot }_1$
 
         Update the weights: for each
         $i = 1, \dots, p, \enspace w_i^{(l+1)} \leftarrow \frac{1}{\lvert x_i^{(l)} \rvert + \epsilon}$
@@ -317,6 +317,7 @@ Therefore, it follows an algorithm to iteratively reweight the coefficients of t
 \Return{$x$}
 \end{algorithm}
 }
+\jo{the math seems wrong in the algorithm above. double check it!}
 
 \vskip 0.2in
 
@@ -334,26 +335,26 @@ becomes more likely that the iterative reweighted $l_1$ algorithm will be stuck 
 \section{Multi-Task LASSO}
 \label{section_4}
 
-In this section, we assume that $T > 1$. Therefore, we are now predicting a multivariate response $\mathbf{Y}\in \mathbb{R}^{n \times T}$, and by assuming that the data collected are linear measurements, the model reads:
+In this section, we assume that $T > 1$. Therefore, we are now predicting a multivariate response $\mathbf{Y}\in \bbR^{n \times T}$, and by assuming that the data collected are linear measurements, the model reads:
 
 \begin{equation*}
     \mathbf{Y} = \mathbf{\Phi}\mathbf{X} + \mathbf{E}
 \end{equation*}
 \\
-where $\mathbf{E} \in \mathbb{R}^{n \times T}$ is a matrix of errors (noise), usually simulated with a pre-defined signal-to-noise ratio, when doing compressive sensing. Note that $\mathbf{X} \in \mathbb{R}^{p \times T}$ is a matrix.
+where $\mathbf{E} \in \bbR^{n \times T}$ is a matrix of errors (noise), usually simulated with a pre-defined signal-to-noise ratio, when doing compressive sensing. Note that $\mathbf{X} \in \bbR^{p \times T}$ is a matrix.
 Like in \nameref{section_2}, let's suppose that there exists an unknown subset $S \subset  \{1, \dots, p\}$ of the features that are relevant for prediction, and that \textbf{this same subset is preserved across all K components} of the response
-variable. In this case, it is natural to consider a group LASSO penalty, in which the $p$ groups are defined by the rows $\{x_{j} \in \mathbb{R}^T, j=1,\dots,p\}$ of $\mathbf{X}$.
+variable. In this case, it is natural to consider a group LASSO penalty, in which the $p$ groups are defined by the rows $\{x_{j} \in \bbR^T, j=1,\dots,p\}$ of $\mathbf{X}$.
 \\
 Therefore, the optimization problem we need to solve is:
 
 \begin{equation*}
-    \mathbf{X}^* = \argmin_{\mathbf{X} \in \mathbb{R}^{p \times T}} \frac{1}{2n} \norm{ \mathbf{Y} - \mathbf{\Phi X}}_{\text{F}}^2 + \lambda \Biggl( \sum_{j=1}^p \norm{ x_{j}}_2 \Biggr)
+    \mathbf{X}^* = \argmin_{\mathbf{X} \in \bbR^{p \times T}} \frac{1}{2n} \norm{ \mathbf{Y} - \mathbf{\Phi X}}_{\text{F}}^2 + \lambda \Biggl( \sum_{j=1}^p \norm{ x_{j}}_2 \Biggr)
 \end{equation*}
 \\
 Using the $l_1/l_2$ mixed-norm, it reads:
 
 \begin{equation*}
-    \mathbf{X}^* = \argmin_{\mathbf{X} \in \mathbb{R}^{p \times T}} \frac{1}{2n} \norm{ \mathbf{Y} - \mathbf{\Phi X}}_{\text{F}}^2 + \lambda \norm{ \mathbf{X}}_{2, 1}
+    \mathbf{X}^* = \argmin_{\mathbf{X} \in \bbR^{p \times T}} \frac{1}{2n} \norm{ \mathbf{Y} - \mathbf{\Phi X}}_{\text{F}}^2 + \lambda \norm{ \mathbf{X}}_{2, 1}
 \end{equation*}
 \\
 Note that the fitting term is now a matrix norm (here the Frobenius norm) since we are dealing with matrices. As stated in \nameref{section_2}, we are using a mixed $l_1/l_2$ norm to enforce group sparsity on the coefficients $\mathbf{X}$. Indeed,
@@ -368,13 +369,13 @@ In scikit-learn, the algorithm used to fit the model is coordinate descent.
 
 The Multi-Task Reweighted LASSO is a combination of \nameref{section_3} and \nameref{section_4}. The goal of the model is to predict a multivariate response variable while enforcing a sparser solution than \nameref{section_1}.
 \\
-To induce a group-sparsity penalty like in \nameref{section_2}, we compute the $l_2$ norm of the lines of the coefficient matrix $\mathbf{X} \in \mathbb{R}^{p \times T}$, then we apply like in \nameref{section_3} a weighting matrix
+To induce a group-sparsity penalty like in \nameref{section_2}, we compute the $l_2$ norm of the lines of the coefficient matrix $\mathbf{X} \in \bbR^{p \times T}$, then we apply like in \nameref{section_3} a weighting matrix
 on the resulting vector.
 \\
 Therefore, the optimization problems reads:
 
 \begin{equation*}
-    \mathbf{X}^* = \argmin_{\mathbf{X} \in \mathbb{R}^{p \times T}} \frac{1}{2n} \norm{ \mathbf{Y} - \mathbf{\Phi X}}_F^2 + \lambda \sum_{j=1}^p \underbrace{g(\norm{\mathbf{X_{j:}}}_{2})}_{g(x) \leq g(x^{(k)}) + \langle \nabla g (x^{(k)}) \cdot x - x^{(k)} \rangle }
+    \mathbf{X}^* = \argmin_{\mathbf{X} \in \bbR^{p \times T}} \frac{1}{2n} \norm{ \mathbf{Y} - \mathbf{\Phi X}}_F^2 + \lambda \sum_{j=1}^p \underbrace{g(\norm{\mathbf{X_{j:}}}_{2})}_{g(x) \leq g(x^{(k)}) + \langle \nabla g (x^{(k)}) \cdot x - x^{(k)} \rangle }
 \end{equation*}
 
 where $g$ is any penalty convex or non-convex. In \cite{Candes_Wakin_Boyd08}, $g(x) = \sum_{i=1}^p \log(\lvert x_i \rvert + \epsilon)$. Algorithm 2 shows the log-concave reweighted $l_1$ minimization.
@@ -413,6 +414,7 @@ where $g$ is any penalty convex or non-convex. In \cite{Candes_Wakin_Boyd08}, $g
 \Return{$\mathbf{X}$}
 \end{algorithm}
 }
+\jo{to avoid ambiguity you might use $\diag(w)$ for a matrix multiplication in the update formula of the algorithm}
 
 \newpage
 \bibliographystyle{plainnat}

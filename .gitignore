@@ -8,3 +8,12 @@ __pycache__
 *.fdb_latexmk
 *.fls
 *.synctex.gz
+mtl_code/mtl.egg-info/dependency_links.txt
+mtl_code/mtl.egg-info/PKG-INFO
+mtl_code/mtl.egg-info/requires.txt
+mtl_code/mtl.egg-info/SOURCES.txt
+mtl_code/mtl.egg-info/top_level.txt
+tex/__latexindent_temp.tex
+tex/lasso_overview.out
+tex/bibli/__latexindent_temp.tex
+mtl_code/examples/.ipynb_checkpoints

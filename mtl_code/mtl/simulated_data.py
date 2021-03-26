@@ -9,6 +9,7 @@ def simulate_data(
     n_tasks=150,
     nnz=10,
     snr=1,
+    corr=0.3,
     random_state=None,
 ):
     """Generates a simulated dataset and a row-sparse weight
@@ -34,6 +35,9 @@ def simulate_data(
     snr : float, default=3
         Signal-to-noise ratio.
 
+    corr : float, default=0.3
+        Correlation coefficient.
+
     random_state : int, default=None
         Seed for random number generators.
 
@@ -47,20 +51,27 @@ def simulate_data(
 
     W : np.ndarray of shape (n_features, n_tasks)
         Sparse-row weight matrix.
-
-    References
-    ----------
-    https://github.com/mathurinm/celer/blob/22914526c777c1f63fc66daa76935042742a3510/celer/datasets/simulated.py#L10
     """
 
     rng = check_random_state(random_state)
+
+    if not 0 <= corr < 1:
+        raise ValueError("The correlation coefficient must be in [0, 1)")
 
     if nnz > n_features:
         raise ValueError(
             "Number of non-zero coefficients can't be greater than the number of features"
         )
 
-    X = rng.randn(n_samples, n_features)
+    sigma = np.sqrt(1 - corr ** 2)
+    U = rng.randn(n_samples)
+
+    X = np.empty([n_samples, n_features], order="F")
+    X[:, 0] = U
+    for j in range(1, n_features):
+        U *= corr
+        U += sigma * rng.randn(n_samples)
+        X[:, j] = U
 
     support = rng.choice(n_features, nnz, replace=False)
     W = np.zeros((n_features, n_tasks))
@@ -68,7 +79,8 @@ def simulate_data(
     for k in support:
         W[k, :] = rng.normal(size=(n_tasks))
 
-    Y = X @ W + rng.normal(0, snr, (n_samples, n_tasks))
-    Y /= norm(Y, ord="fro")
+    Y = X @ W
+    noise = rng.randn(n_samples, n_tasks)
+    Y += noise / norm(noise) * norm(Y) / snr
 
     return X, Y, W

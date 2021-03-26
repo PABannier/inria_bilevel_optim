@@ -263,6 +263,24 @@ For more details, see \cite{Bertrand_Massias_Anderson}.
 
 See memo on LASSO.
 
+\section{Stein's unbiased risk estimate (SURE)}
+
+SURE is an unbiased estimator of the mean-squared error of a nonlinear biased estimator.
+It is an important mathematical objects as it is differentiable and can estimate the true
+mean squared error. The model of interest in this bibliography is LASSO. Therefore, we derive below a formulation of SURE in
+the uni-task and multi-task cases for LASSO.
+
+\subsection*{Univariate case}
+
+Let $\lambda > 0$ be a regularizing hyperparameter. Let $\mathbf{\Phi} \in \mathbb{R}^{n\times p}$ be the design matrix,
+$w \in \mathbb{R}^d$ be the coefficient vector and $y \in \mathbb{R}^n$ the target vector.
+The LASSO model reads:
+
+\begin{equation*}
+    w^* = \argmin_{w \in \mathbb{R}^d} \frac{1}{2}\norm{y - \mathbf{X}w}_2^2 + \lambda \norm{w}_1
+\end{equation*}
+
+We observe that $w^*$ an estimator of the true $w$ is written as the sum of
 
 \newpage
 \bibliographystyle{plainnat}

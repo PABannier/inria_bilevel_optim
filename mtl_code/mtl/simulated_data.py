@@ -8,7 +8,7 @@ def simulate_data(
     n_features=1000,
     n_tasks=150,
     nnz=10,
-    snr=1,
+    snr=4,
     corr=0.3,
     random_state=None,
 ):
@@ -82,5 +82,7 @@ def simulate_data(
     Y = X @ W
     noise = rng.randn(n_samples, n_tasks)
     Y += noise / norm(noise) * norm(Y) / snr
+
+    Y /= norm(Y, ord="fro")
 
     return X, Y, W

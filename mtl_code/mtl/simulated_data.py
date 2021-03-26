@@ -47,6 +47,10 @@ def simulate_data(
 
     W : np.ndarray of shape (n_features, n_tasks)
         Sparse-row weight matrix.
+
+    References
+    ----------
+    https://github.com/mathurinm/celer/blob/22914526c777c1f63fc66daa76935042742a3510/celer/datasets/simulated.py#L10
     """
 
     rng = check_random_state(random_state)

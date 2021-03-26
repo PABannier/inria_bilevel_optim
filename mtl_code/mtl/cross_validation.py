@@ -49,12 +49,12 @@ class MultiTaskLassoCV(BaseEstimator, RegressorMixin):
         self.n_folds = n_folds
         self.random_state = random_state
 
-        self.best_estimator = None
-        self.best_cv, self.best_alpha = np.inf, None
+        self.best_estimator_ = None
+        self.best_cv_, self.best_alpha_ = np.inf, None
 
     @property
     def weights(self):
-        return self.best_estimator.weights
+        return self.best_estimator_.weights
 
     def fit(self, X: np.ndarray, Y: np.ndarray):
         """Fits the cross-validation error estimator
@@ -93,19 +93,19 @@ class MultiTaskLassoCV(BaseEstimator, RegressorMixin):
 
             cv_score = self.criterion(Y, Y_oof)
 
-            if cv_score < self.best_cv:
+            if cv_score < self.best_cv_:
                 print(
-                    f"Criterion reduced from {self.best_cv:.5f} to "
+                    f"Criterion reduced from {self.best_cv_:.5f} to "
                     + f"{cv_score:.5f} for alpha = {alpha}"
                 )
 
-                self.best_cv = cv_score
-                self.best_alpha = alpha
-                self.best_estimator = estimator_
+                self.best_cv_ = cv_score
+                self.best_alpha_ = alpha
+                self.best_estimator_ = estimator_
 
         print("\n")
-        print(f"Best criterion: {self.best_cv}")
-        print(f"Best alpha: {self.best_alpha}")
+        print(f"Best criterion: {self.best_cv_}")
+        print(f"Best alpha: {self.best_alpha_}")
 
     def predict(self, X: np.ndarray):
         """Predicts data with the fitted coefficients.
@@ -118,59 +118,3 @@ class MultiTaskLassoCV(BaseEstimator, RegressorMixin):
         check_is_fitted(self)
         X = check_array(X)
         return self.best_estimator.predict(X)
-
-
-def mtl_cross_val(estimator, criterion, X, Y, n_folds=5):
-    """Carries out a cross validation to estimate the performance
-       of an multi-task LASSO estimator.
-
-    In an inverse problem in neuroscience, partitioning X into
-    folds consists in partitioning with respect to the sensors
-    on the scalp. This is why CV makes less sense in this kind
-    of inverse problem than on vanilla prediction problems. In
-    vanilla prediction problems, samples in X are expected to
-    be i.i.d., while in an inverse problem like this one X
-    represents the geometry of the brain and data fails to be
-    i.i.d.
-
-    Parameters
-    ----------
-    estimator : BaseEstimator
-        Scikit-learn estimator.
-
-    criterion : Callable
-        Cross-validation metric (e.g. SURE).
-
-    X : np.ndarray of shape (n_samples, n_features)
-        Design matrix.
-
-    Y : np.ndarray of shape (n_samples, n_tasks)
-        Target matrix.
-
-    n_folds : int, default=5
-        Number of folds.
-
-    Returns
-    -------
-    loss : float
-        Cross-validation loss.
-    """
-
-    Y_oof = np.zeros_like(Y)
-    n_samples = X.shape[0]
-
-    folds = np.array_split(range(n_samples), n_folds)
-
-    for i in range(n_folds):
-        train_indices = np.concatenate([fold for j, fold in enumerate(folds) if i != j])
-        valid_indices = folds[i]
-
-        X_train, Y_train = X[train_indices, :], Y[train_indices, :]
-        X_valid, Y_valid = X[valid_indices, :], Y[valid_indices, :]
-
-        estimator.fit(X_train, Y_train)
-        Y_pred = estimator.predict(X_valid)
-
-        Y_oof[valid_indices, :] = Y_pred
-
-    return criterion(Y, Y_oof)

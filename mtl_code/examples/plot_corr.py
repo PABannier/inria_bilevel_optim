@@ -1,9 +1,11 @@
-from mtl.simulated_data import simulate_data
-from mtl.cross_validation import MultiTaskLassoCV
-from utils import compute_alpha_max, plot_original_reconstructed_signal
-from utils import plot_original_reconstructed_signal_band
 import numpy as np
 import matplotlib.pyplot as plt
+
+from mtl.simulated_data import simulate_data
+from mtl.cross_validation import MultiTaskLassoCV
+
+from utils import compute_alpha_max, plot_original_reconstructed_signal
+from utils import plot_original_reconstructed_signal_band
 
 
 def experiment_cv(X, Y, coef):

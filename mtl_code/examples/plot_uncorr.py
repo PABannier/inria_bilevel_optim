@@ -1,10 +1,12 @@
+import numpy as np
+import matplotlib.pyplot as plt
+
 from mtl.simulated_data import simulate_data
 from mtl.mtl import ReweightedMTL
 from mtl.cross_validation import MultiTaskLassoCV
+
 from utils import compute_alpha_max, plot_original_reconstructed_signal
 from utils import plot_original_reconstructed_signal_band
-import numpy as np
-import matplotlib.pyplot as plt
 
 
 def small_experiment_no_cv(X, Y, coef):

@@ -25,9 +25,8 @@ regressor_cv.fit(X, Y)
 
 plt.figure(figsize=(8, 6))
 for idx_fold in range(n_folds):
-    plt.semilogx(alphas, regressor.mse_path_[:, idx_fold], linestyle="--")
-plt.semilogx(alphas, regressor.mse_path_.mean(axis=1), linewidth=4, color="black")
+    plt.semilogx(alphas, regressor_cv.mse_path_[:, idx_fold], linestyle="--")
+plt.semilogx(alphas, regressor_cv.mse_path_.mean(axis=1), linewidth=4, color="black")
 plt.xlabel("alpha", fontsize=12)
-plt.xticks(np.arange(len(alphas)), xlabels)
 plt.ylabel("MSE", fontsize=12)
 plt.show(block=True)

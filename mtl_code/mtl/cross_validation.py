@@ -51,6 +51,7 @@ class MultiTaskLassoCV(BaseEstimator, RegressorMixin):
 
         self.best_estimator_ = None
         self.best_cv_, self.best_alpha_ = np.inf, None
+        self.mse_path_ = np.zeros((len(param_grid), n_folds))
 
     @property
     def weights(self):
@@ -77,19 +78,22 @@ class MultiTaskLassoCV(BaseEstimator, RegressorMixin):
 
         kf = KFold(self.n_folds, random_state=self.random_state)
 
-        for alpha in self.param_grid:
+        for idx_alpha, alpha in enumerate(self.param_grid):
             print("Fitting MTL estimator with alpha =", alpha)
             estimator_ = ReweightedMTL(alpha, verbose=False)
 
             Y_oof = np.zeros_like(Y)
 
-            for train_indices, valid_indices in kf.split(X, Y):
+            for idx_fold, (train_indices, valid_indices) in enumerate(
+                    kf.split(X, Y)):
                 X_train, Y_train = X[train_indices, :], Y[train_indices, :]
                 X_valid, Y_valid = X[valid_indices, :], Y[valid_indices, :]
 
                 estimator_.fit(X_train, Y_train, n_iterations=10)
                 Y_pred = estimator_.predict(X_valid)
                 Y_oof[valid_indices, :] = Y_pred
+                self.mse_path_[idx_alpha, idx_fold] = mean_squared_error(
+                    Y_valid, Y_pred)
 
             cv_score = self.criterion(Y, Y_oof)
 

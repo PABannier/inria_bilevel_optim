@@ -490,7 +490,8 @@ We can express the LASSO fit as follows:
 where $\mathbf{\Phi}_A$ (respectively $\mathbf{X}_A$) indexes the columns of $\bf\Phi$ (respectively $\mathbf{X}$) in $A$. Furthermore, $\mathbf{S}_A$ are the signs of the active
 LASSO coefficients and $\bf\Lambda$ is a matrix full of lambda (note that in the special case of \nameref{section_5}, the columns of $\mathbf{\Lambda}$ would be the same but the rows
 different).
-
+\\
+\\
 To prove that this function is continuous, we need to use the dual of the LASSO, which reads:
 
 \begin{align*}
@@ -498,9 +499,37 @@ To prove that this function is continuous, we need to use the dual of the LASSO,
     &\text{s.t.} \quad \norm{\mathbf{\Phi^{\top}\Theta}}_{2, \infty} \leq \lambda
 \end{align*}
 
+and the relationship between the dual $\hat{\Theta}$ and the primal $\hat{X}$ solutions is:
 
+\begin{equation*}
+    \bf{\Phi X} = \mathbf{Y - \hat{\Theta}}
+\end{equation*}
+
+Yet the dual solution $\hat{\Theta}$ is the projection of $\mathbf{Y}$ onto the convex polyhedron $C = \{\Theta, \norm{\mathbf{\Phi^{\top}\Theta}}_{2, \infty} \leq \lambda\}$,
+which we denote $\hat{\bf{\Theta}} = P_C(\bf{Y})$. Therefore, the \nameref{section_4} fit is simply:
+
+\begin{equation*}
+    \mathbf{\Phi X} = (I - P_C)(\mathbf{Y})
+\end{equation*}
+
+which is the residual of the projection of $\bfY$ onto $C$.
+\\
+\\
+Yet, we know that a projection onto a convex set is a non-expansive mapping, the same is true for the residual map. It follows:
+
+\begin{equation*}
+    \forall \mathbf{Y}, \mathbf{Y'}, \norm{(I - P_C(\mathbf{Y})) - (I - P_C(\mathbf{Y'}))}_{\text{F}} \leq \norm{Y - Y'}_{\text{F}}
+\end{equation*}
+
+From the previous equation, we deduce that the LASSO fit is a Lipschitz-continuous mapping, which by Rademacher's theorem
+(see \url{https://en.wikipedia.org/wiki/Rademacher%27s_theorem}), means that it is almost differentiable everywhere.
+\\
+\\
 The continuity can be interpreted as follows: when $\bfY$ changes thus the active set $A$, the coefficients of variables to leave
 the active continuously drop to zero, and coefficients of variables to enter the active set would continuously move from zero. This makes the LASSO continuous.
+
+
+\subsection*{Finding the closed-form expression of SURE for \nameref{section_4}}
 
 
 \newpage

@@ -28,7 +28,7 @@ def plot_mse_path_reweighted_mtl():
     print("Alpha max for large experiment:", alpha_max)
     print("\n")
 
-    alphas = np.geomspace(alpha_max / 100, alpha_max, num=30)
+    alphas = np.geomspace(alpha_max / 100, alpha_max / 5, num=100)
     regressor = ReweightedMultiTaskLassoCV(alphas, n_folds=n_folds)
     regressor.fit(X, Y)
 
@@ -172,7 +172,7 @@ def plot_mse_path_reweighted_mtl_wrt_correlation():
     plt.show(block=True)
 
 
-def plot_mse_path_wrt_num_iterations():
+def plot_mse_path_wrt_num_iterations(corr=0.2):
     n_iterations = [1, 3, 5, 7, 10]  # No need beyond 10 (alpha_min is the same)
     colors = ["r", "b", "g", "y", "black"]
 
@@ -184,7 +184,7 @@ def plot_mse_path_wrt_num_iterations():
             n_features=250,
             n_tasks=25,
             nnz=8,
-            corr=0.2,
+            corr=corr,
             random_state=2020,
             snr=1,
         )
@@ -215,7 +215,7 @@ def plot_mse_path_wrt_num_iterations():
     plt.xlabel("alpha", fontsize=12)
     plt.ylabel("MSE", fontsize=12)
     plt.title(
-        "MSE path vs. number of iterations - Reweighted MTL",
+        f"MSE path vs. number of iterations - Reweighted MTL - Corr: {corr}",
         fontsize=15,
         fontweight="bold",
     )
@@ -224,7 +224,7 @@ def plot_mse_path_wrt_num_iterations():
 
 
 if __name__ == "__main__":
-    plot_mse_path_reweighted_mtl()
-    plot_mse_path_wrt_num_iterations()
-    plot_comparison_mse_path_lasso()
-    plot_mse_path_reweighted_mtl_wrt_correlation()
+    # plot_mse_path_reweighted_mtl()
+    plot_mse_path_wrt_num_iterations(corr=0.7)
+    # plot_comparison_mse_path_lasso()
+    # plot_mse_path_reweighted_mtl_wrt_correlation()

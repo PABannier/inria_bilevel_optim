@@ -50,6 +50,15 @@ def plot_mse_path_reweighted_mtl():
         label="Mean",
     )
 
+    mtl_min_idx = regressor.mse_path_.mean(axis=1).argmin()
+    plt.axvline(
+        x=alphas[mtl_min_idx],
+        color="black",
+        linestyle="dashed",
+        linewidth=3,
+        label="Best alpha",
+    )
+
     plt.xlabel("alpha", fontsize=12)
     plt.ylabel("MSE", fontsize=12)
     plt.title("MSE path - Reweighted MTL", fontsize=15, fontweight="bold")
@@ -301,7 +310,7 @@ def plot_mse_path_wrt_num_iterations(corr=0.2):
         alpha_max = compute_alpha_max(X, Y)
         print("Alpha max for large experiment:", alpha_max)
 
-        alphas = np.geomspace(alpha_max / 100, alpha_max, num=30)
+        alphas = np.geomspace(alpha_max / 100, alpha_max, num=60)
 
         reweighted_mtl_lasso = ReweightedMultiTaskLassoCV(alphas, n_folds=n_folds)
         reweighted_mtl_lasso.fit(X, Y, n_iterations=n_iter)
@@ -309,12 +318,12 @@ def plot_mse_path_wrt_num_iterations(corr=0.2):
         x = alphas
         y = reweighted_mtl_lasso.mse_path_.mean(axis=1)
 
-        plt.semilogx(
-            x, y, linewidth=1.5, linestyle="dashed", color=color, label=f"{n_iter}"
-        )
+        plt.semilogx(x, y, linewidth=1.5, color=color, label=f"{n_iter}")
 
         reweighted_mtl_min_idx = reweighted_mtl_lasso.mse_path_.mean(axis=1).argmin()
-        plt.axvline(x=alphas[reweighted_mtl_min_idx], color=color)
+        plt.axvline(
+            x=alphas[reweighted_mtl_min_idx], color=color, linewidth=3, linestyle="--"
+        )
 
     plt.xlabel("alpha", fontsize=12)
     plt.ylabel("MSE", fontsize=12)
@@ -329,7 +338,7 @@ def plot_mse_path_wrt_num_iterations(corr=0.2):
 
 if __name__ == "__main__":
     # plot_mse_path_reweighted_mtl()
-    # plot_mse_path_wrt_num_iterations(corr=0.7)
+    plot_mse_path_wrt_num_iterations(corr=0.7)
     # plot_comparison_mse_path_lasso()
-    plot_comparison_mse_path_lasso_across_folds()
+    # plot_comparison_mse_path_lasso_across_folds()
     # plot_mse_path_reweighted_mtl_wrt_correlation()

@@ -144,7 +144,8 @@ literate={á}{{\'a}}1
 
 In this memo, $\mathbf{\Phi} \in \bbR^{n \times p}$ is the design matrix, $x \in \bbR^{p}$ (resp. $\mathbf{X} \in \bbR^{p \times T}$) is the coefficient vector (resp. matrix) and $y \in \bbR^n$
 (resp. $\mathbf{Y} \in \bbR^{n \times T}$) is the target vector (resp. matrix). Let $n, p, T \in \mathbb{N}^*$ be respectively the number of samples, the number of features and the number of tasks. As we shall see later, LASSO-like models
-are particularly useful for large-dimensional problems \textit{i.e.} when $p \gg n$. $\lambda \in \bbR^+$ is a regularizing hyperparameter.
+are particularly useful for large-dimensional problems \textit{i.e.} when $p \gg n$. $\lambda \in \bbR^+$ is a regularizing hyperparameter. We write $\bbS^n$ for the set of symmetric matrices and $\bbS^n_+$ (respectively $\bbS^n_{++}$) for
+the set of positive semi-definite (respectively positive definite) matrices.
 
 \section{LASSO}
 \label{section_1}
@@ -424,45 +425,83 @@ which consists in optimizing a criterion (outer loss) with respect to a hyperpar
 a second optimization problem (inner loss). More formally,
 
 \begin{align*}
-    &\lambda^* = \argmin_{\lambda \in \bbR^p} \Biggl\{\mathcal{L}(\lambda) \triangleq \mathcal{C}(\hat{x}^{(\lambda)})\Biggr\} \\
-    &\text{s.t.} \quad \hat{x}^{(\lambda)} \in \argmin_{x \in \bbR^p} L(x, \lambda)
+    &\lambda^* = \argmin_{\lambda \in \bbR^p} \Biggl\{\mathcal{L}(\lambda) \triangleq \mathcal{C}(\hat{\mathbf{X}}^{(\lambda)})\Biggr\} \\
+    &\text{s.t.} \quad \hat{\mathbf{X}}^{(\lambda)} \in \argmin_{\mathbf{X} \in \bbR^{p\times T}} L(\mathbf{X}, \lambda)
 \end{align*}
 
 where $\mathcal{L}$ is the outer loss and $L$ is the inner loss.
 
-Let's focus on the univariate case for now. Consider a noisy data generating process such that:
+Let's focus on the \nameref{section_5} case for now. Consider a noisy data generating process such that:
 
 \begin{equation*}
-    y = \mathbf{\Phi}x_0 + \epsilon
+    \mathbf{Y} = \mathbf{\Phi}\mathbf{X}_0 + \mathbf{\Sigma^*}\mathbf{E}
 \end{equation*}
 
-where $y, x_0, \epsilon \in \bbR^p$ and $\epsilon \sim \mathcal{N}(0, \sigma^2)$ with
-$\sigma^2$ the noise level. We wish to estimate
-$x_0$ such that we minimize:
+where entries of $\mathbf{E}$ are independent, centered and normally distributed and $\mathbf{\Sigma^*} \in \mathbb{S}^n_{++}$. For a more formal
+formulation of the multi-task regression problem, see \cite{Massias_Fercoq_Gramfort_Salmon17}. We wish to estimate
+$\mathbf{X}_0$ such that we minimize:
 
 \begin{equation*}
-    \text{MSE} = \bbE_{\epsilon}[ \norm{x_0 - \hat{x}}_2^2 ]
+    \text{MSE}(\hat{\mathbf{X}}) = \bbE_{\mathbf{E}}\Biggl[ \norm{\mathbf{X}_0 - \hat{\mathbf{X}}}_{\text{F}}^2 \Biggr]
 \end{equation*}
 
-However, the mean squared error can't be evaluated since $\epsilon$ and the noise level
+However, the mean squared error can't be evaluated since $\mathbf{E}$ and the noise level
 are unknown, thus can't be directly optimized. Therefore, we need to find an estimator of that
 quantity that is differentiable (to be optimized using first-order methods). Charles Stein has
-propsed an unbiased estimator the MSE, called the SURE (Stein's unbiased risk estimator) which reads:
+proposed an unbiased estimator of the MSE, called the SURE (Stein's unbiased risk estimator) which reads:
 
 \begin{equation*}
-    \text{SURE} = -p\sigma^2 + \norm{y - \mathbf{\Phi} \hat{x}}_2^2 + 2 \sigma^2 \text{df}(y)
+    \text{SURE}(\hat{\bf{X}}) = -p\sigma^2 + \norm{\mathbf{Y} - \mathbf{\Phi} \hat{\mathbf{X}}}_{\text{F}}^2 + 2 \sigma^2 \text{df}(\bf{Y})
 \end{equation*}
 
-where $\text{df}(y)$ is the number of degrees of freedom of $y$, alternatively called the divergence of
-the estimator of $x_0$. The two first terms are trivially evaluated, while the final term present some
-peculiarities as presented in Stein's lemma \footnote{For a proof of Stein's lemma, see:
+where $\text{df}(\mathbf{Y})$ is the number of degrees of freedom of $\mathbf{Y}$, alternatively called the divergence of
+the estimator of $\mathbf{X}_0$. The two first terms are trivially evaluated, while the final term presents some
+peculiarities hence the need for Stein's lemma \footnote{For a proof of Stein's lemma, see:
 \url{http://www.stat.cmu.edu/~larry/=sml/stein.pdf}}.
 
 As we shall see below, $\text{SURE}$ is a differentiable estimator of $\text{MSE}$ that needs to verify some
 non-trivial assumptions, the most notable of which being that \textbf{the estimator must be weakly differentiable with
 respect to its target vector}.
 
-\subsection*{Deriving the degrees of freedom in LASSO}
+\subsection*{Deriving the degrees of freedom in \nameref{section_4}}
+
+Before diving into the derivation of the degrees of freedom in \nameref{section_4}, let's motivate the choice of $\text{SURE}$ as a criterion
+to optimize. Remember that in a bi-level optimization setting, we can use $\text{SURE}$ for model selection purposes. LASSO-like
+models depend on a tuning parameter $\lambda \in \mathcal{D}$ where $\mathcal{D}$ is some open domain then we can choose this parameter to
+minimize $\text{SURE}$:
+
+\begin{equation*}
+    \hat{\lambda} = \argmin_{\lambda \in \mathcal{D}} \norm{ \mathbf{Y} - \mathbf{\Phi}\mathbf{X}^{(\lambda)}}_{\text{F}}^2 + 2 \sigma^2 \text{df}(\bf{Y})
+\end{equation*}
+
+We will assume that $\mathbf{Y} \sim \mathcal{MN}_{p\times T}(\mathbf{M}, \mathbf{U}, \mathbf{V})$ the matrix Gaussian distribution with location $\mathbf{M}$
+and scale parameters $\mathbf{U}$ and $\mathbf{V}$ we consider the lasso fit $\mathbf{\hat{M} = \Phi X}$ as an estimate of $\mathbf{M}$.
+\\
+\\
+First we need to verify that $\hat{\bf{M}}$ is weakly differentiable\footnote{\url{https://en.wikipedia.org/wiki/Weak_derivative}} as a function of $\mathbf{Y}$
+(recall that $\hat{\bf{M}}$ depends on $\mathbf{X}$ hence on $\mathbf{Y}$). And before that, we can even ask ouverselves if this function is even continuous: if
+we change $\mathbf{Y}$, the active set of the solution $\mathbf{X}$ can change/jump thus creating discontinuities. Let the support of the solution be $A = \text{supp}(\hat{\mathbf{X}})$.
+We can express the LASSO fit as follows:
+
+\begin{equation*}
+    \mathbf{\Phi X} = \mathbf{\Phi}_A(\mathbf{\Phi}_A^{\top}\mathbf{\Phi}_A)^{-1}(\mathbf{X}^{\top}_A\mathbf{Y} - \mathbf{\Lambda}\mathbf{S}_A)
+\end{equation*}
+
+where $\mathbf{\Phi}_A$ (respectively $\mathbf{X}_A$) indexes the columns of $\bf\Phi$ (respectively $\mathbf{X}$) in $A$. Furthermore, $\mathbf{S}_A$ are the signs of the active
+LASSO coefficients and $\bf\Lambda$ is a matrix full of lambda (note that in the special case of \nameref{section_5}, the columns of $\mathbf{\Lambda}$ would be the same but the rows
+different).
+
+To prove that this function is continuous, we need to use the dual of the LASSO, which reads:
+
+\begin{align*}
+    &\min_{\mathbf{\Theta} \in \bbR^{n \times T}} \norm{ \mathbf{\Theta} - \mathbf{Y} }_{\text{F}}^2 \\
+    &\text{s.t.} \quad \norm{\mathbf{\Phi^{\top}\Theta}}_{2, \infty} \leq \lambda
+\end{align*}
+
+
+The continuity can be interpreted as follows: when $\bfY$ changes thus the active set $A$, the coefficients of variables to leave
+the active continuously drop to zero, and coefficients of variables to enter the active set would continuously move from zero. This makes the LASSO continuous.
+
 
 \newpage
 \bibliographystyle{plainnat}

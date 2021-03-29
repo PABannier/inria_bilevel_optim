@@ -1,10 +1,12 @@
+import numpy as np
+import matplotlib.pyplot as plt
+
 from mtl.simulated_data import simulate_data
 from mtl.mtl import ReweightedMTL
 from mtl.cross_validation import MultiTaskLassoCV
+
 from utils import compute_alpha_max, plot_original_reconstructed_signal
 from utils import plot_original_reconstructed_signal_band
-import numpy as np
-import matplotlib.pyplot as plt
 
 
 def small_experiment_no_cv(X, Y, coef):
@@ -65,7 +67,7 @@ def plot_support_recovery_iterations(X, Y, coef):
 
         supports.append(nnz_reconstructed)
 
-        fig = plt.figure(figsize=(8, 6))
+    fig = plt.figure(figsize=(8, 6))
 
     plt.plot(supports)
     plt.title("Support recovery over iterations", fontweight="bold", fontsize=20)
@@ -103,18 +105,10 @@ def plot_support_recovery_regularizing_constant(X, Y, coef):
 
 
 if __name__ == "__main__":
-    print("===== SMALL EXPERIMENT =====")
-    X, Y, coef = simulate_data(
-        n_samples=10, n_features=50, n_tasks=5, nnz=5, corr=0, random_state=42
-    )
-
-    small_experiment_no_cv(X, Y, coef)
-    small_experiment_cv(X, Y, coef)
-
     print("\n")
     print("===== LARGE EXPERIMENT =====")
     X, Y, coef = simulate_data(
-        n_samples=50, n_features=250, n_tasks=25, nnz=25, corr=0, random_state=2020
+        n_samples=50, n_features=250, n_tasks=25, nnz=2, corr=0, random_state=2020
     )
 
     large_experiment_cv(X, Y, coef)

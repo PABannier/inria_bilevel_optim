@@ -37,6 +37,9 @@ class ReweightedMTL(BaseEstimator, RegressorMixin):
 
         self.weights = None
         self.loss_history_ = []
+        self.clf = MultiTaskLasso(
+            alpha=alpha, fit_intercept=False, warm_start=True)
+
 
     def fit(self, X: np.ndarray, Y: np.ndarray, n_iterations: int = 5):
         """Fits estimator to the data.
@@ -69,11 +72,10 @@ class ReweightedMTL(BaseEstimator, RegressorMixin):
             X_w = X / w[np.newaxis, :]
 
             # Solving weighted l1 minimization problem
-            clf = MultiTaskLasso(alpha=self.alpha, fit_intercept=False)
-            clf.fit(X_w, Y)
+            self.clf.fit(X_w, Y)
 
             # Trick: "de-scaling" the weights
-            coef_hat = (clf.coef_ / w).T  # (n_features, n_tasks)
+            coef_hat = (self.clf.coef_ / w).T  # (n_features, n_tasks)
 
             # Updating the weights
             c = np.linalg.norm(coef_hat, axis=1)

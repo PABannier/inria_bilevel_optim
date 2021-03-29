@@ -52,7 +52,7 @@ def plot_mse_path_reweighted_mtl():
 
     plt.xlabel("alpha", fontsize=12)
     plt.ylabel("MSE", fontsize=12)
-    plt.title("MSE Path - Reweighted MTL", fontsize=15, fontweight="bold")
+    plt.title("MSE path - Reweighted MTL", fontsize=15, fontweight="bold")
     plt.legend()
     plt.show(block=True)
 
@@ -113,7 +113,7 @@ def plot_comparison_mse_path_lasso():
     plt.xlabel("alpha", fontsize=12)
     plt.ylabel("MSE", fontsize=12)
     plt.title(
-        "MSE Path - Non-reweighted vs. reweighted MTL - Corr: 0.2",
+        "MSE path - Non-reweighted vs. reweighted MTL - Corr: 0.2",
         fontsize=15,
         fontweight="bold",
     )
@@ -164,7 +164,58 @@ def plot_mse_path_reweighted_mtl_wrt_correlation():
     plt.xlabel("alpha", fontsize=12)
     plt.ylabel("MSE", fontsize=12)
     plt.title(
-        "MSE Path vs. data correlation - Reweighted MTL",
+        "MSE path vs. data correlation - Reweighted MTL",
+        fontsize=15,
+        fontweight="bold",
+    )
+    plt.legend()
+    plt.show(block=True)
+
+
+def plot_mse_path_wrt_num_iterations():
+    n_iterations = [1, 3, 5, 7, 10]  # No need beyond 10 (alpha_min is the same)
+    colors = ["r", "b", "g", "y", "black"]
+
+    plt.figure(figsize=(8, 6))
+
+    for n_iter, color in zip(n_iterations, colors):
+        X, Y, _ = simulate_data(
+            n_samples=50,
+            n_features=250,
+            n_tasks=25,
+            nnz=8,
+            corr=0.2,
+            random_state=2020,
+            snr=1,
+        )
+
+        X = np.asfortranarray(X)
+        Y = np.asfortranarray(Y)
+
+        n_folds = 5
+
+        alpha_max = compute_alpha_max(X, Y)
+        print("Alpha max for large experiment:", alpha_max)
+
+        alphas = np.geomspace(alpha_max / 100, alpha_max, num=30)
+
+        reweighted_mtl_lasso = ReweightedMultiTaskLassoCV(alphas, n_folds=n_folds)
+        reweighted_mtl_lasso.fit(X, Y, n_iterations=n_iter)
+
+        x = alphas
+        y = reweighted_mtl_lasso.mse_path_.mean(axis=1)
+
+        plt.semilogx(
+            x, y, linewidth=1.5, linestyle="dashed", color=color, label=f"{n_iter}"
+        )
+
+        reweighted_mtl_min_idx = reweighted_mtl_lasso.mse_path_.mean(axis=1).argmin()
+        plt.axvline(x=alphas[reweighted_mtl_min_idx], color=color)
+
+    plt.xlabel("alpha", fontsize=12)
+    plt.ylabel("MSE", fontsize=12)
+    plt.title(
+        "MSE path vs. number of iterations - Reweighted MTL",
         fontsize=15,
         fontweight="bold",
     )
@@ -173,6 +224,7 @@ def plot_mse_path_reweighted_mtl_wrt_correlation():
 
 
 if __name__ == "__main__":
-    # plot_mse_path_reweighted_mtl()
-    # plot_comparison_mse_path_lasso()
+    plot_mse_path_reweighted_mtl()
+    plot_mse_path_wrt_num_iterations()
+    plot_comparison_mse_path_lasso()
     plot_mse_path_reweighted_mtl_wrt_correlation()

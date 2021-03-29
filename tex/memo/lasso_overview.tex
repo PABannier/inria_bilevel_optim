@@ -134,7 +134,7 @@ literate={á}{{\'a}}1
 
 
 \author{Pierre-Antoine Bannier}
-\title{A quick guided tour of LASSO-like models}
+\title{A quick guided tour of LASSO-like models and bi-level optimization}
 
 \begin{document}
 
@@ -413,6 +413,56 @@ where $g$ is any penalty convex or non-convex. In \cite{Candes_Wakin_Boyd08}, $g
 \Return{$\mathbf{X}$}
 \end{algorithm}
 }
+
+\newpage
+
+\section{Bi-level optimization for structrued sparse models using SURE}
+\label{section_6}
+
+In the following we refer as bi-level optimization the nested optimization problem
+which consists in optimizing a criterion (outer loss) with respect to a hyperparameter subject to
+a second optimization problem (inner loss). More formally,
+
+\begin{align*}
+    &\lambda^* = \argmin_{\lambda \in \bbR^p} \Biggl\{\mathcal{L}(\lambda) \triangleq \mathcal{C}(\hat{x}^{(\lambda)})\Biggr\} \\
+    &\text{s.t.} \quad \hat{x}^{(\lambda)} \in \argmin_{x \in \bbR^p} L(x, \lambda)
+\end{align*}
+
+where $\mathcal{L}$ is the outer loss and $L$ is the inner loss.
+
+Let's focus on the univariate case for now. Consider a noisy data generating process such that:
+
+\begin{equation*}
+    y = \mathbf{\Phi}x_0 + \epsilon
+\end{equation*}
+
+where $y, x_0, \epsilon \in \bbR^p$ and $\epsilon \sim \mathcal{N}(0, \sigma^2)$ with
+$\sigma^2$ the noise level. We wish to estimate
+$x_0$ such that we minimize:
+
+\begin{equation*}
+    \text{MSE} = \bbE_{\epsilon}[ \norm{x_0 - \hat{x}}_2^2 ]
+\end{equation*}
+
+However, the mean squared error can't be evaluated since $\epsilon$ and the noise level
+are unknown, thus can't be directly optimized. Therefore, we need to find an estimator of that
+quantity that is differentiable (to be optimized using first-order methods). Charles Stein has
+propsed an unbiased estimator the MSE, called the SURE (Stein's unbiased risk estimator) which reads:
+
+\begin{equation*}
+    \text{SURE} = -p\sigma^2 + \norm{y - \mathbf{\Phi} \hat{x}}_2^2 + 2 \sigma^2 \text{df}(y)
+\end{equation*}
+
+where $\text{df}(y)$ is the number of degrees of freedom of $y$, alternatively called the divergence of
+the estimator of $x_0$. The two first terms are trivially evaluated, while the final term present some
+peculiarities as presented in Stein's lemma \footnote{For a proof of Stein's lemma, see:
+\url{http://www.stat.cmu.edu/~larry/=sml/stein.pdf}}.
+
+As we shall see below, $\text{SURE}$ is a differentiable estimator of $\text{MSE}$ that needs to verify some
+non-trivial assumptions, the most notable of which being that \textbf{the estimator must be weakly differentiable with
+respect to its target vector}.
+
+\subsection*{Deriving the degrees of freedom in LASSO}
 
 \newpage
 \bibliographystyle{plainnat}

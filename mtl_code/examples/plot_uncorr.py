@@ -3,33 +3,10 @@ import matplotlib.pyplot as plt
 
 from mtl.simulated_data import simulate_data
 from mtl.mtl import ReweightedMTL
-from mtl.cross_validation import MultiTaskLassoCV
+from mtl.cross_validation import ReweightedMultiTaskLassoCV
 
 from utils import compute_alpha_max, plot_original_reconstructed_signal
 from utils import plot_original_reconstructed_signal_band
-
-
-def small_experiment_no_cv(X, Y, coef):
-    alpha_max = compute_alpha_max(X, Y)
-    print("Alpha max for small experiment:", alpha_max)
-
-    regressor = ReweightedMTL(alpha=alpha_max * 0.01)
-    regressor.fit(X, Y)
-
-    coef_hat = regressor.weights
-    plot_original_reconstructed_signal(
-        coef, coef_hat, "A first attempt for Reweighted Multi-Task LASSO minimization"
-    )
-
-
-def small_experiment_cv(X, Y, coef):
-    alphas = np.geomspace(1e-3, 1e-1, num=20)
-    regressor = MultiTaskLassoCV(alphas, n_folds=5)
-
-    regressor.fit(X, Y)
-    coef_hat = regressor.weights
-
-    plot_original_reconstructed_signal(coef, coef_hat, "A cross-validated attempt...")
 
 
 def large_experiment_cv(X, Y, coef):
@@ -37,7 +14,7 @@ def large_experiment_cv(X, Y, coef):
     print("Alpha max for large experiment:", alpha_max)
 
     alphas = np.geomspace(5e-4, 1.8e-3, num=15)
-    regressor = MultiTaskLassoCV(alphas, n_folds=3)
+    regressor = ReweightedMultiTaskLassoCV(alphas, n_folds=3)
 
     regressor.fit(X, Y)
     best_alpha = regressor.best_alpha_
@@ -59,8 +36,10 @@ def plot_support_recovery_iterations(X, Y, coef):
     best_alpha = 2e-3
 
     for n_iterations in range(1, 11):
-        estimator = ReweightedMTL(alpha=best_alpha, verbose=False)
-        estimator.fit(X, Y, n_iterations=n_iterations)
+        estimator = ReweightedMTL(
+            alpha=best_alpha, n_iterations=n_iterations, verbose=False
+        )
+        estimator.fit(X, Y)
 
         coef_hat = estimator.weights
         nnz_reconstructed = np.count_nonzero(np.count_nonzero(coef_hat, axis=1))
@@ -105,8 +84,6 @@ def plot_support_recovery_regularizing_constant(X, Y, coef):
 
 
 if __name__ == "__main__":
-    print("\n")
-    print("===== LARGE EXPERIMENT =====")
     X, Y, coef = simulate_data(
         n_samples=50, n_features=250, n_tasks=25, nnz=2, corr=0, random_state=2020
     )

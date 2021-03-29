@@ -3,15 +3,12 @@ from numpy.linalg import norm
 
 import matplotlib.pyplot as plt
 
-from mtl.cross_validation import MultiTaskLassoCV
+from mtl.cross_validation import ReweightedMultiTaskLassoCV
 from mtl.simulated_data import simulate_data
-from celer.plot_utils import configure_plt
 
-configure_plt()
 
 X, Y, _ = simulate_data(
-    n_samples=50, n_features=250, n_tasks=25, nnz=10, corr=0.2,
-    random_state=2020, snr=3
+    n_samples=50, n_features=250, n_tasks=25, nnz=10, corr=0.2, random_state=2020, snr=3
 )
 
 alpha_max = np.max(norm(X.T @ Y, axis=1)) / X.shape[0]
@@ -19,7 +16,7 @@ print("Alpha max for large experiment:", alpha_max)
 
 n_folds = 5
 alphas = np.geomspace(alpha_max, alpha_max / 100, num=30)
-regressor_cv = MultiTaskLassoCV(alphas, n_folds=n_folds)
+regressor_cv = ReweightedMultiTaskLassoCV(alphas, n_folds=n_folds)
 regressor_cv.fit(X, Y)
 
 

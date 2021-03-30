@@ -530,25 +530,33 @@ the active continuously drop to zero, and coefficients of variables to enter the
 
 \subsection*{Finding the closed-form expression of SURE for \nameref{section_4}}
 
-Now, we want to derive a closed-form expression of SURE for \nameref{section_4}. Let's re-examine the LASSO fit:
-
+Now, we want to derive a closed-form expression of SURE for \nameref{section_4}. Let's re-examine the LASSO fit, for $t=1, \dots, T$:
+%
 \begin{equation*}
-    \mathbf{\Phi X} = \mathbf{\Phi}_A(\mathbf{\Phi}_A^{\top}\mathbf{\Phi}_A)^{-1}(\mathbf{X}^{\top}_A\mathbf{Y} - \mathbf{\Lambda}\mathbf{S}_A)
+    \mathbf{\Phi X_{:t}}
+    = \mathbf{\Phi}_A(\mathbf{\Phi}_A^{\top}\mathbf{\Phi}_A)^{-1}(\mathbf{X}^{\top}_A\mathbf{Y_{:t}} - \mathbf{\Lambda}\mathbf{S}_{A, t})
+    \enspace .
 \end{equation*}
-
+%
 We take the reasonable assumption that $A$ and $\mathbf{S}_A$ are locally constant, meaning that a small change in $\mathbf{Y}$ won't change the active set nor the signs of the active
 coefficients. Remember that finding a closed-form expression of SURE boils down to computing the divergence of the LASSO estimator.
-
+The degree od fredom of the LASSO writes:
+%
 \begin{equation*}
-    \text{df}(\mathbf{\Phi X}) = \sum_{i=1}^n \sum_{j=1}^T \frac{\partial (\mathbf{\Phi X})_{i,j}}{\partial (\mathbf{Y})_{i, j}} = \text{tr}(\mathbf{\Phi}_A(\mathbf{\Phi}_A^{\top}\mathbf{\Phi}_A)^{-1}\mathbf{\Phi}_A^{\top}) = \lvert A \rvert
+    \text{df}(\mathbf{\Phi X})
+    =  \sum_{t=1}^T \left ( \sum_{i=1}^n \frac{\partial (\mathbf{\Phi X})_{i,t}}{\partial (\mathbf{Y})_{i, t}} \right )
+    = \sum_{t=1}^T \text{tr}(\mathbf{\Phi}_A(\mathbf{\Phi}_A^{\top}\mathbf{\Phi}_A)^{-1}\mathbf{\Phi}_A^{\top})
+    = T \lvert A \rvert
+    \enspace ,
 \end{equation*}
-
+%
 where $\lvert A \rvert$ is the cardinal of the active set. This yields the following closed-form expression for the risk estimate:
-
+%
 \begin{equation*}
-    \text{SURE}(\hat{\bf{X}}) = -p\sigma^2 + \norm{\mathbf{Y} -  \mathbf{\Phi X}}^2_{\text{F}} + 2 \sigma^2 \lvert A \rvert
+    \text{SURE}(\hat{\bf{X}}) = - n T \sigma^2 + \norm{\mathbf{Y} -  \mathbf{\Phi X}}^2_{\text{F}} + 2 \sigma^2 T \lvert A \rvert
+    \enspace .
 \end{equation*}
-
+%
 This seems a very reasonable answer since the number of degrees of freedom (number of parameters in a model allowed to change) in LASSO is the active set, meaning the set of non-zero
 coefficients.
 

@@ -477,7 +477,8 @@ minimize $\text{SURE}$:
 \begin{equation*}
     \hat{\lambda} = \argmin_{\lambda \in \mathcal{D}} \norm{ \mathbf{Y} - \mathbf{\Phi}\mathbf{X}^{(\lambda)}}_{\text{F}}^2 + 2 \sigma^2 \text{df}(\bf{Y})
 \end{equation*}
-
+%
+Note that the $\text{df}$ term refers to the degrees of freedom of the model, a measure used to quantify the complexity of a statistical modeling procedure.
 We will assume that $\mathbf{Y} \sim \mathcal{MN}_{p\times T}(\mathbf{M}, \mathbf{U}, \mathbf{V})$ the matrix Gaussian distribution with location $\mathbf{M}$
 and scale parameters $\mathbf{U}$ and $\mathbf{V}$, we consider the lasso fit $\mathbf{\hat{M} = \Phi X}$ as an estimate of $\mathbf{M}$.
 \\
@@ -567,6 +568,55 @@ coefficients.
 
 \subsection*{The technicalities of SURE for reweighted Multi-Task LASSO}
 
+The previous reasoning can't be trivially applied to the reweighted case. Indeed, the non-convex penalty seen at \nameref{section_5} can prevent
+the derivation of a closed-form solution or be very challenging. It needs to be treated on a case-by-case basis. In the following we review two
+techniques to evaluate numerically SURE. A more comprehensive review was carried out by \cite{Deledalle_Vaiter_Fadili_Peyre14}. Our goal here is
+to find a numerical way to efficiently compute $\text{df}(\bfY)$. Evaluating such a term costs $O(Tn^2)$.
+\\
+\\
+Note that $\sigma$ is an unknown quantity, thus it needs to be estimated with an additional parameter.
+%
+\subsubsection*{Monte-Carlo SURE}
+
+The Monte-Carlo sampling technique consists in evaluating the degrees of freedom by randomly sampling $p$ vectors that will serve to compute $p$ directional derivatives
+of $\bf{Y} \rightarrow \Phi \hat{X}$, where $\hat{\bf X}$ is some estimator of $\bf X$ obtained using a non-convex penalty.
+%
+More formally, for $t = 1, \dots, T$, we infer that:
+
+\begin{equation*}
+    \text{df}(\mathbf{Y}_{:t}) = \mathbb{E}_{\Delta \sim \mathcal{N}(0, \text{Id}_\text{p})}\left[ \langle \frac{\partial \mathbf{\Phi X}_{:t} }{\partial \mathbf{Y}_{:t}}, ?? \rangle \right]
+    \enspace .
+\end{equation*}
+%
+We observe numerically that for the recovery problems we consider, it provides a very accurate estimator of the trace, while
+it only costs in the multi-task case $O(Tn)$. Now, we need to study a more tedious question: how to reliably and efficiently
+evaluate the directional derivative for $t=1, \dots, T$, $\frac{\partial \mathbf{Y}_{:t} }{\mathbf{M}_{:t}}$.
+
+\subsubsection*{Finite-difference SURE}
+
+The most straightforward way to evaluate such a partial derivative is using finite difference methods.
+Since the notation we have used so far is cumbersome, we will adopt a lighter one. Let $\hat{\bfX}(\bfY) \in \bbR^{p\times T}$ be an estimator
+of $\mathbf{X} \in \mathbb{R}^{p\times T}$ which depends on $\mathbf{Y} \in \bbR^{n \times T}$ (\textit{e.g.} a \nameref{section_5} fit for which the divergence
+can't be evaluate in closed-form). Let $(e_i)_{1 \leq i \leq n}$ be the canonical basis of $\bbR^n$. The finite difference expression for computing
+the degrees of freedom of a multi-task regression fit writes:
+
+\begin{equation*}
+    \forall \epsilon > 0, \enspace \text{df}(\mathbf{Y}_{:t}) = \frac{1}{\epsilon} \sum_{t=1}^T \sum_{i=1}^n
+    \left( \mathbf{\hat{X}}_{:t}(\mathbf{Y}_{:t} + \epsilon e_i) - \mathbf{\hat{X}}_{:t}(\mathbf{Y}_{:t}) \right)
+    \enspace .
+\end{equation*}
+%
+The main advantage of this method is that $\mathbf{Y} \rightarrow \mathbf{\hat{X}(Y)}$ can be used as a black-box without knowing the underlying algorithm that provides
+the fit. This generic method allows us to circumvent the hurdle of evaluating a closed-form expression for each penalty in the case of \nameref{section_5}.
+\cite{Deledalle_Vaiter_Fadili_Peyre14} observes that in practice this method yields quasi unbiased risk estimator (\textit{i.e.} with neglectable bias). They
+found a heuristic for $\epsilon = 2 \sigma / n^{0.3}$.
+
+\subsection{Combining Monte-Carlo and finite difference}
+
+The finite difference method still requires to evaluate $nT$ finite differences, which can be significant. In that case the
+Monte-Carlo approach can be used in conjunction with finite difference methods.
+
+???
 
 \newpage
 \bibliographystyle{plainnat}

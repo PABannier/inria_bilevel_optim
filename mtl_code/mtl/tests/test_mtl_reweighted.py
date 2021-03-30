@@ -1,8 +1,10 @@
-from mtl.mtl import ReweightedMTL
-from mtl.simulated_data import simulate_data
 import numpy as np
 from numpy.linalg import norm
 from sklearn.utils import check_random_state
+
+from mtl.mtl import ReweightedMTL
+from mtl.cross_validation import ReweightedMultiTaskLassoCV
+from mtl.simulated_data import simulate_data
 
 
 def test_training_loss_decrease():
@@ -17,20 +19,17 @@ def test_training_loss_decrease():
     assert start_loss > final_loss
 
 
-def test_sparsity_level():
-    """Tests that the sparsity level is (nearly) identical between
-    the original and the reconstructed coefficient matrix.
+def test_reconstruction():
+    X, Y, coef = simulate_data(
+        n_samples=50, n_features=250, n_tasks=25, nnz=2, corr=0, random_state=2020
+    )
 
-    The correct hyperparameters have been found in the notebook
-    `Sparse reconstructions signal`, available in the example
-    folder.
-    """
-    X, Y, W = simulate_data(50, 250, 25, 25, random_state=0)
+    alphas = np.geomspace(5e-4, 1.8e-3, num=15)
+    regressor = ReweightedMultiTaskLassoCV(alphas, n_folds=3)
 
-    regressor = ReweightedMTL(alpha=0.0009)
-    regressor.fit(X, Y, n_iterations=10)
+    regressor.fit(X, Y)
+    coef_hat = regressor.weights
 
-    nnz_original = np.count_nonzero(np.count_nonzero(W, axis=1))
-    nnz_reconstructed = np.count_nonzero(np.count_nonzero(regressor.weights, axis=1))
+    nnz_reconstructed = np.count_nonzero(np.count_nonzero(coef_hat, axis=1))
 
-    assert np.abs(nnz_original - nnz_reconstructed) <= 1
+    assert nnz_reconstructed == 2

@@ -17,3 +17,6 @@ tex/__latexindent_temp.tex
 tex/lasso_overview.out
 tex/bibli/__latexindent_temp.tex
 mtl_code/examples/.ipynb_checkpoints
+.vscode/settings.json
+tex/memo/lasso_overview.out
+tex/memo/__latexindent_temp.tex

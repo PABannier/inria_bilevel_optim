@@ -272,15 +272,22 @@ the uni-task and multi-task cases for LASSO.
 
 \subsection*{Univariate case}
 
-Let $\lambda > 0$ be a regularizing hyperparameter. Let $\mathbf{\Phi} \in \mathbb{R}^{n\times p}$ be the design matrix,
-$w \in \mathbb{R}^d$ be the coefficient vector and $y \in \mathbb{R}^n$ the target vector.
+Let $\lambda > 0$ be a regularizing hyperparameter. Let $\mathbf{\Phi} \in \mathbb{R}^{n\times p}$ be a design matrix,
+$x \in \mathbb{R}^d$ be the coefficient vector and $y \in \mathbb{R}^n$ the target vector.
 The LASSO model reads:
 
 \begin{equation*}
-    w^* = \argmin_{w \in \mathbb{R}^d} \frac{1}{2}\norm{y - \mathbf{X}w}_2^2 + \lambda \norm{w}_1
+    x^* = \argmin_{x \in \mathbb{R}^d} \frac{1}{2}\norm{y - \mathbf{\Phi}x}_2^2 + \lambda \norm{x}_1
 \end{equation*}
 
-We observe that $w^*$ an estimator of the true $w$ is written as the sum of
+We assume that there exists $\epsilon \in \mathbb{R}^p$ a Gaussian white noise distributed according to
+$\mathcal{N}(0, \sigma^2 \text{Id}_p)$ such that:
+
+\begin{equation*}
+    y = \mathbf{\Phi}x + \epsilon
+\end{equation*}
+
+$\sigma^2$ is the variance of the noise.
 
 \newpage
 \bibliographystyle{plainnat}

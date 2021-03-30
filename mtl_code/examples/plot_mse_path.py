@@ -2,6 +2,7 @@ import numpy as np
 from numpy.linalg import norm
 
 import matplotlib.pyplot as plt
+import matplotlib.pylab as pl
 
 from sklearn.linear_model import MultiTaskLassoCV
 
@@ -22,7 +23,12 @@ def plot_mse_path_reweighted_mtl():
         snr=1,
     )
 
+    X = np.asfortranarray(X)
+    Y = np.asfortranarray(Y)
+
     n_folds = 5
+
+    colors = pl.cm.jet(np.linspace(0, 1, n_folds))
 
     alpha_max = compute_alpha_max(X, Y)
     print("Alpha max for large experiment:", alpha_max)
@@ -39,6 +45,7 @@ def plot_mse_path_reweighted_mtl():
             alphas,
             regressor.mse_path_[:, idx_fold],
             linestyle="--",
+            color=colors[idx_fold],
             label=f"Fold {idx_fold + 1}",
         )
 
@@ -101,7 +108,7 @@ def plot_comparison_mse_path_lasso():
         alphas,
         mtl_lasso.mse_path_.mean(axis=1),
         linewidth=2,
-        color="red",
+        color="deepskyblue",
         label="Non-reweighted",
     )
 
@@ -112,7 +119,7 @@ def plot_comparison_mse_path_lasso():
         alphas,
         reweighted_mtl_lasso.mse_path_.mean(axis=1),
         linewidth=2,
-        color="green",
+        color="midnightblue",
         label="Reweighted",
     )
 
@@ -146,6 +153,8 @@ def plot_comparison_mse_path_lasso_across_folds():
 
     n_folds = 5
 
+    colors = pl.cm.jet(np.linspace(0, 1, n_folds))
+
     alpha_max = compute_alpha_max(X, Y)
     print("Alpha max for large experiment:", alpha_max)
 
@@ -159,13 +168,14 @@ def plot_comparison_mse_path_lasso_across_folds():
     reweighted_mtl_lasso = ReweightedMultiTaskLassoCV(alphas, n_folds=n_folds)
     reweighted_mtl_lasso.fit(X, Y)
 
-    fig, axes = plt.subplots(1, 2, figsize=(14, 7))
+    fig, axes = plt.subplots(1, 2, figsize=(14, 7), sharey="row")
 
     for idx_fold in range(n_folds):
         axes[0].semilogx(
             alphas,
             mtl_lasso.mse_path_[:, idx_fold],
             linestyle="--",
+            color=colors[idx_fold],
             label=f"Fold {idx_fold + 1}",
         )
 
@@ -191,6 +201,7 @@ def plot_comparison_mse_path_lasso_across_folds():
             alphas,
             reweighted_mtl_lasso.mse_path_[:, idx_fold],
             linestyle="--",
+            color=colors[idx_fold],
             label=f"Fold {idx_fold + 1}",
         )
 
@@ -236,7 +247,7 @@ def plot_comparison_mse_path_lasso_across_folds():
 
 def plot_mse_path_reweighted_mtl_wrt_correlation():
     correlation_coefficients = [0.1, 0.3, 0.5, 0.7, 0.9]
-    colors = ["r", "b", "g", "y", "black"]
+    colors = pl.cm.jet(np.linspace(0, 1, len(correlation_coefficients)))
 
     plt.figure(figsize=(8, 6))
 
@@ -287,7 +298,7 @@ def plot_mse_path_reweighted_mtl_wrt_correlation():
 
 def plot_mse_path_wrt_num_iterations(corr=0.2):
     n_iterations = [1, 3, 5, 7, 10]  # No need beyond 10 (alpha_min is the same)
-    colors = ["r", "b", "g", "y", "black"]
+    colors = pl.cm.jet(np.linspace(0, 1, len(n_iterations)))
 
     plt.figure(figsize=(8, 6))
 
@@ -337,8 +348,8 @@ def plot_mse_path_wrt_num_iterations(corr=0.2):
 
 
 if __name__ == "__main__":
-    plot_mse_path_reweighted_mtl()
-    plot_mse_path_wrt_num_iterations(corr=0.7)
-    plot_comparison_mse_path_lasso()
-    plot_comparison_mse_path_lasso_across_folds()
-    plot_mse_path_reweighted_mtl_wrt_correlation()
+    # plot_mse_path_reweighted_mtl()
+    # plot_comparison_mse_path_lasso()
+    # plot_comparison_mse_path_lasso_across_folds()
+    # plot_mse_path_reweighted_mtl_wrt_correlation()
+    plot_mse_path_wrt_num_iterations(corr=0.5)

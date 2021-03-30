@@ -160,4 +160,4 @@ if __name__ == "__main__":
 
     stc = apply_solver(solver, evoked, forward, noise_cov, loose, depth)
 
-    # plot_sparse_source_estimates(forward["src"], stc, bgcolor=(1, 1, 1), opacity=0.1)
+    plot_sparse_source_estimates(forward["src"], stc, bgcolor=(1, 1, 1), opacity=0.1)

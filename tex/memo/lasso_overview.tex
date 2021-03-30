@@ -549,6 +549,9 @@ where $\lvert A \rvert$ is the cardinal of the active set. This yields the follo
     \text{SURE}(\hat{\bf{X}}) = -p\sigma^2 + \norm{\mathbf{Y} -  \mathbf{\Phi X}}^2_{\text{F}} + 2 \sigma^2 \lvert A \rvert
 \end{equation*}
 
+This seems a very reasonable answer since the number of degrees of freedom (number of parameters in a model allowed to change) in LASSO is the active set, meaning the set of non-zero
+coefficients.
+
 \newpage
 \bibliographystyle{plainnat}
 \bibliography{references_all}

@@ -151,17 +151,14 @@ the set of positive semi-definite (respectively positive definite) matrices.
 \label{section_1}
 
 In this section, we assume that $T = 1$ and $p \gg n$.
-
-\vskip 0.2in
-
+\\
 LASSO consists in solving the following optimization problem:
 
 \begin{equation*}
     x^* = \argmin_{x \in \bbR^{p}} \frac{1}{2n}\norm{ y - \mathbf{\Phi} x}_2^2 + \lambda \norm{ x}_{1}
+    \enspace .
 \end{equation*}
-
-\vskip 0.1in
-
+%
 LASSO is a useful estimator to reconstruct sparse signals. It acts as a convex regularizer surrogate for the $l_0$ norm. Indeed, the
 $l_0$ norm yields a $NP$-hard combinatorial non-convex problem to solve. \\
 
@@ -189,8 +186,9 @@ Then, the optimization problem reads:
 
 \begin{equation*}
     x^* = \argmin_{x \in \bbR^p} \Biggl\{ \frac{1}{2n} \sum_{i=1}^n (y_i - \sum_{j=1}^J \phi_{j}^\top x_{j})^2 + \lambda \sum_{j=1}^{J} \norm{ x_{j}}_2 \Biggr\}
+    \enspace .
 \end{equation*}
-
+%
 $ \norm{x_{j}}$ is the Euclidean norm of the vector $x_{j}$. We can convince ourselves that if $\forall j \in \{1, \dots, J\}, p_j = 1$, then $\norm{ x_{j}}_2 = \lvert x_{j} \rvert$,
 thus the problem reduces to \nameref{section_1}.
 
@@ -217,14 +215,16 @@ penalized. The optimization problem reads:
 
 \begin{equation*}
     x^* = \argmin_{x \in \bbR^p} \Biggl\{ \frac{1}{2n} \norm{ y - \mathbf{\Phi}x}_2^2 + \lambda \sum_{j=1}^p w_j \lvert x_j \rvert \Biggr\}
+    \enspace .
 \end{equation*}
-\\
+%
 where $w \in \bbR^p$ is a weight vector. By placing $w \in \bbR^p$ on the diagonal of a square matrix $\mathbf{W} \in \bbR^{p \times p}$, we can rewrite the optimization problem in a matrix form:
 
 \begin{equation*}
     x^* = \argmin_{x \in \bbR^p} \frac{1}{2n} \norm{y - \mathbf{\Phi}x}_2^2 + \lambda \norm{\mathbf{W}x}_1
+    \enspace .
 \end{equation*}
-
+%
 \subsection*{How to choose the weight vector?}
 
 The rationale is that large weights could be used to discourage nonzero entries in the recovered signal, while small weights would encourage them. As a rule of thumb, the weights should relate inversely
@@ -232,7 +232,7 @@ to the true signal magnitude (in the context of signal processing, which is of i
 may be obtained without first knowing the true signal. \cite{Candes_Wakin_Boyd08} argues that there may exist a range of favorable weighting matrices $\mathbf{W} \in \bbR^{p \times p}$.
 \\
 \\
-They propose a majorization-minimization (MM) algoritm to iteratively reweight the coefficients of the LASSO estimator.
+They propose a majorization-minimization (MM) algorithm to iteratively reweight the coefficients of the LASSO estimator.
 Recall that a MM algorithm works by iteratively minimizing a surrogate function that majorizes the objective function.
 Simply put, first we majorize the objective function by a surrogate, then we minimize this surrogate function \footnote{It is a core idea in optimization, used to derive gradient descent for instance.
 For a convex $L$-smooth function, we majorize it by its quadratic upper bound, then we minimize this quadratic upper bound.
@@ -243,44 +243,50 @@ Indeed, consider the following constrained problem:
 
 \begin{equation*}
     \min_{x \in \bbR^p} \quad  \sum_{i=1}^p \log(\lvert x_i \rvert + \epsilon) \quad \textrm{s.t.} \quad  y = \mathbf{\Phi} x
+    \enspace .
 \end{equation*}
-\\
+%
 
 Clearly this problem is equivalent to the following:
 \begin{equation*}
     \min_{x,u \in \bbR^p} \quad  \sum_{i=1}^p \log(u_i + \epsilon) \quad \textrm{s.t.} \quad  y = \mathbf{\Phi} x, \quad \lvert x_i \rvert \leq u_i, \enspace i=1,\dots,p
+    \enspace .
 \end{equation*}
-
+%
 This problem is easier to solve since we get rid of the absolute value in the minimized term as it is now placed as an additional constraint.
-\\
 To apply a MM algorithm, we need to majorize the log-sum function. Yet, the log-sum function is concave and therefore below its tangent. Thus by taking a first-order Taylor expansion, we obtain a linearization of
 the log-sum function in a neighborhood of $u$.
+\\
 \\
 More formally, let $g(u) = \sum_{i=1}^p \log(u_i + \epsilon)$. The first-order Taylor expansion in a neighborhood of $u^{(l)} \in \bbR^p$ yields:
 
 \begin{align*}
     u^{(l+1)} &= \argmin_{u \in \bbR^p} g(u^{(l)}) + \nabla g(u^{(l)})\cdot (u - u^{(l)}) \\
               &= \argmin_{u \in \bbR^p} \sum_{i=1}^p \log( u_i^{(l)} + \epsilon) + (u - u^{(l)}) \sum_{i=1}^p \frac{1}{ u_i^{(l)}  + \epsilon}
+    \enspace .
 \end{align*}
-
+%
 By removing the terms that do not depend on $u$, it follows that:
 
 \begin{equation*}
     u^{(l+1)} = \argmin_{u \in \bbR^p} \sum_{i=1}^p \frac{u_i}{ u_i^{(l)} + \epsilon}
+    \enspace .
 \end{equation*}
-
+%
 And by equivalence,
 
 \begin{equation*}
     x^{(l+1)} = \argmin_{x \in \bbR^p} \sum_{i=1}^p \frac{\lvert x_i \rvert}{\lvert x_i^{(l)} \rvert + \epsilon}
+    \enspace .
 \end{equation*}
-
+%
 By letting $\forall i \in \{1, \dots, p\}, w_i^{(l)} = \frac{1}{\lvert x_i^{(l)}\rvert + \epsilon}$, it follows:
 
 \begin{equation*}
     x^{(l+1)} = \argmin_{x \in \bbR^p} \sum_{i=1}^p w_i^{(l)} \lvert x_i \rvert
+    \enspace .
 \end{equation*}
-\\
+%
 Therefore, it follows an algorithm to iteratively reweight the coefficients of the LASSO model.
 
 \vskip 0.2in
@@ -317,7 +323,6 @@ Therefore, it follows an algorithm to iteratively reweight the coefficients of t
 \Return{$x$}
 \end{algorithm}
 }
-\jo{the math seems wrong in the algorithm above. double check it!}
 
 \vskip 0.2in
 
@@ -339,8 +344,9 @@ In this section, we assume that $T > 1$. Therefore, we are now predicting a mult
 
 \begin{equation*}
     \mathbf{Y} = \mathbf{\Phi}\mathbf{X} + \mathbf{E}
+    \enspace .
 \end{equation*}
-\\
+%
 where $\mathbf{E} \in \bbR^{n \times T}$ is a matrix of errors (noise), usually simulated with a pre-defined signal-to-noise ratio, when doing compressive sensing. Note that $\mathbf{X} \in \bbR^{p \times T}$ is a matrix.
 Like in \nameref{section_2}, suppose that there exists an unknown subset $S \subset  \{1, \dots, p\}$ of the features that are relevant for prediction, and that \textbf{this same subset is preserved across all K components} of the response
 variable. In this case, it is natural to consider a group LASSO penalty, in which the $p$ groups are defined by the rows $\{x_{j} \in \bbR^T, j=1,\dots,p\}$ of $\mathbf{X}$.
@@ -349,14 +355,16 @@ Therefore, the optimization problem we need to solve is:
 
 \begin{equation*}
     \mathbf{X}^* = \argmin_{\mathbf{X} \in \bbR^{p \times T}} \frac{1}{2n} \norm{ \mathbf{Y} - \mathbf{\Phi X}}_{\text{F}}^2 + \lambda \Biggl( \sum_{j=1}^p \norm{ x_{j}}_2 \Biggr)
+    \enspace .
 \end{equation*}
-\\
+%
 Using the $l_1/l_2$ mixed-norm, it reads:
 
 \begin{equation*}
     \mathbf{X}^* = \argmin_{\mathbf{X} \in \bbR^{p \times T}} \frac{1}{2n} \norm{ \mathbf{Y} - \mathbf{\Phi X}}_{\text{F}}^2 + \lambda \norm{ \mathbf{X}}_{2, 1}
+    \enspace .
 \end{equation*}
-\\
+%
 Note that the fitting term is now a matrix norm (here the Frobenius norm) since we are dealing with matrices. As stated in \nameref{section_2}, we are using a mixed $l_1/l_2$ norm to enforce group sparsity on the coefficients $\mathbf{X}$. Indeed,
 we are first computing the $l_2$ norm of every line of the coefficient matrix, then we are computing the $l_1$ norm of the remaining vectors full of the $l_2$ norm of the line of the coefficient matrix.
 
@@ -376,8 +384,9 @@ Therefore, the optimization problems reads:
 
 \begin{equation*}
     \mathbf{X}^* = \argmin_{\mathbf{X} \in \bbR^{p \times T}} \frac{1}{2n} \norm{ \mathbf{Y} - \mathbf{\Phi X}}_{\text{F}}^2 + \lambda \sum_{j=1}^p \underbrace{g(\norm{\mathbf{X}_{j:}}_{2})}_{g(x) \leq g(x^{(k)}) + \langle \nabla g (x^{(k)}) , x - x^{(k)} \rangle }
+    \enspace .
 \end{equation*}
-
+%
 where $g$ is any penalty convex or non-convex. In \cite{Candes_Wakin_Boyd08}, $g(x) = \sum_{i=1}^p \log(\lvert x_i \rvert + \epsilon)$. Algorithm 2 shows the log-concave reweighted $l_1$ minimization.
 
 \vskip 0.2in
@@ -428,23 +437,25 @@ a second optimization problem (inner loss). More formally,
     &\lambda^* = \argmin_{\lambda \in \bbR^p} \Biggl\{\mathcal{L}(\lambda) \triangleq \mathcal{C}(\hat{\mathbf{X}}^{(\lambda)})\Biggr\} \\
     &\text{s.t.} \quad \hat{\mathbf{X}}^{(\lambda)} \in \argmin_{\mathbf{X} \in \bbR^{p\times T}} L(\mathbf{X}, \lambda)
 \end{align*}
-
+%
 where $\mathcal{L}$ is the outer loss and $L$ is the inner loss.
 
 Let's consider the \nameref{section_4} case. Consider a noisy data generating process such that:
 
 \begin{equation*}
     \mathbf{Y} = \mathbf{\Phi}\mathbf{X}_0 + \mathbf{E}
+    \enspace .
 \end{equation*}
-
+%
 where entries of $\mathbf{E}$ are independent, centered and normally distributed.
 For a more formal formulation of the multi-task regression problem, see \cite{Massias_Fercoq_Gramfort_Salmon17}. We wish to estimate
 $\mathbf{X}_0$ such that we minimize:
 
 \begin{equation*}
     \text{MSE}(\hat{\mathbf{X}}) = \bbE_{\mathbf{E}}\Biggl[ \norm{\mathbf{X}_0 - \hat{\mathbf{X}}}_{\text{F}}^2 \Biggr]
+    \enspace .
 \end{equation*}
-
+%
 However, the mean squared error can't be evaluated directly since it depends on $\bfX_0$, which is unknown. \footnote{Recall that
 MSE is a general concept: take the average of the squared differences between two quantities. For more clarity, we can differentiate estimation
 error and prediction error. For two output vectors $y$ and $\hat{y}$, we can easily evaluate $\text{MSE}(y, \hat{y})$ (prediction error). Conversely,
@@ -456,8 +467,9 @@ proposed an unbiased estimator of the MSE, called the SURE (Stein's unbiased ris
 
 \begin{equation*}
     \text{SURE}(\hat{\bf{X}}) = -nT\sigma^2 + \norm{\mathbf{Y} - \mathbf{\Phi} \hat{\mathbf{X}}}_{\text{F}}^2 + 2 \sigma^2 \text{df}(\bf{Y})
+    \enspace .
 \end{equation*}
-
+%
 where $\text{df}(\mathbf{Y})$ is the number of degrees of freedom of $\mathbf{Y}$, alternatively called the divergence of
 the estimator of $\mathbf{X}_0$. The two first terms are trivially evaluated, while the final term presents some
 peculiarities hence the need for Stein's lemma \footnote{For a proof of Stein's lemma, see:
@@ -476,6 +488,7 @@ minimize $\text{SURE}$:
 
 \begin{equation*}
     \hat{\lambda} = \argmin_{\lambda \in \mathcal{D}} \norm{ \mathbf{Y} - \mathbf{\Phi}\mathbf{X}^{(\lambda)}}_{\text{F}}^2 + 2 \sigma^2 \text{df}(\bf{Y})
+    \enspace .
 \end{equation*}
 %
 Note that the $\text{df}$ term refers to the degrees of freedom of the model, a measure used to quantify the complexity of a statistical modeling procedure.
@@ -492,8 +505,9 @@ We can express the LASSO fit as follows:
 
 \begin{equation*}
     \mathbf{\Phi X} = \mathbf{\Phi}_A(\mathbf{\Phi}_A^{\top}\mathbf{\Phi}_A)^{-1}(\mathbf{X}^{\top}_A\mathbf{Y} - \mathbf{\Lambda}\mathbf{S}_A)
+    \enspace .
 \end{equation*}
-
+%
 where $\mathbf{\Phi}_A$ (respectively $\mathbf{X}_A$) indexes the columns of $\bf\Phi$ (respectively $\mathbf{X}$) in $A$. Furthermore, $\mathbf{S}_A$ are the signs of the active
 LASSO coefficients and $\bf\Lambda$ is a matrix full of lambda.
 \\
@@ -502,12 +516,14 @@ To prove that this function is continuous, we need to use the dual of the LASSO,
 \begin{align*}
     &\min_{\mathbf{\Theta} \in \bbR^{n \times T}} \norm{ \mathbf{\Theta} - \mathbf{Y} }_{\text{F}}^2 \\
     &\text{s.t.} \quad \norm{\mathbf{\Phi^{\top}\Theta}}_{2, \infty} \leq \lambda
+    \enspace .
 \end{align*}
-
+%
 and the relationship between the dual $\hat{\bf{\Theta}}$ and the primal $\hat{\bf{X}}$ solutions is:
 
 \begin{equation*}
     \bf{\Phi X} = \mathbf{Y - \hat{\Theta}}
+    \enspace .
 \end{equation*}
 
 Yet the dual solution $\hat{\bf{\Theta}}$ is the projection of $\mathbf{Y}$ onto the convex polyhedron $C = \{\bf{\Theta}, \norm{\mathbf{\Phi^{\top}\Theta}}_{2, \infty} \leq \lambda\}$,
@@ -515,8 +531,9 @@ which we denote $\hat{\bf{\Theta}} = P_C(\bf{Y})$. Therefore, the \nameref{secti
 
 \begin{equation*}
     \mathbf{\Phi X} = (I - P_C)(\mathbf{Y})
+    \enspace .
 \end{equation*}
-
+%
 which is the residual of the projection of $\bfY$ onto $C$.
 \\
 \\
@@ -524,14 +541,14 @@ Yet, we know that a projection onto a convex set is a non-expansive mapping, the
 
 \begin{equation*}
     \forall \mathbf{Y}, \mathbf{Y'}, \norm{(I - P_C(\mathbf{Y})) - (I - P_C(\mathbf{Y'}))}_{\text{F}} \leq \norm{Y - Y'}_{\text{F}}
+    \enspace .
 \end{equation*}
-
+%
 From the previous equation, we deduce that the LASSO fit is a Lipschitz-continuous mapping, which by Rademacher's theorem, implies that it is almost differentiable everywhere.
 \\
 \\
 The continuity can be interpreted as follows: when $\bfY$ changes thus the active set $A$, \textbf{the coefficients of variables to leave
 the active continuously drop to zero, and coefficients of variables to enter the active set would continuously move from zero}. This makes the LASSO continuous.
-
 
 \subsection*{Finding the closed-form expression of SURE for \nameref{section_4}}
 
@@ -611,7 +628,7 @@ the fit. This generic method allows us to circumvent the hurdle of evaluating a 
 \cite{Deledalle_Vaiter_Fadili_Peyre14} observes that in practice this method yields quasi unbiased risk estimator (\textit{i.e.} with neglectable bias). They
 found a heuristic for $\epsilon = 2 \sigma / n^{0.3}$.
 
-\subsection{Combining Monte-Carlo and finite difference}
+\subsection*{Combining Monte-Carlo and finite difference}
 
 The finite difference method still requires to evaluate $nT$ finite differences, which can be significant. In that case the
 Monte-Carlo approach can be used in conjunction with finite difference methods.

@@ -337,8 +337,8 @@ def plot_mse_path_wrt_num_iterations(corr=0.2):
 
 
 if __name__ == "__main__":
-    # plot_mse_path_reweighted_mtl()
+    plot_mse_path_reweighted_mtl()
     plot_mse_path_wrt_num_iterations(corr=0.7)
-    # plot_comparison_mse_path_lasso()
-    # plot_comparison_mse_path_lasso_across_folds()
-    # plot_mse_path_reweighted_mtl_wrt_correlation()
+    plot_comparison_mse_path_lasso()
+    plot_comparison_mse_path_lasso_across_folds()
+    plot_mse_path_reweighted_mtl_wrt_correlation()

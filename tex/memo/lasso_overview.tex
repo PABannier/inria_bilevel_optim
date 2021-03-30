@@ -417,11 +417,11 @@ where $g$ is any penalty convex or non-convex. In \cite{Candes_Wakin_Boyd08}, $g
 
 \newpage
 
-\section{Bi-level optimization for structrued sparse models using SURE}
+\section{Bi-level optimization for structured sparse models using SURE}
 \label{section_6}
 
 In the following we refer as bi-level optimization the nested optimization problem
-which consists in optimizing a criterion (outer loss) with respect to a hyperparameter subject to
+which consists in optimizing a criterion (outer loss) with respect to a hyperparameter, subject to
 a second optimization problem (inner loss). More formally,
 
 \begin{align*}
@@ -431,14 +431,14 @@ a second optimization problem (inner loss). More formally,
 
 where $\mathcal{L}$ is the outer loss and $L$ is the inner loss.
 
-Let's focus on the \nameref{section_5} case for now. Consider a noisy data generating process such that:
+Let's consider the \nameref{section_4} case. Consider a noisy data generating process such that:
 
 \begin{equation*}
     \mathbf{Y} = \mathbf{\Phi}\mathbf{X}_0 + \mathbf{\Sigma^*}\mathbf{E}
 \end{equation*}
 
-where entries of $\mathbf{E}$ are independent, centered and normally distributed and $\mathbf{\Sigma^*} \in \mathbb{S}^n_{++}$. For a more formal
-formulation of the multi-task regression problem, see \cite{Massias_Fercoq_Gramfort_Salmon17}. We wish to estimate
+where entries of $\mathbf{E}$ are independent, centered and normally distributed and $\mathbf{\Sigma^*} \in \mathbb{S}^n_{++}$ the co-standard-deviation matrix.
+For a more formal formulation of the multi-task regression problem, see \cite{Massias_Fercoq_Gramfort_Salmon17}. We wish to estimate
 $\mathbf{X}_0$ such that we minimize:
 
 \begin{equation*}
@@ -475,11 +475,11 @@ minimize $\text{SURE}$:
 \end{equation*}
 
 We will assume that $\mathbf{Y} \sim \mathcal{MN}_{p\times T}(\mathbf{M}, \mathbf{U}, \mathbf{V})$ the matrix Gaussian distribution with location $\mathbf{M}$
-and scale parameters $\mathbf{U}$ and $\mathbf{V}$ we consider the lasso fit $\mathbf{\hat{M} = \Phi X}$ as an estimate of $\mathbf{M}$.
+and scale parameters $\mathbf{U}$ and $\mathbf{V}$, we consider the lasso fit $\mathbf{\hat{M} = \Phi X}$ as an estimate of $\mathbf{M}$.
 \\
 \\
 First we need to verify that $\hat{\bf{M}}$ is weakly differentiable\footnote{\url{https://en.wikipedia.org/wiki/Weak_derivative}} as a function of $\mathbf{Y}$
-(recall that $\hat{\bf{M}}$ depends on $\mathbf{X}$ hence on $\mathbf{Y}$). And before that, we can even ask ouverselves if this function is even continuous: if
+(recall that $\hat{\bf{M}}$ depends on $\mathbf{X}$ hence on $\mathbf{Y}$). And before that, we can ask ourselves if this function is even continuous: if
 we change $\mathbf{Y}$, the active set of the solution $\mathbf{X}$ can change/jump thus creating discontinuities. Let the support of the solution be $A = \text{supp}(\hat{\mathbf{X}})$.
 We can express the LASSO fit as follows:
 
@@ -499,13 +499,13 @@ To prove that this function is continuous, we need to use the dual of the LASSO,
     &\text{s.t.} \quad \norm{\mathbf{\Phi^{\top}\Theta}}_{2, \infty} \leq \lambda
 \end{align*}
 
-and the relationship between the dual $\hat{\Theta}$ and the primal $\hat{X}$ solutions is:
+and the relationship between the dual $\hat{\bf{\Theta}}$ and the primal $\hat{\bf{X}}$ solutions is:
 
 \begin{equation*}
     \bf{\Phi X} = \mathbf{Y - \hat{\Theta}}
 \end{equation*}
 
-Yet the dual solution $\hat{\Theta}$ is the projection of $\mathbf{Y}$ onto the convex polyhedron $C = \{\Theta, \norm{\mathbf{\Phi^{\top}\Theta}}_{2, \infty} \leq \lambda\}$,
+Yet the dual solution $\hat{\bf{\Theta}}$ is the projection of $\mathbf{Y}$ onto the convex polyhedron $C = \{\bf{\Theta}, \norm{\mathbf{\Phi^{\top}\Theta}}_{2, \infty} \leq \lambda\}$,
 which we denote $\hat{\bf{\Theta}} = P_C(\bf{Y})$. Therefore, the \nameref{section_4} fit is simply:
 
 \begin{equation*}
@@ -521,16 +521,33 @@ Yet, we know that a projection onto a convex set is a non-expansive mapping, the
     \forall \mathbf{Y}, \mathbf{Y'}, \norm{(I - P_C(\mathbf{Y})) - (I - P_C(\mathbf{Y'}))}_{\text{F}} \leq \norm{Y - Y'}_{\text{F}}
 \end{equation*}
 
-From the previous equation, we deduce that the LASSO fit is a Lipschitz-continuous mapping, which by Rademacher's theorem
-(see \url{https://en.wikipedia.org/wiki/Rademacher%27s_theorem}), means that it is almost differentiable everywhere.
+From the previous equation, we deduce that the LASSO fit is a Lipschitz-continuous mapping, which by Rademacher's theorem, means that it is almost differentiable everywhere.
 \\
 \\
-The continuity can be interpreted as follows: when $\bfY$ changes thus the active set $A$, the coefficients of variables to leave
-the active continuously drop to zero, and coefficients of variables to enter the active set would continuously move from zero. This makes the LASSO continuous.
+The continuity can be interpreted as follows: when $\bfY$ changes thus the active set $A$, \textbf{the coefficients of variables to leave
+the active continuously drop to zero, and coefficients of variables to enter the active set would continuously move from zero}. This makes the LASSO continuous.
 
 
 \subsection*{Finding the closed-form expression of SURE for \nameref{section_4}}
 
+Now, we want to derive a closed-form expression of SURE for \nameref{section_4}. Let's re-examine the LASSO fit:
+
+\begin{equation*}
+    \mathbf{\Phi X} = \mathbf{\Phi}_A(\mathbf{\Phi}_A^{\top}\mathbf{\Phi}_A)^{-1}(\mathbf{X}^{\top}_A\mathbf{Y} - \mathbf{\Lambda}\mathbf{S}_A)
+\end{equation*}
+
+We take the reasonable assumption that $A$ and $\mathbf{S}_A$ are locally constant, meaning that a small change in $\mathbf{Y}$ won't change the active set nor the signs of the active
+coefficients. Remember that finding a closed-form expression of SURE boils down to computing the divergence of the LASSO estimator.
+
+\begin{equation*}
+    \text{df}(\mathbf{\Phi X}) = \sum_{i=1}^n \sum_{j=1}^T \frac{\partial (\mathbf{\Phi X})_{i,j}}{\partial (\mathbf{Y})_{i, j}} = \text{tr}(\mathbf{\Phi}_A(\mathbf{\Phi}_A^{\top}\mathbf{\Phi}_A)^{-1}\mathbf{\Phi}_A^{\top}) = \lvert A \rvert
+\end{equation*}
+
+where $\lvert A \rvert$ is the cardinal of the active set. This yields the following closed-form expression for the risk estimate:
+
+\begin{equation*}
+    \text{SURE}(\hat{\bf{X}}) = -p\sigma^2 + \norm{\mathbf{Y} -  \mathbf{\Phi X}}^2_{\text{F}} + 2 \sigma^2 \lvert A \rvert
+\end{equation*}
 
 \newpage
 \bibliographystyle{plainnat}

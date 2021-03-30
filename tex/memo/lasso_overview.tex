@@ -434,10 +434,10 @@ where $\mathcal{L}$ is the outer loss and $L$ is the inner loss.
 Let's consider the \nameref{section_4} case. Consider a noisy data generating process such that:
 
 \begin{equation*}
-    \mathbf{Y} = \mathbf{\Phi}\mathbf{X}_0 + \mathbf{\Sigma^*}\mathbf{E}
+    \mathbf{Y} = \mathbf{\Phi}\mathbf{X}_0 + \mathbf{E}
 \end{equation*}
 
-where entries of $\mathbf{E}$ are independent, centered and normally distributed and $\mathbf{\Sigma^*} \in \mathbb{S}^n_{++}$ the co-standard-deviation matrix.
+where entries of $\mathbf{E}$ are independent, centered and normally distributed.
 For a more formal formulation of the multi-task regression problem, see \cite{Massias_Fercoq_Gramfort_Salmon17}. We wish to estimate
 $\mathbf{X}_0$ such that we minimize:
 
@@ -445,13 +445,17 @@ $\mathbf{X}_0$ such that we minimize:
     \text{MSE}(\hat{\mathbf{X}}) = \bbE_{\mathbf{E}}\Biggl[ \norm{\mathbf{X}_0 - \hat{\mathbf{X}}}_{\text{F}}^2 \Biggr]
 \end{equation*}
 
-However, the mean squared error can't be evaluated since $\mathbf{E}$ and the noise level
-are unknown, thus can't be directly optimized. Therefore, we need to find an estimator of that
-quantity that is differentiable (to be optimized using first-order methods). Charles Stein has
+However, the mean squared error can't be evaluated directly since it depends on $\bfX_0$, which is unknown. \footnote{Recall that
+MSE is a general concept: take the average of the squared differences between two quantities. For more clarity, we can differentiate estimation
+error and prediction error. For two output vectors $y$ and $\hat{y}$, we can easily evaluate $\text{MSE}(y, \hat{y})$ (prediction error). Conversely,
+evaluating the estimation error for one true quantity and its estimator $\text{MSE}(\theta, \hat{\theta})$ is often impossible, hence the need for
+an estimator of the quadratic risk, also called MSE.}
+
+Therefore, we need to find an estimator of the quadratic risk that is differentiable (to be optimized using first-order methods). Charles Stein has
 proposed an unbiased estimator of the MSE, called the SURE (Stein's unbiased risk estimator) which reads:
 
 \begin{equation*}
-    \text{SURE}(\hat{\bf{X}}) = -p\sigma^2 + \norm{\mathbf{Y} - \mathbf{\Phi} \hat{\mathbf{X}}}_{\text{F}}^2 + 2 \sigma^2 \text{df}(\bf{Y})
+    \text{SURE}(\hat{\bf{X}}) = -nT\sigma^2 + \norm{\mathbf{Y} - \mathbf{\Phi} \hat{\mathbf{X}}}_{\text{F}}^2 + 2 \sigma^2 \text{df}(\bf{Y})
 \end{equation*}
 
 where $\text{df}(\mathbf{Y})$ is the number of degrees of freedom of $\mathbf{Y}$, alternatively called the divergence of
@@ -481,6 +485,8 @@ and scale parameters $\mathbf{U}$ and $\mathbf{V}$, we consider the lasso fit $\
 First we need to verify that $\hat{\bf{M}}$ is weakly differentiable\footnote{\url{https://en.wikipedia.org/wiki/Weak_derivative}} as a function of $\mathbf{Y}$
 (recall that $\hat{\bf{M}}$ depends on $\mathbf{X}$ hence on $\mathbf{Y}$). And before that, we can ask ourselves if this function is even continuous: if
 we change $\mathbf{Y}$, the active set of the solution $\mathbf{X}$ can change/jump thus creating discontinuities. Let the support of the solution be $A = \text{supp}(\hat{\mathbf{X}})$.
+Here, \textbf{we mean that $A$ is the set of activated rows}.
+\newpage
 We can express the LASSO fit as follows:
 
 \begin{equation*}
@@ -488,9 +494,7 @@ We can express the LASSO fit as follows:
 \end{equation*}
 
 where $\mathbf{\Phi}_A$ (respectively $\mathbf{X}_A$) indexes the columns of $\bf\Phi$ (respectively $\mathbf{X}$) in $A$. Furthermore, $\mathbf{S}_A$ are the signs of the active
-LASSO coefficients and $\bf\Lambda$ is a matrix full of lambda (note that in the special case of \nameref{section_5}, the columns of $\mathbf{\Lambda}$ would be the same but the rows
-different).
-\\
+LASSO coefficients and $\bf\Lambda$ is a matrix full of lambda.
 \\
 To prove that this function is continuous, we need to use the dual of the LASSO, which reads:
 
@@ -521,7 +525,7 @@ Yet, we know that a projection onto a convex set is a non-expansive mapping, the
     \forall \mathbf{Y}, \mathbf{Y'}, \norm{(I - P_C(\mathbf{Y})) - (I - P_C(\mathbf{Y'}))}_{\text{F}} \leq \norm{Y - Y'}_{\text{F}}
 \end{equation*}
 
-From the previous equation, we deduce that the LASSO fit is a Lipschitz-continuous mapping, which by Rademacher's theorem, means that it is almost differentiable everywhere.
+From the previous equation, we deduce that the LASSO fit is a Lipschitz-continuous mapping, which by Rademacher's theorem, implies that it is almost differentiable everywhere.
 \\
 \\
 The continuity can be interpreted as follows: when $\bfY$ changes thus the active set $A$, \textbf{the coefficients of variables to leave
@@ -530,25 +534,26 @@ the active continuously drop to zero, and coefficients of variables to enter the
 
 \subsection*{Finding the closed-form expression of SURE for \nameref{section_4}}
 
-Now, we want to derive a closed-form expression of SURE for \nameref{section_4}. Let's re-examine the LASSO fit, for $t=1, \dots, T$:
+Now, we want to derive a closed-form expression of SURE for \nameref{section_4}. Let's re-examine the LASSO fit column-wise (\textit{i.e.} task by task), for $t=1, \dots, T$:
 %
 \begin{equation*}
-    \mathbf{\Phi X_{:t}}
-    = \mathbf{\Phi}_A(\mathbf{\Phi}_A^{\top}\mathbf{\Phi}_A)^{-1}(\mathbf{X}^{\top}_A\mathbf{Y_{:t}} - \mathbf{\Lambda}\mathbf{S}_{A, t})
+    \mathbf{\Phi X}_{:t}
+    = \mathbf{\Phi}_A(\mathbf{\Phi}_A^{\top}\mathbf{\Phi}_A)^{-1}(\mathbf{X}^{\top}_A\mathbf{Y}_{:t} - \mathbf{\Lambda}\mathbf{S}_{A, t})
     \enspace .
 \end{equation*}
 %
 We take the reasonable assumption that $A$ and $\mathbf{S}_A$ are locally constant, meaning that a small change in $\mathbf{Y}$ won't change the active set nor the signs of the active
 coefficients. Remember that finding a closed-form expression of SURE boils down to computing the divergence of the LASSO estimator.
-The degree od fredom of the LASSO writes:
+The degrees of freedom of the LASSO writes:
 %
-\begin{equation*}
+\begin{align*}
     \text{df}(\mathbf{\Phi X})
-    =  \sum_{t=1}^T \left ( \sum_{i=1}^n \frac{\partial (\mathbf{\Phi X})_{i,t}}{\partial (\mathbf{Y})_{i, t}} \right )
-    = \sum_{t=1}^T \text{tr}(\mathbf{\Phi}_A(\mathbf{\Phi}_A^{\top}\mathbf{\Phi}_A)^{-1}\mathbf{\Phi}_A^{\top})
-    = T \lvert A \rvert
-    \enspace ,
-\end{equation*}
+    &= \sum_{i=1}^n \sum_{t=1}^T \frac{\partial (\mathbf{\Phi X})_{i,t}}{\partial (\mathbf{Y})_{i, t}} \\
+    &= \sum_{t=1}^T \left ( \sum_{i=1}^n \frac{\partial (\mathbf{\Phi X})_{i,t}}{\partial (\mathbf{Y})_{i, t}} \right ) \\
+    &= \sum_{t=1}^T \text{tr}(\mathbf{\Phi}_A (\mathbf{\Phi}_A^{\top} \mathbf{\Phi}_A)^{-1}\mathbf{\Phi}_A^{\top}) \\
+    &= \sum_{t=1}^T \text{tr}(\mathbf{\Phi}_A^{\top}\mathbf{\Phi}_A (\mathbf{\Phi}_A^{\top} \mathbf{\Phi}_A)^{-1}) \\
+    &= T \lvert A \rvert
+\end{align*}
 %
 where $\lvert A \rvert$ is the cardinal of the active set. This yields the following closed-form expression for the risk estimate:
 %
@@ -560,7 +565,8 @@ where $\lvert A \rvert$ is the cardinal of the active set. This yields the follo
 This seems a very reasonable answer since the number of degrees of freedom (number of parameters in a model allowed to change) in LASSO is the active set, meaning the set of non-zero
 coefficients.
 
-It
+\subsection*{The technicalities of SURE for reweighted Multi-Task LASSO}
+
 
 \newpage
 \bibliographystyle{plainnat}

@@ -13,7 +13,7 @@ from utils import compute_alpha_max
 
 
 def plot_mse_path_reweighted_mtl():
-    X, Y, _ = simulate_data(
+    X, Y, _, _ = simulate_data(
         n_samples=50,
         n_features=250,
         n_tasks=25,
@@ -34,7 +34,7 @@ def plot_mse_path_reweighted_mtl():
     print("alpha max for large experiment:", alpha_max)
     print("\n")
 
-    alphas = np.geomspace(alpha_max / 100, alpha_max / 5, num=100)
+    alphas = np.geomspace(alpha_max / 10, alpha_max, num=20)
     regressor = ReweightedMultiTaskLassoCV(alphas, n_folds=n_folds)
     regressor.fit(X, Y)
 
@@ -74,7 +74,7 @@ def plot_mse_path_reweighted_mtl():
 
 
 def plot_comparison_mse_path_lasso():
-    X, Y, _ = simulate_data(
+    X, Y, _, _ = simulate_data(
         n_samples=50,
         n_features=250,
         n_tasks=25,
@@ -92,7 +92,7 @@ def plot_comparison_mse_path_lasso():
     alpha_max = compute_alpha_max(X, Y)
     print("alpha max for large experiment:", alpha_max)
 
-    alphas = np.geomspace(alpha_max / 100, alpha_max, num=100)
+    alphas = np.geomspace(alpha_max / 10, alpha_max, num=50)
 
     # Multi-task LASSO
     mtl_lasso = MultiTaskLassoCV(cv=n_folds, random_state=2020, alphas=alphas)
@@ -150,7 +150,7 @@ def plot_comparison_mse_path_lasso():
 
 
 def plot_comparison_mse_path_lasso_across_folds():
-    X, Y, _ = simulate_data(
+    X, Y, _, _ = simulate_data(
         n_samples=50,
         n_features=250,
         n_tasks=25,
@@ -170,7 +170,7 @@ def plot_comparison_mse_path_lasso_across_folds():
     alpha_max = compute_alpha_max(X, Y)
     print("alpha max for large experiment:", alpha_max)
 
-    alphas = np.geomspace(alpha_max / 100, alpha_max, num=100)
+    alphas = np.geomspace(alpha_max / 10, alpha_max, num=30)
 
     # Multi-task LASSO
     mtl_lasso = MultiTaskLassoCV(cv=n_folds, random_state=2020, alphas=alphas)
@@ -264,7 +264,7 @@ def plot_mse_path_reweighted_mtl_wrt_correlation():
     plt.figure(figsize=(8, 6))
 
     for corr, color in zip(correlation_coefficients, colors):
-        X, Y, _ = simulate_data(
+        X, Y, _, _ = simulate_data(
             n_samples=50,
             n_features=250,
             n_tasks=25,
@@ -282,7 +282,7 @@ def plot_mse_path_reweighted_mtl_wrt_correlation():
         alpha_max = compute_alpha_max(X, Y)
         print("alpha max for large experiment:", alpha_max)
 
-        alphas = np.geomspace(alpha_max / 100, alpha_max / 5, num=30)
+        alphas = np.geomspace(alpha_max / 10, alpha_max, num=30)
 
         reweighted_mtl_lasso = ReweightedMultiTaskLassoCV(alphas, n_folds=n_folds)
         reweighted_mtl_lasso.fit(X, Y)
@@ -314,12 +314,12 @@ def plot_mse_path_reweighted_mtl_wrt_correlation():
 
 
 def plot_mse_path_wrt_num_iterations(corr=0.2):
-    n_iterations = [1, 5]
+    n_iterations = [1, 3, 5, 7]
     colors = pl.cm.jet(np.linspace(0, 1, len(n_iterations)))
 
     dict_alpha_y = {}
 
-    X, Y, _ = simulate_data(
+    X, Y, _, _ = simulate_data(
         n_samples=50,
         n_features=250,
         n_tasks=25,
@@ -337,7 +337,7 @@ def plot_mse_path_wrt_num_iterations(corr=0.2):
     alpha_max = compute_alpha_max(X, Y)
     print("alpha max for large experiment:", alpha_max)
 
-    alphas = np.geomspace(alpha_max / 100, alpha_max, num=60)
+    alphas = np.geomspace(alpha_max / 50, alpha_max, num=60)
 
     for n_iter, color in zip(n_iterations, colors):
         reweighted_mtl_lasso = ReweightedMultiTaskLassoCV(alphas, n_folds=n_folds)

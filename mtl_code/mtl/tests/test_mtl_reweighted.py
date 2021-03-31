@@ -8,7 +8,7 @@ from mtl.simulated_data import simulate_data
 
 
 def test_training_loss_decrease():
-    X, Y, W = simulate_data(n_samples=10, n_features=20, n_tasks=15, nnz=5)
+    X, Y, W, _ = simulate_data(n_samples=10, n_features=20, n_tasks=15, nnz=5)
 
     regressor = ReweightedMTL()
     regressor.fit(X, Y)
@@ -20,7 +20,7 @@ def test_training_loss_decrease():
 
 
 def test_reconstruction():
-    X, Y, coef = simulate_data(
+    X, Y, coef, _ = simulate_data(
         n_samples=50, n_features=250, n_tasks=25, nnz=2, corr=0, random_state=2020
     )
 

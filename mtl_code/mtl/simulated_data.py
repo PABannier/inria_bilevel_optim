@@ -82,10 +82,14 @@ def simulate_data(
     Y = X @ W
 
     noise = rng.randn(n_samples, n_tasks)
-    noise = noise / norm(noise) * norm(Y) / snr
-    Y += noise
-    Y /= norm(Y, ord="fro")
+    # noise = noise / norm(noise) * norm(Y) / snr
+    # Y += noise
+    # Y /= norm(Y, ord="fro")
+    # sigma = noise / norm(noise) * norm(Y) / snr
+    # Y += noise
+    # Y /= norm(Y, ord="fro")
 
-    sigma = 1 / norm(noise) * norm(X @ W) / snr
+    sigma = 1 / norm(noise) * norm(Y) / snr
+    Y += sigma * noise
 
     return X, Y, W, sigma

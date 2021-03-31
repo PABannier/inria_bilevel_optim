@@ -2,7 +2,7 @@ import numpy as np
 from numpy.linalg import norm
 from sklearn.utils import check_random_state
 
-from mtl_code.mtl import ReweightedMTL
+from mtl.mtl import ReweightedMTL
 
 
 class SURE:
@@ -74,7 +74,7 @@ class SURE:
         n_samples, n_tasks = Y.shape
 
         if self.delta is None or self.eps is None:
-            self.init_eps_and_delta(n_samples)
+            self.init_eps_and_delta(n_samples, n_tasks)
 
         # fit 2 models in Y and Y + epsilon * delta
         model = ReweightedMTL(alpha, n_iterations, verbose=False)
@@ -84,7 +84,7 @@ class SURE:
         coef2 = model.coef_
 
         # compute the dof
-        dof = ((X @ coef2 - X @ coef1) * self.delta).sum() / self.epsilon
+        dof = ((X @ coef2 - X @ coef1) * self.delta).sum() / self.eps
         # compute the SURE
         sure = norm(Y - X @ coef1) ** 2
         sure -= n_samples * n_tasks * self.sigma ** 2
@@ -92,7 +92,7 @@ class SURE:
 
         return sure
 
-    def init_eps_and_delta(self, n_features):
+    def init_eps_and_delta(self, n_features, n_tasks):
         """Implements a heuristic found by [1] to correctly
         set epsilon, and initializes delta with an isotropic
         Gaussian distribution.
@@ -103,4 +103,4 @@ class SURE:
             Number of features in the design matrix.
         """
         self.eps = 2 * self.sigma / (n_features ** 0.3)
-        self.delta = self.rng.randn(n_features, n_features)
+        self.delta = self.rng.randn(n_features, n_tasks)

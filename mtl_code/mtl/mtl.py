@@ -3,6 +3,8 @@ from numpy.linalg import norm
 from sklearn.base import BaseEstimator, RegressorMixin
 from sklearn.utils.validation import check_X_y, check_is_fitted, check_array
 from sklearn.utils import check_random_state
+
+# from celer import MultiTaskLasso
 from sklearn.linear_model import MultiTaskLasso
 
 

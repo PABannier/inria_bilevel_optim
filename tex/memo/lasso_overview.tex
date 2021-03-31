@@ -147,6 +147,13 @@ In this memo, $\mathbf{\Phi} \in \bbR^{n \times p}$ is the design matrix, $x \in
 are particularly useful for large-dimensional problems \textit{i.e.} when $p \gg n$. $\lambda \in \bbR^+$ is a regularizing hyperparameter. We write $\bbS^n$ for the set of symmetric matrices and $\bbS^n_+$ (respectively $\bbS^n_{++}$) for
 the set of positive semi-definite (respectively positive definite) matrices.
 
+Changer les notations:
+
+$y = X \beta$ stat
+
+$y = \phi w$ signal
+
+
 \section{LASSO}
 \label{section_1}
 
@@ -487,7 +494,7 @@ models depend on a tuning parameter $\lambda \in \mathcal{D}$ where $\mathcal{D}
 minimize $\text{SURE}$:
 
 \begin{equation*}
-    \hat{\lambda} = \argmin_{\lambda \in \mathcal{D}} \norm{ \mathbf{Y} - \mathbf{\Phi}\mathbf{X}^{(\lambda)}}_{\text{F}}^2 + 2 \sigma^2 \text{df}(\bf{Y})
+    \hat{\lambda} = \argmin_{\lambda \in \mathcal{D}} \norm{ \mathbf{Y} - \mathbf{\Phi}\mathbf{X}^{(\lambda)} }_{\text{F}}^2 + 2 \sigma^2 \text{df}(\bf{\mathbf{\Phi}\mathbf{X}^{(\lambda)}})
     \enspace .
 \end{equation*}
 %
@@ -601,7 +608,12 @@ of $\bf{Y} \rightarrow \Phi \hat{X}$, where $\hat{\bf X}$ is some estimator of $
 More formally, for $t = 1, \dots, T$, we infer that:
 
 \begin{equation*}
-    \text{df}(\mathbf{Y}_{:t}) = \mathbb{E}_{\Delta \sim \mathcal{N}(0, \text{Id}_\text{p})}\left[ \langle \frac{\partial \mathbf{\Phi X}_{:t} }{\partial \mathbf{Y}_{:t}}, ?? \rangle \right]
+    \text{df}(\mathbf{\phi X}) =
+    \sum_{t=1}^T \bbE_{\Delta_t \sim \mathcal{N}(0, \text{Id}_\text{n})}
+    \left \langle
+            \frac{\partial \mathbf{\Phi X}_{:t} }{
+            \partial \mathbf{Y}_{:t}} \Delta_t, \Phi \Phi^T \Delta_t
+    \right \rangle
     \enspace .
 \end{equation*}
 %

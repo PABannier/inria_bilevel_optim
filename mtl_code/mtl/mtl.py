@@ -11,7 +11,7 @@ class ReweightedMTL(BaseEstimator, RegressorMixin):
 
     Parameters
     ----------
-    lambda_param : float, default=0.1
+    alpha : float, default=0.1
         Constants that multiplies the L1/L2 mixed norm as a regularizer.
 
     verbose : bool, default=True
@@ -35,17 +35,15 @@ class ReweightedMTL(BaseEstimator, RegressorMixin):
     """
 
     def __init__(
-        self, lambda_param: float = 0.1, n_iterations: int = 10, verbose: bool = True
+        self, alpha: float = 0.1, n_iterations: int = 10, verbose: bool = True
     ):
-        self.lambda_param = lambda_param
+        self.alpha = alpha
         self.verbose = verbose
         self.n_iterations = n_iterations
 
         self.coef_ = None
         self.loss_history_ = []
-        self.clf = MultiTaskLasso(
-            alpha=lambda_param, fit_intercept=False, warm_start=True
-        )
+        self.clf = MultiTaskLasso(alpha=alpha, fit_intercept=False, warm_start=True)
 
     def fit(self, X: np.ndarray, Y: np.ndarray):
         """Fits estimator to the data.
@@ -68,7 +66,7 @@ class ReweightedMTL(BaseEstimator, RegressorMixin):
 
         objective = lambda W: np.sum((Y - X @ W) ** 2) / (
             2 * n_samples
-        ) + self.lambda_param * np.sum(np.sqrt(norm(W, axis=1)))
+        ) + self.alpha * np.sum(np.sqrt(norm(W, axis=1)))
 
         for l in range(self.n_iterations):
             # Trick: rescaling the weights

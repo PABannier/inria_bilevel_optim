@@ -5,20 +5,20 @@ from mtl.simulated_data import simulate_data
 from mtl.mtl import ReweightedMTL
 from mtl.cross_validation import ReweightedMultiTaskLassoCV
 
-from utils import compute_lambda_max, plot_original_reconstructed_signal
+from utils import compute_alpha_max, plot_original_reconstructed_signal
 from utils import plot_original_reconstructed_signal_band
 
 
 def large_experiment_cv(X, Y, coef):
-    lambda_max = compute_lambda_max(X, Y)
-    print("Lambda max for large experiment:", lambda_max)
+    alpha_max = compute_alpha_max(X, Y)
+    print("Alpha max for large experiment:", alpha_max)
 
-    lambdas = np.geomspace(5e-4, 1.8e-3, num=15)
-    regressor = ReweightedMultiTaskLassoCV(lambdas, n_folds=3)
+    alphas = np.geomspace(5e-4, 1.8e-3, num=15)
+    regressor = ReweightedMultiTaskLassoCV(alphas, n_folds=3)
 
     regressor.fit(X, Y)
-    best_lambda = regressor.best_lambda_
-    print("Best lambda:", best_lambda)
+    best_alpha = regressor.best_alpha_
+    print("Best alpha:", best_alpha)
 
     coef_hat = regressor.weights
     plot_original_reconstructed_signal_band(coef, coef_hat)
@@ -34,10 +34,10 @@ def large_experiment_cv(X, Y, coef):
 
 def plot_support_recovery_iterations(X, Y, coef):
     supports = []
-    best_lambda = 2e-3
+    best_alpha = 2e-3
 
     for n_iterations in range(1, 11):
-        estimator = ReweightedMTL(best_lambda, n_iterations, False)
+        estimator = ReweightedMTL(best_alpha, n_iterations, False)
         estimator.fit(X, Y)
 
         coef_hat = estimator.coef_
@@ -56,10 +56,10 @@ def plot_support_recovery_iterations(X, Y, coef):
 
 def plot_support_recovery_regularizing_constant(X, Y, coef):
     supports = []
-    lambdas = np.geomspace(1e-4, 2e-2, num=15)
+    alphas = np.geomspace(1e-4, 2e-2, num=15)
 
-    for lambda_param in lambdas:
-        estimator = ReweightedMTL(lambda_param, verbose=False)
+    for alpha_param in alphas:
+        estimator = ReweightedMTL(alpha_param, verbose=False)
         estimator.fit(X, Y)
 
         coef_hat = estimator.coef_
@@ -69,14 +69,14 @@ def plot_support_recovery_regularizing_constant(X, Y, coef):
 
     fig = plt.figure(figsize=(8, 6))
 
-    xlabels = [str(round(x, 4)) for x in lambdas]
+    xlabels = [str(round(x, 4)) for x in alphas]
 
     plt.plot(supports)
     plt.title(
         "Support recovery against penalizing constant", fontweight="bold", fontsize=20
     )
     plt.xlabel("alpha", fontsize=12)
-    plt.xticks(np.arange(len(lambdas)), xlabels)
+    plt.xticks(np.arange(len(alphas)), xlabels)
     plt.xticks(rotation=45)
     plt.ylabel("Sparsity level", fontsize=12)
     plt.show(block=True)

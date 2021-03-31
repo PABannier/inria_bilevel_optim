@@ -3,7 +3,7 @@ import numpy as np
 from numpy.linalg import norm
 
 
-def compute_lambda_max(X, Y):
+def compute_alpha_max(X, Y):
     B = X.T @ Y
     b = norm(B, axis=1)
     return np.max(b) / X.shape[0]

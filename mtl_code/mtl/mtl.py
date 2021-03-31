@@ -11,7 +11,7 @@ class ReweightedMTL(BaseEstimator, RegressorMixin):
 
     Parameters
     ----------
-    alpha : float, default=0.1
+    lambda_param : float, default=0.1
         Constants that multiplies the L1/L2 mixed norm as a regularizer.
 
     verbose : bool, default=True
@@ -19,10 +19,10 @@ class ReweightedMTL(BaseEstimator, RegressorMixin):
 
     Attributes
     ----------
-    weights : np.ndarray of shape (n_features, n_tasks)
+    coef_ : np.ndarray of shape (n_features, n_tasks)
         Parameter matrix of coefficients for the Multi-Task LASSO.
 
-    loss_history : list
+    loss_history_ : list
         Contains the training loss history after fitting.
 
     n_iterations : int
@@ -35,15 +35,17 @@ class ReweightedMTL(BaseEstimator, RegressorMixin):
     """
 
     def __init__(
-        self, alpha: float = 0.1, n_iterations: int = 10, verbose: bool = True
+        self, lambda_param: float = 0.1, n_iterations: int = 10, verbose: bool = True
     ):
-        self.alpha = alpha
+        self.lambda_param = lambda_param
         self.verbose = verbose
         self.n_iterations = n_iterations
 
-        self.weights = None
+        self.coef_ = None
         self.loss_history_ = []
-        self.clf = MultiTaskLasso(alpha=alpha, fit_intercept=False, warm_start=True)
+        self.clf = MultiTaskLasso(
+            alpha=lambda_param, fit_intercept=False, warm_start=True
+        )
 
     def fit(self, X: np.ndarray, Y: np.ndarray):
         """Fits estimator to the data.
@@ -66,7 +68,7 @@ class ReweightedMTL(BaseEstimator, RegressorMixin):
 
         objective = lambda W: np.sum((Y - X @ W) ** 2) / (
             2 * n_samples
-        ) + self.alpha * np.sum(np.sqrt(norm(W, axis=1)))
+        ) + self.lambda_param * np.sum(np.sqrt(norm(W, axis=1)))
 
         for l in range(self.n_iterations):
             # Trick: rescaling the weights
@@ -88,7 +90,7 @@ class ReweightedMTL(BaseEstimator, RegressorMixin):
             if self.verbose:
                 print(f"Iteration {l}: {loss:.4f}")
 
-        self.weights = coef_hat
+        self.coef_ = coef_hat
 
     def predict(self, X: np.ndarray):
         """Predicts data with the fitted coefficients.
@@ -101,4 +103,4 @@ class ReweightedMTL(BaseEstimator, RegressorMixin):
         check_is_fitted(self)
         X = check_array(X)
 
-        return X @ self.weights
+        return X @ self.coef_

@@ -4,21 +4,21 @@ import matplotlib.pyplot as plt
 from mtl.simulated_data import simulate_data
 from mtl.cross_validation import ReweightedMultiTaskLassoCV
 
-from utils import compute_alpha_max, plot_original_reconstructed_signal
+from utils import compute_lambda_max, plot_original_reconstructed_signal
 from utils import plot_original_reconstructed_signal_band
 
 
 def experiment_cv(X, Y, coef):
-    alpha_max = compute_alpha_max(X, Y)
-    print("Alpha max for large experiment:", alpha_max)
+    lambda_max = compute_lambda_max(X, Y)
+    print("Lambda max for large experiment:", lambda_max)
 
-    alphas = np.geomspace(5e-4, 5e-3, num=20)
-    regressor = ReweightedMultiTaskLassoCV(alphas, n_folds=3)
+    lambdas = np.geomspace(5e-4, 5e-3, num=20)
+    regressor = ReweightedMultiTaskLassoCV(lambdas, n_folds=3)
 
     regressor.fit(X, Y)
-    best_alpha = regressor.best_alpha_
+    best_lambda = regressor.best_lambda_
 
-    coef_hat = regressor.weights
+    coef_hat = regressor.coef_
     plot_original_reconstructed_signal_band(coef, coef_hat)
 
     nnz_original = np.count_nonzero(np.count_nonzero(coef, axis=1))
@@ -26,21 +26,21 @@ def experiment_cv(X, Y, coef):
     print("Number of non-zero rows in original:", nnz_original)
     print("Number of non-zero rows in reconstructed:", nnz_reconstructed)
 
-    return best_alpha
+    return best_lambda
 
 
 def plot_correlation_performance(**data_params):
-    best_alphas, best_cvs = list(), list()
+    best_lambdas, best_cvs = list(), list()
 
     for rho in np.linspace(0, 0.9, 10):
         data_params["corr"] = rho
         X, Y, coef = simulate_data(**data_params)
 
-        alphas = np.geomspace(1e-4, 5e-2, num=15)
+        lambdas = np.geomspace(1e-4, 5e-2, num=15)
         regressor = ReweightedMultiTaskLassoCV(alphas, n_folds=3)
 
         regressor.fit(X, Y)
-        best_alphas.append(regressor.best_alpha_)
+        best_lambdas.append(regressor.best_lambda_)
         best_cvs.append(regressor.best_cv_)
 
     xlabels = [str(round(x, 2)) for x in np.linspace(0, 0.9, 10)]

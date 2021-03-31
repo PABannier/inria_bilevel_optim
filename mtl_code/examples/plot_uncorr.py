@@ -5,19 +5,20 @@ from mtl.simulated_data import simulate_data
 from mtl.mtl import ReweightedMTL
 from mtl.cross_validation import ReweightedMultiTaskLassoCV
 
-from utils import compute_alpha_max, plot_original_reconstructed_signal
+from utils import compute_lambda_max, plot_original_reconstructed_signal
 from utils import plot_original_reconstructed_signal_band
 
 
 def large_experiment_cv(X, Y, coef):
-    alpha_max = compute_alpha_max(X, Y)
-    print("Alpha max for large experiment:", alpha_max)
+    lambda_max = compute_lambda_max(X, Y)
+    print("Lambda max for large experiment:", lambda_max)
 
-    alphas = np.geomspace(5e-4, 1.8e-3, num=15)
-    regressor = ReweightedMultiTaskLassoCV(alphas, n_folds=3)
+    lambdas = np.geomspace(5e-4, 1.8e-3, num=15)
+    regressor = ReweightedMultiTaskLassoCV(lambdas, n_folds=3)
 
     regressor.fit(X, Y)
-    best_alpha = regressor.best_alpha_
+    best_lambda = regressor.best_lambda_
+    print("Best lambda:", best_lambda)
 
     coef_hat = regressor.weights
     plot_original_reconstructed_signal_band(coef, coef_hat)
@@ -33,15 +34,13 @@ def large_experiment_cv(X, Y, coef):
 
 def plot_support_recovery_iterations(X, Y, coef):
     supports = []
-    best_alpha = 2e-3
+    best_lambda = 2e-3
 
     for n_iterations in range(1, 11):
-        estimator = ReweightedMTL(
-            alpha=best_alpha, n_iterations=n_iterations, verbose=False
-        )
+        estimator = ReweightedMTL(best_lambda, n_iterations, False)
         estimator.fit(X, Y)
 
-        coef_hat = estimator.weights
+        coef_hat = estimator.coef_
         nnz_reconstructed = np.count_nonzero(np.count_nonzero(coef_hat, axis=1))
 
         supports.append(nnz_reconstructed)
@@ -57,27 +56,27 @@ def plot_support_recovery_iterations(X, Y, coef):
 
 def plot_support_recovery_regularizing_constant(X, Y, coef):
     supports = []
-    alphas = np.geomspace(1e-4, 2e-2, num=15)
+    lambdas = np.geomspace(1e-4, 2e-2, num=15)
 
-    for alpha in alphas:
-        estimator = ReweightedMTL(alpha=alpha, verbose=False)
+    for lambda_param in lambdas:
+        estimator = ReweightedMTL(lambda_param, verbose=False)
         estimator.fit(X, Y)
 
-        coef_hat = estimator.weights
+        coef_hat = estimator.coef_
         nnz_reconstructed = np.count_nonzero(np.count_nonzero(coef_hat, axis=1))
 
         supports.append(nnz_reconstructed)
 
     fig = plt.figure(figsize=(8, 6))
 
-    xlabels = [str(round(x, 4)) for x in alphas]
+    xlabels = [str(round(x, 4)) for x in lambdas]
 
     plt.plot(supports)
     plt.title(
         "Support recovery against penalizing constant", fontweight="bold", fontsize=20
     )
     plt.xlabel("alpha", fontsize=12)
-    plt.xticks(np.arange(len(alphas)), xlabels)
+    plt.xticks(np.arange(len(lambdas)), xlabels)
     plt.xticks(rotation=45)
     plt.ylabel("Sparsity level", fontsize=12)
     plt.show(block=True)

@@ -50,12 +50,12 @@ class ReweightedMultiTaskLassoCV(BaseEstimator, RegressorMixin):
         self.random_state = random_state
 
         self.best_estimator_ = None
-        self.best_cv_, self.best_alpha_ = np.inf, None
+        self.best_cv_, self.best_lambda_ = np.inf, None
         self.mse_path_ = np.zeros((len(param_grid), n_folds))
 
     @property
-    def weights(self):
-        return self.best_estimator_.weights
+    def coef_(self):
+        return self.best_estimator_.coef_
 
     def fit(self, X: np.ndarray, Y: np.ndarray, n_iterations: int = 10):
         """Fits the cross-validation error estimator
@@ -81,9 +81,11 @@ class ReweightedMultiTaskLassoCV(BaseEstimator, RegressorMixin):
 
         kf = KFold(self.n_folds, random_state=self.random_state)
 
-        for idx_alpha, alpha in enumerate(self.param_grid):
-            print("Fitting MTL estimator with alpha =", alpha)
-            estimator_ = ReweightedMTL(alpha, n_iterations=n_iterations, verbose=False)
+        for idx_lambda, lambda_param in enumerate(self.param_grid):
+            print("Fitting MTL estimator with lambda =", lambda_param)
+            estimator_ = ReweightedMTL(
+                lambda_param, n_iterations=n_iterations, verbose=False
+            )
 
             Y_oof = np.zeros_like(Y)
 
@@ -94,7 +96,7 @@ class ReweightedMultiTaskLassoCV(BaseEstimator, RegressorMixin):
                 estimator_.fit(X_train, Y_train)
                 Y_pred = estimator_.predict(X_valid)
                 Y_oof[valid_indices, :] = Y_pred
-                self.mse_path_[idx_alpha, idx_fold] = mean_squared_error(
+                self.mse_path_[idx_lambda, idx_fold] = mean_squared_error(
                     Y_valid, Y_pred
                 )
 
@@ -103,16 +105,16 @@ class ReweightedMultiTaskLassoCV(BaseEstimator, RegressorMixin):
             if cv_score < self.best_cv_:
                 print(
                     f"Criterion reduced from {self.best_cv_:.5f} to "
-                    + f"{cv_score:.5f} for alpha = {alpha}"
+                    + f"{cv_score:.5f} for lambda = {lambda_param}"
                 )
 
                 self.best_cv_ = cv_score
-                self.best_alpha_ = alpha
+                self.best_lambda_ = lambda_param
                 self.best_estimator_ = estimator_
 
         print("\n")
         print(f"Best criterion: {self.best_cv_}")
-        print(f"Best alpha: {self.best_alpha_}")
+        print(f"Best lambda: {self.best_lambda_}")
 
     def predict(self, X: np.ndarray):
         """Predicts data with the fitted coefficients.

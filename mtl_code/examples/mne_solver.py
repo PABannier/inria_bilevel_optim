@@ -5,7 +5,7 @@ from mne.datasets import sample
 from mne.viz import plot_sparse_source_estimates
 
 from mtl.mtl import ReweightedMTL
-from utils import compute_alpha_max
+from utils import compute_lambda_max
 
 
 def load_data():
@@ -137,13 +137,13 @@ def solver(M, G, n_orient=1):
         We have ``X_full[active_set] == X`` where X_full is the full X matrix
         such that ``M = G X_full``.
     """
-    alpha_max = compute_alpha_max(G, M)
-    print("Alpha max for large experiment:", alpha_max)
+    lambda_max = compute_lambda_max(G, M)
+    print("Alpha max for large experiment:", lambda_max)
 
-    regressor = ReweightedMTL(alpha=2.5e-3)
+    regressor = ReweightedMTL(2.5e-3)
     regressor.fit(G, M)
 
-    X = regressor.weights
+    X = regressor.coef_
 
     indices = np.argsort(np.sum(X ** 2, axis=1))[-10:]
     active_set = np.zeros(G.shape[1], dtype=bool)

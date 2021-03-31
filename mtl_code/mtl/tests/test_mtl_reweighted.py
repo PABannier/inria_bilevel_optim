@@ -28,7 +28,7 @@ def test_reconstruction():
     regressor = ReweightedMultiTaskLassoCV(alphas, n_folds=3)
 
     regressor.fit(X, Y)
-    coef_hat = regressor.weights
+    coef_hat = regressor.coef_
 
     nnz_reconstructed = np.count_nonzero(np.count_nonzero(coef_hat, axis=1))
 

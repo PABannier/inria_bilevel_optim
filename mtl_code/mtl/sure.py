@@ -1,6 +1,5 @@
 import numpy as np
 from numpy.linalg import norm
-
 from sklearn.utils import check_random_state
 
 from mtl_code.mtl import ReweightedMTL

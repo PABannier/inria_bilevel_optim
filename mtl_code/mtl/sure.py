@@ -72,95 +72,26 @@ class SURE:
         val: float
             Monte-Carlo Finite Difference SURE approximation.
         """
-        n_features, n_tasks = Y.shape
+        n_samples, n_tasks = Y.shape
 
         if self.delta is None or self.eps is None:
-            self.init_eps_and_delta(n_features)
+            self.init_eps_and_delta(n_samples)
 
-        mask, dense = self.forward_lasso(X, Y, alpha, n_iterations)
-        mask2, dense2 = self.forward_lasso(
-            X, Y + self.eps * self.delta, alpha, n_iterations
-        )
-
-        val = self.get_val_outer(X, Y, mask, dense, mask2, weight2)
-        return val
-
-    def get_val_outer(self, X, Y, mask, weight, mask2, weight2):
-        """Computes the degrees of freedom and the SURE.
-
-        Parameters
-        ----------
-        X: np.ndarray of shape (n_samples, n_features)
-            Design matrix.
-
-        Y: np.ndarray of shape (n_samples, n_tasks)
-            Target matrix.
-
-        mask: np.ndarray of shape (n_features, n_tasks)
-            Boolean array corresponding to the non-zero
-            coefficients of the solution of the first
-            optimization problem.
-
-        dense: np.ndarray
-            Values of the non-zero coefficients of the
-            solution of the first optimization problem.
-
-        mask2: np.ndarray of shape (n_features, n_tasks)
-            Boolean array corresponding to the non-zero
-            coefficients of the solution of the second
-            optimization problem.
-
-        dense2: np.ndarray
-            Values of the non-zero coefficients of the
-            solution of the second optimization problem.
-
-        Returns
-        -------
-        val: float
-            SURE approximation using Monte-Carlo finite differences.
-        """
-        X_m = X[:, mask]
-        dof = (X[:, mask2] @ dense2 - X_m @ dense) @ self.delta  # Where is + epsilon?
-        dof /= self.epsilon
-
-        val = norm(Y - X_m @ dense) ** 2
-        val -= n_features * n_tasks * self.sigma ** 2
-        val += 2 * n_tasks * dof * self.sigma ** 2
-        return val
-
-    def forward(self, X, Y, alpha, n_iterations):
-        """Solves the Reweighted Multi-Task LASSO problem
-        for X, Y and parameters alpha and n_iterations.
-
-        Parameters
-        ----------
-        X: np.ndarray of shape (n_samples, n_features)
-            Design matrix.
-
-        Y: np.ndarray of shape (n_samples, n_tasks)
-            Target matrix.
-
-        alpha: float
-            Regularizing constant.
-
-        n_iterations: int, default=10
-            Number of reweighting steps.
-
-        Returns
-        -------
-        mask: np.ndarray
-            Boolean array corresponding to the support.
-
-        dense: np.ndarray
-            Values of the non-zero coefficients of the
-            solution of the optimization problem.
-        """
+        # fit 2 models in Y and Y + epsilon * delta
         model = ReweightedMTL(alpha, n_iterations, verbose=False)
         model.fit(X, Y)
+        coef1 = model.coef_
+        model.fit(X, Y + self.eps * self.delta)
+        coef2 = model.coef_
 
-        mask = model.weights[:, 0] != 0
-        dense = model.weights[mask, :]
-        return mask, dense
+        # compute the dof
+        dof = ((X @ coef2 - X @ coef1) * self.delta).sum() / self.epsilon
+        # compute the SURE
+        sure = norm(Y - X @ coef1) ** 2
+        sure -= n_samples * n_tasks * self.sigma ** 2
+        sure += 2 * dof * self.sigma ** 2
+
+        return sure
 
     def init_eps_and_delta(self, n_features):
         """Implements a heuristic found by [1] to correctly

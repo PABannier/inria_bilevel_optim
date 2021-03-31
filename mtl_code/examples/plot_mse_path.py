@@ -297,46 +297,51 @@ def plot_mse_path_reweighted_mtl_wrt_correlation():
 
 
 def plot_mse_path_wrt_num_iterations(corr=0.2):
-    n_iterations = [1, 3, 5, 7, 10]  # No need beyond 10 (alpha_min is the same)
+    n_iterations = [1, 5]  # No need beyond 10 (alpha_min is the same)
     colors = pl.cm.jet(np.linspace(0, 1, len(n_iterations)))
 
-    plt.figure(figsize=(8, 6))
+    dict_alpha_y = {}
+
+    X, Y, _ = simulate_data(
+        n_samples=50,
+        n_features=250,
+        n_tasks=25,
+        nnz=8,
+        corr=corr,
+        random_state=2020,
+        snr=1,
+    )
+
+    X = np.asfortranarray(X)
+    Y = np.asfortranarray(Y)
+
+    n_folds = 5
+
+    alpha_max = compute_alpha_max(X, Y)
+    print("Alpha max for large experiment:", alpha_max)
+
+    alphas = np.geomspace(alpha_max / 100, alpha_max, num=60)
 
     for n_iter, color in zip(n_iterations, colors):
-        X, Y, _ = simulate_data(
-            n_samples=50,
-            n_features=250,
-            n_tasks=25,
-            nnz=8,
-            corr=corr,
-            random_state=2020,
-            snr=1,
-        )
-
-        X = np.asfortranarray(X)
-        Y = np.asfortranarray(Y)
-
-        n_folds = 5
-
-        alpha_max = compute_alpha_max(X, Y)
-        print("Alpha max for large experiment:", alpha_max)
-
-        alphas = np.geomspace(alpha_max / 100, alpha_max, num=60)
 
         reweighted_mtl_lasso = ReweightedMultiTaskLassoCV(alphas, n_folds=n_folds)
         reweighted_mtl_lasso.fit(X, Y, n_iterations=n_iter)
 
-        x = alphas
         y = reweighted_mtl_lasso.mse_path_.mean(axis=1)
 
-        plt.semilogx(x, y, linewidth=1.5, color=color, label=f"{n_iter}")
+        dict_alpha_y[n_iter] = alphas, y
 
-        reweighted_mtl_min_idx = reweighted_mtl_lasso.mse_path_.mean(axis=1).argmin()
+    plt.figure(figsize=(8, 6))
+    for n_iter in dict_alpha_y.keys():
+        alpha, y = dict_alpha_y[n_iter]
+        plt.semilogx(alpha / alpha_max, y, linewidth=1.5, label=f"{n_iter}")
+
+        reweighted_mtl_min_idx = y.argmin()
         plt.axvline(
-            x=alphas[reweighted_mtl_min_idx], color=color, linewidth=3, linestyle="--"
+            x=alphas[reweighted_mtl_min_idx] / alpha_max, linewidth=3, linestyle="--"
         )
 
-    plt.xlabel("alpha", fontsize=12)
+    plt.xlabel("$\lambda / \lambda_{\max}$", fontsize=12)
     plt.ylabel("MSE", fontsize=12)
     plt.title(
         f"MSE path vs. number of iterations - Reweighted MTL - Corr: {corr}",

@@ -634,7 +634,7 @@ Note that $\sigma$ is an unknown quantity, thus it needs to be estimated with an
 %
 \subsubsection*{Monte-Carlo SURE}
 
-The Monte-Carlo sampling technique consists in evaluating the degrees of freedom by randomly sampling $p$ vectors that will serve to compute $p$ directional derivatives
+The Monte-Carlo sampling technique consists in evaluating the degrees of freedom by randomly sampling $n$ vectors that will serve to compute $n$ directional derivatives
 of $\mathbf{Y} \rightarrow \mathbf{\hat{B}(Y)}$, where $\hat{\bf B}$ is some estimator of $\bf B_0$ obtained using a non-convex penalty.
 %
 More formally, for $t = 1, \dots, T$, \cite{Ramani_Blu_Unser08} infers that:
@@ -683,9 +683,102 @@ Monte-Carlo approach can be used in conjunction with finite difference methods, 
 the Finite Difference Monte Carlo (FDMC) writes:
 
 \begin{equation*}
-    \text{df}(\hat{\mathbf{B}}) \approx
+    \text{df}(\hat{\mathbf{B}}) \approx \frac{1}{n\epsilon}
+    \sum_{t=1}^T \sum_{i=1}^n
+    \left \langle
+            \left(
+                \mathbf{\hat{B}}_{:t}(\mathbf{Y}_{:t} + \epsilon e_i)
+                - \mathbf{\hat{B}}_{:t}(\mathbf{Y}_{:t})
+            \right) \Delta_t
+            ,
+            \mathbf{XX}^{\top} \Delta_t
+    \right \rangle
+    \enspace .
 \end{equation*}
+%
+\underline{Proof}: We will prove the previous equality for $t=1, \dots, T$. Let
+$\epsilon > 0$ and $\Delta_t$ be a zero-mean i.i.d. random vector independent of
+$\mathbf{Y}_{:t}$ with unit variance and bounded higher moments.
+\\
+\\
+Writing the second-order Taylor expansion of $\hat{\mathbf{B}_{:t}}(\mathbf{Y}_{:t})$,
 
+\begin{equation*}
+    \hat{\mathbf{B}}_{:t}(\mathbf{Y}_{:t} + \epsilon \Delta_t) =
+    \hat{\mathbf{B}}_{:t}(\mathbf{Y}_{:t})
+    + \epsilon \mathcal{J}_{\hat{\mathbf{B}}_{:t}}(\mathbf{Y}_{:t}) \Delta_t
+    + \epsilon^2 r_t
+    \enspace .
+\end{equation*}
+%
+where $\mathcal{J}_{\hat{\mathbf{B}}_{:t}}(\mathbf{Y}_{:t})$ is the Jacobian of $\hat{\mathbf{B}}_{:t}$
+evaluated at $\mathbf{Y}_{:t}$ and $r_t$ is a residual term that tends towards 0 when $\epsilon$ is infinitely
+small. It follows that:
+
+\begin{equation*}
+    \frac{1}{\epsilon}
+        \left(
+            \Delta_t^{\top} (\hat{\mathbf{B}}_{:t}(\mathbf{Y}_{:t}
+            + \epsilon \Delta_t) - \hat{\mathbf{B}}_{:t}(\mathbf{Y}_{:t}))
+        \right)
+    =
+    \Delta_t^{\top} \mathcal{J}_{\hat{\mathbf{B}}_{:t}}(\mathbf{Y}_{:t}) \Delta_t
+    + \epsilon \Delta_t^{\top}r_t
+\end{equation*}
+%
+Taking the expectation on both sides, it follows:
+
+\begin{align*}
+    \mathbb{E} \left(
+        \frac{1}{\epsilon}
+        \left(
+            \Delta_t^{\top} (\hat{\mathbf{B}}_{:t}(\mathbf{Y}_{:t}
+            + \epsilon \Delta_t) - \hat{\mathbf{B}}_{:t}(\mathbf{Y}_{:t}))
+        \right)
+    \right)
+    &=
+    \mathbb{E} \left(
+        \Delta_t^{\top} \mathcal{J}_{\hat{\mathbf{B}}_{:t}}(\mathbf{Y}_{:t}) \Delta_t
+    \right) + \epsilon \mathbb{E} \left( \Delta_t^{\top} r_t \right)\\
+    &=
+    \mathbb{E} \left(
+        \tr \left(
+            \Delta_t^{\top} \mathcal{J}_{\hat{\mathbf{B}}_{:t}}(\mathbf{Y}_{:t}) \Delta_t
+        \right)
+    \right) + \epsilon \mathbb{E} \left( \Delta_t^{\top} r_t \right)\\
+    &=
+    \mathbb{E} \left(
+        \tr \left(
+            \Delta_t \Delta_t^{\top} \mathcal{J}_{\hat{\mathbf{B}}_{:t}}(\mathbf{Y}_{:t})
+        \right)
+    \right) + \epsilon \mathbb{E} \left( \Delta_t^{\top} r_t \right)\\
+    &=
+    \tr \left(
+        \mathbb{E} \left(
+            \Delta_t \Delta_t^{\top}
+        \right)
+        \mathcal{J}_{\hat{\mathbf{B}}_{:t}}(\mathbf{Y}_{:t})
+    \right) + \epsilon \mathbb{E} \left( \Delta_t^{\top} r_t \right)\\
+    &=
+    \tr \left(
+        \mathcal{J}_{\hat{\mathbf{B}}_{:t}}(\mathbf{Y}_{:t})
+    \right) + \epsilon \mathbb{E} \left( \Delta_t^{\top} r_t \right)
+\end{align*}
+%
+Therefore,
+
+\begin{equation*}
+    \lim_{\epsilon \rightarrow 0} \mathbb{E} \left(
+        \frac{1}{\epsilon}
+        \left(
+            \Delta_t^{\top} (\hat{\mathbf{B}}_{:t}(\mathbf{Y}_{:t}
+            + \epsilon \Delta_t) - \hat{\mathbf{B}}_{:t}(\mathbf{Y}_{:t}))
+        \right)
+    \right)
+    = \tr \left(
+        \mathcal{J}_{\hat{\mathbf{B}}_{:t}}(\mathbf{Y}_{:t})
+    \right)
+\end{equation*}
 
 \newpage
 \bibliographystyle{plainnat}

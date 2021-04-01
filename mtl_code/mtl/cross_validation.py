@@ -1,6 +1,6 @@
 import numpy as np
 from sklearn.base import BaseEstimator, RegressorMixin
-from sklearn.metrics import mean_squared_error
+from sklearn.metrics import mean_squared_error, f1_score, jaccard_score
 from sklearn.model_selection import KFold
 from sklearn.utils.validation import check_X_y, check_is_fitted, check_array
 from mtl.mtl import ReweightedMTL
@@ -51,13 +51,22 @@ class ReweightedMultiTaskLassoCV(BaseEstimator, RegressorMixin):
 
         self.best_estimator_ = None
         self.best_cv_, self.best_alpha_ = np.inf, None
+
         self.mse_path_ = np.zeros((len(param_grid), n_folds))
+        self.f1_path_ = np.zeros((len(param_grid), n_folds))
+        self.jaccard_path_ = np.zeros((len(param_grid), n_folds))
 
     @property
     def coef_(self):
         return self.best_estimator_.coef_
 
-    def fit(self, X: np.ndarray, Y: np.ndarray, n_iterations: int = 10):
+    def fit(
+        self,
+        X: np.ndarray,
+        Y: np.ndarray,
+        n_iterations: int = 10,
+        coef_true: np.ndarray = None,
+    ):
         """Fits the cross-validation error estimator
         on X and Y.
 
@@ -71,6 +80,10 @@ class ReweightedMultiTaskLassoCV(BaseEstimator, RegressorMixin):
 
         n_iterations : int
             Number of reweighting iterations performed during fitting.
+
+        coef_true : np.ndarray of shape (n_features, n_tasks)
+            Coefficient matrix. To compute f1_score and jaccard_score paths,
+            it needs to be specified.
         """
         X, Y = check_X_y(X, Y, multi_output=True)
 
@@ -96,9 +109,19 @@ class ReweightedMultiTaskLassoCV(BaseEstimator, RegressorMixin):
                 estimator_.fit(X_train, Y_train)
                 Y_pred = estimator_.predict(X_valid)
                 Y_oof[valid_indices, :] = Y_pred
+
                 self.mse_path_[idx_alpha, idx_fold] = mean_squared_error(
                     Y_valid, Y_pred
                 )
+
+                if coef_true is not None:
+                    self.f1_path_[idx_alpha, idx_fold] = f1_score(
+                        coef_true != 0, estimator_.coef_ != 0, average="macro"
+                    )
+
+                    self.jaccard_path_[idx_alpha, idx_fold] = jaccard_score(
+                        coef_true != 0, estimator_.coef_ != 0, average="macro"
+                    )
 
             cv_score = self.criterion(Y, Y_oof)
 

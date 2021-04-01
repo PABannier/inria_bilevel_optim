@@ -9,6 +9,14 @@ from examples.utils import compute_alpha_max
 
 
 def test_best_alpha_sure_mse(random_state=2020):
+    """Compares that the alpha that minimizes SURE and
+    CV MSE are the same for a relatively small example.
+
+    Parameters
+    ----------
+    random_state: int or None, default=2020
+        For reproducibility purposes, the seed is set.
+    """
     X, Y, _, sigma = simulate_data(
         n_samples=50,
         n_features=250,

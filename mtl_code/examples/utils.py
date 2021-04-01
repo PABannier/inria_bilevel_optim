@@ -1,6 +1,9 @@
-import matplotlib.pyplot as plt
 import numpy as np
 from numpy.linalg import norm
+
+import matplotlib.pyplot as plt
+
+from sklearn.metrics import f1_score, mean_squared_error, jaccard_score
 
 
 def compute_alpha_max(X, Y):

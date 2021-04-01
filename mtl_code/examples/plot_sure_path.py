@@ -129,12 +129,15 @@ def impact_correlation_coefficient_on_sure(random_state=2020):
 
 def plot_support_recovery(random_state=0):
     # Generating data
+    corr = 0
+    n_iterations = 5
+
     X, Y, coef, sigma = simulate_data(
         n_samples=50,
         n_features=250,
         n_tasks=25,
-        nnz=8,
-        corr=0.2,
+        nnz=2,
+        corr=corr,
         random_state=random_state,
         snr=0.8,
     )
@@ -152,8 +155,9 @@ def plot_support_recovery(random_state=0):
     alphas = np.geomspace(alpha_max / 10, alpha_max, num=50)
 
     # Modelling and fitting data
-    reweigthed_cv = ReweightedMultiTaskLassoCV(alphas, n_folds=n_folds)
-    reweigthed_cv.fit(X, Y, coef_true=coef)
+    reweigthed_cv = ReweightedMultiTaskLassoCV(
+        alphas, n_folds=n_folds)
+    reweigthed_cv.fit(X, Y, coef_true=coef, n_iterations=n_iterations)
 
     sure_estimator = SURE(sigma, random_state=random_state)
     sure_metrics = []
@@ -225,6 +229,7 @@ def plot_support_recovery(random_state=0):
         axes[i][j].legend()
 
     plt.show()
+
 
 
 if __name__ == "__main__":

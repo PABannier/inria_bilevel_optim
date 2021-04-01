@@ -4,8 +4,9 @@ from sklearn.base import BaseEstimator, RegressorMixin
 from sklearn.utils.validation import check_X_y, check_is_fitted, check_array
 from sklearn.utils import check_random_state
 
-# from celer import MultiTaskLasso
-from sklearn.linear_model import MultiTaskLasso
+from celer import MultiTaskLasso
+
+# from sklearn.linear_model import MultiTaskLasso
 
 
 class ReweightedMTL(BaseEstimator, RegressorMixin):
@@ -45,7 +46,8 @@ class ReweightedMTL(BaseEstimator, RegressorMixin):
 
         self.coef_ = None
         self.loss_history_ = []
-        self.clf = MultiTaskLasso(alpha=alpha, fit_intercept=False, warm_start=True)
+        # self.clf = MultiTaskLasso(alpha=alpha, fit_intercept=False, warm_start=True)
+        self.clf = MultiTaskLasso(alpha=alpha, fit_intercept=False)
 
     def fit(self, X: np.ndarray, Y: np.ndarray):
         """Fits estimator to the data.

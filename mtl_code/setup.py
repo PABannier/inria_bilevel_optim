@@ -15,5 +15,5 @@ setup(
         "pandas",
         "ipython",
     ],
-    packages=[find_packages()],
+    packages=find_packages(),
 )

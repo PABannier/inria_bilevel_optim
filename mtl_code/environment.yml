@@ -1,8 +1,8 @@
-name: mne_env
+name: mne
 channels:
 - conda-forge
 dependencies:
-- python=3.8.1
+- python>=3.8
 - pip
 - numpy
 - scipy

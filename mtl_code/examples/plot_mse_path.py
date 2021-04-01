@@ -225,7 +225,9 @@ def plot_comparison_mse_path_lasso_across_folds():
         label="Mean",
     )
 
-    reweighted_mtl_min_idx = reweighted_mtl_lasso.mse_path_.mean(axis=1).argmin()
+    reweighted_mtl_min_idx = reweighted_mtl_lasso.mse_path_.mean(
+        axis=1
+    ).argmin()
     axes[1].axvline(
         x=alphas[reweighted_mtl_min_idx] / alpha_max,
         color="black",
@@ -284,7 +286,9 @@ def plot_mse_path_reweighted_mtl_wrt_correlation():
 
         alphas = np.geomspace(alpha_max / 10, alpha_max, num=30)
 
-        reweighted_mtl_lasso = ReweightedMultiTaskLassoCV(alphas, n_folds=n_folds)
+        reweighted_mtl_lasso = ReweightedMultiTaskLassoCV(
+            alphas, n_folds=n_folds
+        )
         reweighted_mtl_lasso.fit(X, Y)
 
         x = alphas
@@ -299,7 +303,9 @@ def plot_mse_path_reweighted_mtl_wrt_correlation():
             label=f"{corr}",
         )
 
-        reweighted_mtl_min_idx = reweighted_mtl_lasso.mse_path_.mean(axis=1).argmin()
+        reweighted_mtl_min_idx = reweighted_mtl_lasso.mse_path_.mean(
+            axis=1
+        ).argmin()
         plt.axvline(x=alphas[reweighted_mtl_min_idx] / alpha_max, color=color)
 
     plt.xlabel("$\lambda / \lambda_{\max}$", fontsize=12)
@@ -340,7 +346,9 @@ def plot_mse_path_wrt_num_iterations(corr=0.2):
     alphas = np.geomspace(alpha_max / 50, alpha_max, num=60)
 
     for n_iter, color in zip(n_iterations, colors):
-        reweighted_mtl_lasso = ReweightedMultiTaskLassoCV(alphas, n_folds=n_folds)
+        reweighted_mtl_lasso = ReweightedMultiTaskLassoCV(
+            alphas, n_folds=n_folds
+        )
         reweighted_mtl_lasso.fit(X, Y, n_iterations=n_iter)
 
         y = reweighted_mtl_lasso.mse_path_.mean(axis=1)
@@ -351,7 +359,11 @@ def plot_mse_path_wrt_num_iterations(corr=0.2):
     for color, n_iter in zip(colors, dict_alpha_y.keys()):
         alpha_param, y = dict_alpha_y[n_iter]
         plt.semilogx(
-            alpha_param / alpha_max, y, color=color, linewidth=1.5, label=f"{n_iter}"
+            alpha_param / alpha_max,
+            y,
+            color=color,
+            linewidth=1.5,
+            label=f"{n_iter}",
         )
 
         reweighted_mtl_min_idx = y.argmin()

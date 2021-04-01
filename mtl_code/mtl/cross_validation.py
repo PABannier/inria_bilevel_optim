@@ -42,7 +42,9 @@ class ReweightedMultiTaskLassoCV(BaseEstimator, RegressorMixin):
         random_state: int = None,
     ):
         if not isinstance(param_grid, (list, np.ndarray)):
-            raise TypeError("The parameter grid must be a list or a Numpy array.")
+            raise TypeError(
+                "The parameter grid must be a list or a Numpy array."
+            )
 
         self.param_grid = param_grid
         self.criterion = criterion
@@ -97,12 +99,14 @@ class ReweightedMultiTaskLassoCV(BaseEstimator, RegressorMixin):
         for idx_alpha, alpha_param in enumerate(self.param_grid):
             print("Fitting MTL estimator with alpha =", alpha_param)
             estimator_ = ReweightedMTL(
-                alpha_param, n_iterations=n_iterations, verbose=False
+                alpha_param, n_iterations=n_iterations, verbose=True
             )
 
             Y_oof = np.zeros_like(Y)
 
-            for idx_fold, (train_indices, valid_indices) in enumerate(kf.split(X, Y)):
+            for idx_fold, (train_indices, valid_indices) in enumerate(
+                kf.split(X, Y)
+            ):
                 X_train, Y_train = X[train_indices, :], Y[train_indices, :]
                 X_valid, Y_valid = X[valid_indices, :], Y[valid_indices, :]
 
@@ -149,4 +153,4 @@ class ReweightedMultiTaskLassoCV(BaseEstimator, RegressorMixin):
         """
         check_is_fitted(self)
         X = check_array(X)
-        return self.best_estimator.predict(X)
+        return self.best_estimator_.predict(X)

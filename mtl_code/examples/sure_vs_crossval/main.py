@@ -18,6 +18,7 @@ from examples.utils import compute_alpha_max
 
 
 def reconstruct_signal(corr, random_state=0):
+    print(f"=== Simulating data for {corr} ===")
     X, Y, coef, sigma = simulate_data(
         n_samples=30, n_features=100, n_tasks=50, nnz=5, snr=1.5, corr=corr
     )
@@ -50,15 +51,21 @@ def reconstruct_signal(corr, random_state=0):
     joblib.dump(reweighted_scores, f"data/scores_reweighted_corr_{corr}.pkl")
 
     # Non-reweighted
-    def scoring(estimator, X_test, Y_test):
-        f1 = f1_score(coef != 0, estimator.coef_ != 0, average="macro")
-        jac = jaccard_score(coef != 0, estimator.coef_ != 0, average="macro")
-        mse = mean_squared_error(estimator.predict(X_test), Y_test)
-        return f1, jac, mse
+    regressor = MultiTaskLassoCV(alphas=alphas, cv=5)
+    regressor.fit(X, Y)
+
+    sure_path = []
+
+    for alpha in alphas:
+        estimator = SURE(MultiTaskLasso, sigma, random_state=random_state)
+        metric = estimator.get_val(X, Y, alpha, n_iterations=5)
+        sure_path.append(metric)
+
+    lasso_scores = {"mse": regressor.mse_path_, "sure": sure_path}
+
+    joblib.dump(lasso_scores, f"data/scores_lasso_corr_{corr}.pkl")
 
 
 if __name__ == "__main__":
-    reconstruct_signal(0)
-
-    # for c in [0, 0.3, 0.5, 0.7, 0.9]:
-    #    reconstruct_signal(c)
+    for c in [0, 0.3, 0.5, 0.7, 0.9]:
+        reconstruct_signal(c)

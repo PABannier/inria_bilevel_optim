@@ -7,7 +7,7 @@ import mne
 from mne.datasets import sample
 from mne.viz import plot_sparse_source_estimates
 
-from mtl.mtl import ReweightedMTL
+from mtl.mtl import ReweightedMultiTaskLasso
 from mtl.cross_validation import ReweightedMultiTaskLassoCV
 from utils import compute_alpha_max
 
@@ -151,11 +151,13 @@ def solver(M, G, n_orient=1):
     alpha_max = compute_alpha_max(G, M)
     print("Alpha max for large experiment:", alpha_max)
 
-    alphas = np.geomspace(alpha_max/2, alpha_max / 20, num=15)
+    alphas = np.geomspace(alpha_max / 2, alpha_max / 20, num=15)
     n_folds = 5
 
-    regressor = ReweightedMultiTaskLassoCV(alphas, n_folds=n_folds)
-    regressor.fit(G, M, n_iterations=5)
+    regressor = ReweightedMultiTaskLassoCV(
+        alphas, n_folds=n_folds, n_iterations=5
+    )
+    regressor.fit(G, M)
 
     # Plot MSE path
     colors = pl.cm.jet(np.linspace(0, 1, n_folds))
@@ -194,7 +196,7 @@ def solver(M, G, n_orient=1):
     plt.legend()
     plt.show(block=True)
 
-    regressor = ReweightedMTL(regressor.best_alpha_, n_iterations=5)
+    regressor = ReweightedMultiTaskLasso(regressor.best_alpha_, n_iterations=5)
     regressor.fit(G, M)
     X = regressor.coef_
 

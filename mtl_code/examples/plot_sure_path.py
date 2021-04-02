@@ -8,7 +8,7 @@ from sklearn.linear_model import MultiTaskLassoCV
 
 from mtl.sure import SURE
 from mtl.simulated_data import simulate_data
-from mtl.mtl import ReweightedMTL
+from mtl.mtl import ReweightedMultiTaskLasso
 from mtl.cross_validation import ReweightedMultiTaskLassoCV
 
 from utils import compute_alpha_max, plot_sure_mse_path
@@ -156,8 +156,9 @@ def plot_support_recovery(random_state=0):
 
     # Modelling and fitting data
     reweigthed_cv = ReweightedMultiTaskLassoCV(
-        alphas, n_folds=n_folds)
-    reweigthed_cv.fit(X, Y, coef_true=coef, n_iterations=n_iterations)
+        alphas, n_folds=n_folds, n_iterations=n_iterations
+    )
+    reweigthed_cv.fit(X, Y, coef_true=coef)
 
     sure_estimator = SURE(sigma, random_state=random_state)
     sure_metrics = []
@@ -216,7 +217,9 @@ def plot_support_recovery(random_state=0):
             )
 
         else:
-            axes[i][j].semilogx(alphas / alpha_max, sure_metrics, color="deepskyblue")
+            axes[i][j].semilogx(
+                alphas / alpha_max, sure_metrics, color="deepskyblue"
+            )
 
             axes[i][j].axvline(
                 x=alphas[vline_idx] / alpha_max,
@@ -229,7 +232,6 @@ def plot_support_recovery(random_state=0):
         axes[i][j].legend()
 
     plt.show()
-
 
 
 if __name__ == "__main__":

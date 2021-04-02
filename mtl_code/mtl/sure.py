@@ -2,7 +2,7 @@ import numpy as np
 from numpy.linalg import norm
 from sklearn.utils import check_random_state
 
-from mtl.mtl import ReweightedMTL
+from mtl.mtl import ReweightedMultiTaskLasso
 
 
 class SURE:
@@ -77,7 +77,7 @@ class SURE:
             self.init_eps_and_delta(n_samples, n_tasks)
 
         # fit 2 models in Y and Y + epsilon * delta
-        model = ReweightedMTL(alpha, n_iterations, verbose=False)
+        model = ReweightedMultiTaskLasso(alpha, n_iterations, verbose=False)
         model.fit(X, Y)
         coef1 = model.coef_
         model.fit(X, Y + self.eps * self.delta)

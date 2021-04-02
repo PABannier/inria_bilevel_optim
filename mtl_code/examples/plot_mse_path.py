@@ -347,9 +347,9 @@ def plot_mse_path_wrt_num_iterations(corr=0.2):
 
     for n_iter, color in zip(n_iterations, colors):
         reweighted_mtl_lasso = ReweightedMultiTaskLassoCV(
-            alphas, n_folds=n_folds
+            alphas, n_folds=n_folds, n_iterations=n_iter
         )
-        reweighted_mtl_lasso.fit(X, Y, n_iterations=n_iter)
+        reweighted_mtl_lasso.fit(X, Y)
 
         y = reweighted_mtl_lasso.mse_path_.mean(axis=1)
 

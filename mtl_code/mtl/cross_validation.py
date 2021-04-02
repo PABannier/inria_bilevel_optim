@@ -100,7 +100,7 @@ class ReweightedMultiTaskLassoCV(BaseEstimator, RegressorMixin):
         for idx_alpha, alpha_param in enumerate(self.alphas):
             print("Fitting MTL estimator with alpha =", alpha_param)
             estimator_ = ReweightedMultiTaskLasso(
-                alpha_param, n_iterations=self.n_iterations, verbose=True
+                alpha_param, n_iterations=self.n_iterations, verbose=False
             )
 
             Y_oof = np.zeros_like(Y)

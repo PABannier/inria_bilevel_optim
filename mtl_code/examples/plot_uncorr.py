@@ -18,6 +18,7 @@ def large_experiment_cv(X, Y, coef):
 
     regressor.fit(X, Y)
     best_alpha = regressor.best_alpha_
+    print("Best alpha:", best_alpha)
 
     coef_hat = regressor.weights
     plot_original_reconstructed_signal_band(coef, coef_hat)
@@ -36,12 +37,10 @@ def plot_support_recovery_iterations(X, Y, coef):
     best_alpha = 2e-3
 
     for n_iterations in range(1, 11):
-        estimator = ReweightedMTL(
-            alpha=best_alpha, n_iterations=n_iterations, verbose=False
-        )
+        estimator = ReweightedMTL(best_alpha, n_iterations, False)
         estimator.fit(X, Y)
 
-        coef_hat = estimator.weights
+        coef_hat = estimator.coef_
         nnz_reconstructed = np.count_nonzero(np.count_nonzero(coef_hat, axis=1))
 
         supports.append(nnz_reconstructed)
@@ -59,11 +58,11 @@ def plot_support_recovery_regularizing_constant(X, Y, coef):
     supports = []
     alphas = np.geomspace(1e-4, 2e-2, num=15)
 
-    for alpha in alphas:
-        estimator = ReweightedMTL(alpha=alpha, verbose=False)
+    for alpha_param in alphas:
+        estimator = ReweightedMTL(alpha_param, verbose=False)
         estimator.fit(X, Y)
 
-        coef_hat = estimator.weights
+        coef_hat = estimator.coef_
         nnz_reconstructed = np.count_nonzero(np.count_nonzero(coef_hat, axis=1))
 
         supports.append(nnz_reconstructed)

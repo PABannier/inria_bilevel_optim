@@ -3,7 +3,10 @@ from numpy.linalg import norm
 from sklearn.base import BaseEstimator, RegressorMixin
 from sklearn.utils.validation import check_X_y, check_is_fitted, check_array
 from sklearn.utils import check_random_state
-from sklearn.linear_model import MultiTaskLasso
+
+from celer import MultiTaskLasso
+
+# from sklearn.linear_model import MultiTaskLasso
 
 
 class ReweightedMTL(BaseEstimator, RegressorMixin):
@@ -19,10 +22,10 @@ class ReweightedMTL(BaseEstimator, RegressorMixin):
 
     Attributes
     ----------
-    weights : np.ndarray of shape (n_features, n_tasks)
+    coef_ : np.ndarray of shape (n_features, n_tasks)
         Parameter matrix of coefficients for the Multi-Task LASSO.
 
-    loss_history : list
+    loss_history_ : list
         Contains the training loss history after fitting.
 
     n_iterations : int
@@ -41,9 +44,10 @@ class ReweightedMTL(BaseEstimator, RegressorMixin):
         self.verbose = verbose
         self.n_iterations = n_iterations
 
-        self.weights = None
+        self.coef_ = None
         self.loss_history_ = []
-        self.clf = MultiTaskLasso(alpha=alpha, fit_intercept=False, warm_start=True)
+        # self.clf = MultiTaskLasso(alpha=alpha, fit_intercept=False, warm_start=True)
+        self.clf = MultiTaskLasso(alpha=alpha, fit_intercept=False)
 
     def fit(self, X: np.ndarray, Y: np.ndarray):
         """Fits estimator to the data.
@@ -88,7 +92,7 @@ class ReweightedMTL(BaseEstimator, RegressorMixin):
             if self.verbose:
                 print(f"Iteration {l}: {loss:.4f}")
 
-        self.weights = coef_hat
+        self.coef_ = coef_hat
 
     def predict(self, X: np.ndarray):
         """Predicts data with the fitted coefficients.
@@ -101,4 +105,4 @@ class ReweightedMTL(BaseEstimator, RegressorMixin):
         check_is_fitted(self)
         X = check_array(X)
 
-        return X @ self.weights
+        return X @ self.coef_

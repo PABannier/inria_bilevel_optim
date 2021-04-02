@@ -1,12 +1,58 @@
-import matplotlib.pyplot as plt
 import numpy as np
 from numpy.linalg import norm
+
+import matplotlib.pyplot as plt
+
+from sklearn.metrics import f1_score, mean_squared_error, jaccard_score
 
 
 def compute_alpha_max(X, Y):
     B = X.T @ Y
     b = norm(B, axis=1)
     return np.max(b) / X.shape[0]
+
+
+def plot_sure_mse_path(alphas, alpha_max, mse_metrics, sure_metrics, mse_path):
+    plt.figure(figsize=(8, 6))
+
+    plt.semilogx(
+        alphas / alpha_max,
+        mse_metrics,
+        linestyle="--",
+        label="MSE",
+        color="midnightblue",
+    )
+    plt.semilogx(
+        alphas / alpha_max,
+        sure_metrics,
+        linestyle="--",
+        label="SURE",
+        color="orange",
+    )
+
+    min_idx = sure_metrics.argmin()
+    plt.axvline(
+        x=alphas[min_idx] / alpha_max,
+        color="orange",
+        linestyle="dashed",
+        linewidth=3,
+        label="Best SURE $\lambda$",
+    )
+
+    min_idx_2 = mse_path.mean(axis=1).argmin()
+    plt.axvline(
+        x=alphas[min_idx] / alpha_max,
+        color="midnightblue",
+        linestyle="dashed",
+        linewidth=3,
+        label="Best MSE $\lambda$",
+    )
+
+    plt.xlabel("$\lambda / \lambda_{\max}$", fontsize=12)
+    plt.ylabel("MSE / SURE (normalized)", fontsize=12)
+    plt.title("MSE vs SURE paths", fontsize=15, fontweight="bold")
+    plt.legend()
+    plt.show(block=True)
 
 
 def plot_original_reconstructed_signal(original, reconstructed, title):

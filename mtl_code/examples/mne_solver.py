@@ -1,10 +1,14 @@
 import numpy as np
+import matplotlib.pyplot as plt
+import matplotlib.pylab as pl
+from numpy.linalg import norm
 
 import mne
 from mne.datasets import sample
 from mne.viz import plot_sparse_source_estimates
 
 from mtl.mtl import ReweightedMTL
+from mtl.cross_validation import ReweightedMultiTaskLassoCV
 from utils import compute_alpha_max
 
 
@@ -19,7 +23,9 @@ def load_data():
     # Read noise covariance matrix
     noise_cov = mne.read_cov(cov_fname)
     # Handling average file
-    evoked = mne.read_evokeds(ave_fname, condition=condition, baseline=(None, 0))
+    evoked = mne.read_evokeds(
+        ave_fname, condition=condition, baseline=(None, 0)
+    )
     evoked.crop(tmin=0.04, tmax=0.18)
 
     evoked = evoked.pick_types(eeg=False, meg=True)
@@ -100,13 +106,18 @@ def apply_solver(solver, evoked, forward, noise_cov, loose=0.2, depth=0.8):
 
     # Whiten data
     M = np.dot(whitener, M)
+    forward = mne.convert_forward_solution(forward, force_fixed=True)
 
     n_orient = 1 if is_fixed_orient(forward) else 3
     X, active_set = solver(M, gain, n_orient)
     X = _reapply_source_weighting(X, source_weighting, active_set)
 
     stc = _make_sparse_stc(
-        X, active_set, forward, tmin=evoked.times[0], tstep=1.0 / evoked.info["sfreq"]
+        X,
+        active_set,
+        forward,
+        tmin=evoked.times[0],
+        tstep=1.0 / evoked.info["sfreq"],
     )
 
     return stc
@@ -140,12 +151,55 @@ def solver(M, G, n_orient=1):
     alpha_max = compute_alpha_max(G, M)
     print("Alpha max for large experiment:", alpha_max)
 
-    regressor = ReweightedMTL(alpha=2.5e-3)
+    alphas = np.geomspace(alpha_max/2, alpha_max / 20, num=15)
+    n_folds = 5
+
+    regressor = ReweightedMultiTaskLassoCV(alphas, n_folds=n_folds)
+    regressor.fit(G, M, n_iterations=5)
+
+    # Plot MSE path
+    colors = pl.cm.jet(np.linspace(0, 1, n_folds))
+
+    plt.figure(figsize=(8, 6))
+
+    for idx_fold in range(n_folds):
+        plt.semilogx(
+            alphas / alpha_max,
+            regressor.mse_path_[:, idx_fold],
+            linestyle="--",
+            color=colors[idx_fold],
+            label=f"Fold {idx_fold + 1}",
+        )
+
+    plt.semilogx(
+        alphas / alpha_max,
+        regressor.mse_path_.mean(axis=1),
+        linewidth=3,
+        color="black",
+        label="Mean",
+    )
+
+    mtl_min_idx = regressor.mse_path_.mean(axis=1).argmin()
+    plt.axvline(
+        x=alphas[mtl_min_idx] / alpha_max,
+        color="black",
+        linestyle="dashed",
+        linewidth=3,
+        label="Best $\lambda$",
+    )
+
+    plt.xlabel("$\lambda / \lambda_{\max}$", fontsize=12)
+    plt.ylabel("MSE", fontsize=12)
+    plt.title("MSE path - Reweighted MTL", fontsize=15, fontweight="bold")
+    plt.legend()
+    plt.show(block=True)
+
+    regressor = ReweightedMTL(regressor.best_alpha_, n_iterations=5)
     regressor.fit(G, M)
+    X = regressor.coef_
 
-    X = regressor.weights
-
-    indices = np.argsort(np.sum(X ** 2, axis=1))[-10:]
+    indices = norm(X, axis=1) != 0
+    # indices = np.argsort(np.sum(X ** 2, axis=1))[-10:]
     active_set = np.zeros(G.shape[1], dtype=bool)
     for idx in indices:
         idx -= idx % n_orient
@@ -155,9 +209,11 @@ def solver(M, G, n_orient=1):
 
 
 if __name__ == "__main__":
-    loose, depth = 1.0, 0.0  # Free orientation
+    loose, depth = 1.0, 0  # Free orieorientationntation
     evoked, forward, noise_cov = load_data()
 
     stc = apply_solver(solver, evoked, forward, noise_cov, loose, depth)
 
-    # plot_sparse_source_estimates(forward["src"], stc, bgcolor=(1, 1, 1), opacity=0.1)
+    plot_sparse_source_estimates(
+        forward["src"], stc, bgcolor=(1, 1, 1), opacity=0.1
+    )

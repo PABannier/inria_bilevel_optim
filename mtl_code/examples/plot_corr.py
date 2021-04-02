@@ -10,7 +10,7 @@ from utils import plot_original_reconstructed_signal_band
 
 def experiment_cv(X, Y, coef):
     alpha_max = compute_alpha_max(X, Y)
-    print("Alpha max for large experiment:", alpha_max)
+    print("alpha max for large experiment:", alpha_max)
 
     alphas = np.geomspace(5e-4, 5e-3, num=20)
     regressor = ReweightedMultiTaskLassoCV(alphas, n_folds=3)
@@ -18,7 +18,7 @@ def experiment_cv(X, Y, coef):
     regressor.fit(X, Y)
     best_alpha = regressor.best_alpha_
 
-    coef_hat = regressor.weights
+    coef_hat = regressor.coef_
     plot_original_reconstructed_signal_band(coef, coef_hat)
 
     nnz_original = np.count_nonzero(np.count_nonzero(coef, axis=1))

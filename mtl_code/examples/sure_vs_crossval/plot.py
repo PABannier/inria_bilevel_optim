@@ -20,11 +20,13 @@ alphas = reweighted_scores["alpha"]
 cvs = [
     # Lasso
     {
+        "f1": lasso_scores["f1"],
         "mse": lasso_scores["mse"],
         "sure": lasso_scores["sure"],
     },
     # Reweighted
     {
+        "f1": reweighted_scores["f1"],
         "mse": reweighted_scores["mse"],
         "sure": reweighted_scores["sure"],
     },
@@ -32,24 +34,31 @@ cvs = [
 
 n_folds = lasso_scores["mse"].shape[1]
 
-fig, axes = plt.subplots(2, 2, sharex="col", sharey="row")
+fig, axes = plt.subplots(3, 2, figsize=(8, 6), sharex="col", sharey="row")
 
 for idx, cv in enumerate(cvs):
     axarr = axes[:, idx]
 
     for fold in range(n_folds):
         axarr[1].semilogx(alphas / alphas[0], cv["mse"][:, fold])
+        axarr[2].semilogx(alphas / alphas[0], cv["f1"][:, fold])
 
     axarr[0].semilogx(
         alphas / alphas[0],
         cv["sure"],
-        label="mean across folds",
         color="k",
         lw=2,
     )
     axarr[1].semilogx(
         alphas / alphas[0],
         cv["mse"].mean(axis=1),
+        label="mean across folds",
+        color="k",
+        lw=2,
+    )
+    axarr[2].semilogx(
+        alphas / alphas[0],
+        cv["f1"].mean(axis=1),
         label="mean across folds",
         color="k",
         lw=2,
@@ -62,9 +71,15 @@ for idx, cv in enumerate(cvs):
         color="k",
         label=r"best $\lambda$",
     )
-
     axarr[1].axvline(
         alphas[np.argmin(cv["mse"].mean(axis=1))] / alphas[0],
+        linestyle="--",
+        lw=3,
+        color="k",
+        label=r"best $\lambda$",
+    )
+    axarr[2].axvline(
+        alphas[np.argmax(cv["f1"].mean(axis=1))] / alphas[0],
         linestyle="--",
         lw=3,
         color="k",
@@ -73,14 +88,16 @@ for idx, cv in enumerate(cvs):
 
     axarr[0].set_ylabel("SURE")
     axarr[1].set_ylabel("MSE")
+    axarr[2].set_ylabel("F1")
     axarr[1].set_xlabel(r"$\lambda / \lambda_{\mathrm{max}}$")
     axarr[0].legend()
     axarr[1].legend()
+    axarr[2].legend()
 
 axes[0][0].set_title("Non-adaptive")
 axes[0][1].set_title("Adaptive")
 plt.suptitle(
-    f"Comparison MSE/SURE in the adpative and non-adpative case \n Corr: {corr}",
+    f"Corr: {corr}",
     fontweight="bold",
 )
 plt.show(block=True)

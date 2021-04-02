@@ -4,7 +4,7 @@ import numpy as np
 from numpy.linalg import norm
 
 from sklearn.model_selection import GridSearchCV
-from sklearn.metrics import f1_score, jaccard_score, mean_squared_error
+from sklearn.metrics import f1_score, mean_squared_error
 
 from celer import MultiTaskLasso
 from celer import MultiTaskLassoCV
@@ -43,17 +43,34 @@ def reconstruct_signal(corr, random_state=0):
     reweighted_scores = {
         "mse": regressor.mse_path_,
         "f1": regressor.f1_path_,
-        "jaccard": regressor.jaccard_path_,
         "sure": sure_path,
         "alpha": alphas,
     }
 
     joblib.dump(reweighted_scores, f"data/scores_reweighted_corr_{corr}.pkl")
 
-    # Non-reweighted
+    # == Non-reweighted ==
+    # MSE
     regressor = MultiTaskLassoCV(alphas=alphas, cv=5)
     regressor.fit(X, Y)
 
+    # F1
+    print("F1")
+
+    def scoring(estimator, X_test, Y_test):
+        return f1_score(coef != 0, estimator.coef_.T != 0, average="macro")
+
+    regressor2 = MultiTaskLasso()
+    gcv = GridSearchCV(
+        regressor2, {"alpha": alphas}, scoring=scoring, n_jobs=-1, cv=5
+    )
+    cv_results = gcv.fit(X, Y).cv_results_
+
+    f1_path = np.hstack(
+        [cv_results[f"split{i}_test_score"][:, np.newaxis] for i in range(5)]
+    )
+
+    # SURE
     sure_path = []
 
     for alpha in alphas:
@@ -61,7 +78,11 @@ def reconstruct_signal(corr, random_state=0):
         metric = estimator.get_val(X, Y, alpha, n_iterations=5)
         sure_path.append(metric)
 
-    lasso_scores = {"mse": regressor.mse_path_, "sure": sure_path}
+    lasso_scores = {
+        "mse": regressor.mse_path_,
+        "sure": sure_path,
+        "f1": f1_path,
+    }
 
     joblib.dump(lasso_scores, f"data/scores_lasso_corr_{corr}.pkl")
 

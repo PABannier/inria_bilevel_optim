@@ -18,13 +18,11 @@ lasso_scores = joblib.load(INFILE_LASSO)
 alphas = reweighted_scores["alpha"]
 
 cvs = [
-    # Lasso
     {
         "f1": lasso_scores["f1"],
         "mse": lasso_scores["mse"],
         "sure": lasso_scores["sure"],
     },
-    # Reweighted
     {
         "f1": reweighted_scores["f1"],
         "mse": reweighted_scores["mse"],

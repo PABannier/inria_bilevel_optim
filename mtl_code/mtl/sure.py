@@ -85,6 +85,12 @@ class SURE:
         model.fit(X, Y + self.eps * self.delta)
         coef2 = model.coef_
 
+        # Note: Celer returns the transpose of the coefficient
+        # matrix
+        if coef1.shape[0] != X.shape[1]:
+            coef1 = coef1.T
+            coef2 = coef2.T
+
         # compute the dof
         dof = ((X @ coef2 - X @ coef1) * self.delta).sum() / self.eps
         # compute the SURE

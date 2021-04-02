@@ -55,7 +55,6 @@ def reconstruct_signal(corr, random_state=0):
     regressor.fit(X, Y)
 
     # F1
-    print("F1")
 
     def scoring(estimator, X_test, Y_test):
         return f1_score(coef != 0, estimator.coef_.T != 0, average="macro")

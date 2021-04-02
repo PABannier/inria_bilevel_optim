@@ -1,6 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.pylab as pl
+from numpy.linalg import norm
 
 import mne
 from mne.datasets import sample
@@ -108,7 +109,6 @@ def apply_solver(solver, evoked, forward, noise_cov, loose=0.2, depth=0.8):
     forward = mne.convert_forward_solution(forward, force_fixed=True)
 
     n_orient = 1 if is_fixed_orient(forward) else 3
-    import ipdb; ipdb.set_trace()
     X, active_set = solver(M, gain, n_orient)
     X = _reapply_source_weighting(X, source_weighting, active_set)
 
@@ -151,7 +151,7 @@ def solver(M, G, n_orient=1):
     alpha_max = compute_alpha_max(G, M)
     print("Alpha max for large experiment:", alpha_max)
 
-    alphas = np.geomspace(alpha_max, alpha_max / 10, num=15)
+    alphas = np.geomspace(alpha_max/2, alpha_max / 20, num=15)
     n_folds = 5
 
     regressor = ReweightedMultiTaskLassoCV(alphas, n_folds=n_folds)
@@ -194,6 +194,8 @@ def solver(M, G, n_orient=1):
     plt.legend()
     plt.show(block=True)
 
+    regressor = ReweightedMTL(regressor.best_alpha_, n_iterations=5)
+    regressor.fit(G, M)
     X = regressor.coef_
 
     indices = norm(X, axis=1) != 0

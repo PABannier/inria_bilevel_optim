@@ -86,17 +86,10 @@ def reconstruct_signal(corr, random_state=0):
     joblib.dump(lasso_scores, f"data/scores_lasso_corr_{corr}.pkl")
 
 
-# if __name__ == "__main__":
-#     corrs = [0, 0.3, 0.5, 0.7, 0.9]
-#     for c in corrs:
-#         reconstruct_signal(c)
-#         n_jobs = min(n_jobs, 15)
-
-corrs = [0, 0.3, 0.5, 0.7, 0.9, 0.99]
-n_jobs = 4
-# n_jobs = len(corrs)
-with parallel_backend("loky", inner_max_num_threads=1):
-    Parallel(
-        n_jobs=n_jobs, verbose=100)(
-        delayed(reconstruct_signal)(corr)
-        for corr in corrs)
+if __name__ == "__main__":
+    corrs = [0, 0.3, 0.5, 0.7, 0.9, 0.99]
+    n_jobs = 4
+    with parallel_backend("loky", inner_max_num_threads=1):
+        Parallel(n_jobs=n_jobs, verbose=100)(
+            delayed(reconstruct_signal)(corr) for corr in corrs
+        )

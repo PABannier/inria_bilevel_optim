@@ -3,26 +3,10 @@
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\section{Introduction}
-\label{sec:introduction}
+\section{Experiments}
+\label{sec:experiments}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-% Let us remind first the famous Pythagoras' theorem:
-
-% \begin{align}\label{eq:pythagore}
-% 	\norm{x+y}^2 = \norm{x}^2 + \norm{y}^2 \enspace.
-% \end{align}
-
-% Note that \Cref{eq:pythagore} is ok only under some conditions.
-% In terms of visualisation, you can reference a figure easily using the command \Cref{fig:pythagore} or using Fig.~\ref{fig:pythagore}.
-
-% \begin{figure}[h] % h stands for here
-% 	\centering
-% 	\includegraphics[width=0.6\textwidth]{residu_orth}
-% 	\caption{Illustration of the residual orthogonality in least-squares.}
-% 	\label{fig:pythagore}
-% \end{figure}
 
 
 % Also an image that is in the \texttt{prebuiltimages/} directory can also be loaded the same way:
@@ -59,12 +43,47 @@
 %     \caption{Exemples of side by side images}
 %     \label{fig:double_example}
 % \end{figure}
-INtroduction blabalba
 
+\subsection{MSE, SURE and F1 score baseline}
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\subsection{Notation, model and estimator}
-\label{sub:model}
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{figure}[h]
+    \centering
+    \includegraphics[]{../srcimages/sure_vs_mse_corr_0.png}
+    \caption{Corr: 0}
+    \label{fig:sure_vs_mse_corr_0}
+\end{figure}
 
-Blabalbz
+\begin{figure}[h]
+    \centering
+    \includegraphics[]{../srcimages/sure_vs_mse_corr_30.png}
+    \caption{Corr: 0.3}
+    \label{fig:sure_vs_mse_corr_30}
+\end{figure}
+
+\begin{figure}[h]
+    \centering
+    \includegraphics[]{../srcimages/sure_vs_mse_corr_50.png}
+    \caption{Corr: 0.5}
+    \label{fig:sure_vs_mse_corr_50}
+\end{figure}
+
+\begin{figure}[h]
+    \centering
+    \includegraphics[]{../srcimages/sure_vs_mse_corr_70.png}
+    \caption{Corr: 0.7}
+    \label{fig:sure_vs_mse_corr_70}
+\end{figure}
+
+\begin{figure}[h]
+    \centering
+    \includegraphics[]{../srcimages/sure_vs_mse_corr_90.png}
+    \caption{Corr: 0.9}
+    \label{fig:sure_vs_mse_corr_90}
+\end{figure}
+
+\begin{figure}[h]
+    \centering
+    \includegraphics[]{../srcimages/sure_vs_mse_corr_99.png}
+    \caption{Corr: 0.99}
+    \label{fig:sure_vs_mse_corr_99}
+\end{figure}

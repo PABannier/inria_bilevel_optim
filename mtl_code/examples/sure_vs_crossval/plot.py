@@ -6,10 +6,10 @@ import matplotlib.pylab as pl
 
 import joblib
 
-corr = 0.99
+CORR = 0
 
-INFILE_REWEIGHTED = f"data/scores_reweighted_corr_{corr}.pkl"
-INFILE_LASSO = f"data/scores_lasso_corr_{corr}.pkl"
+INFILE_REWEIGHTED = f"data/scores_reweighted_corr_{CORR}.pkl"
+INFILE_LASSO = f"data/scores_lasso_corr_{CORR}.pkl"
 
 # Read data
 reweighted_scores = joblib.load(INFILE_REWEIGHTED)
@@ -87,15 +87,21 @@ for idx, cv in enumerate(cvs):
     axarr[0].set_ylabel("SURE")
     axarr[1].set_ylabel("MSE")
     axarr[2].set_ylabel("F1")
-    axarr[1].set_xlabel(r"$\lambda / \lambda_{\mathrm{max}}$")
+    axarr[2].set_xlabel(r"$\lambda / \lambda_{\mathrm{max}}$")
     axarr[0].legend()
     axarr[1].legend()
     axarr[2].legend()
 
 axes[0][0].set_title("Non-adaptive")
 axes[0][1].set_title("Adaptive")
-plt.suptitle(
-    f"Corr: {corr}",
-    fontweight="bold",
-)
+plt.suptitle(f"Corr: {CORR}")
 plt.show(block=True)
+
+# Save figure in tex article folder
+
+DESTINATION_PATH = (
+    f"../../../tex/article/srcimages/sure_vs_mse_corr_{CORR*100}.png"
+)
+
+fig.savefig(DESTINATION_PATH)
+print("Figure saved.")

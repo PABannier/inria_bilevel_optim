@@ -6,7 +6,7 @@ import matplotlib.pylab as pl
 
 import joblib
 
-corr = 0.9
+corr = 0.99
 
 INFILE_REWEIGHTED = f"data/scores_reweighted_corr_{corr}.pkl"
 INFILE_LASSO = f"data/scores_lasso_corr_{corr}.pkl"

@@ -1,7 +1,7 @@
 import joblib
+from joblib import Parallel, delayed, parallel_backend
 
 import numpy as np
-from numpy.linalg import norm
 
 from sklearn.model_selection import GridSearchCV
 from sklearn.metrics import f1_score, mean_squared_error
@@ -14,7 +14,7 @@ from mtl.cross_validation import ReweightedMultiTaskLassoCV
 from mtl.mtl import ReweightedMultiTaskLasso
 from mtl.sure import SURE
 
-from examples.utils import compute_alpha_max
+from mtl.utils_datasets import compute_alpha_max
 
 
 def reconstruct_signal(corr, random_state=0):
@@ -86,6 +86,17 @@ def reconstruct_signal(corr, random_state=0):
     joblib.dump(lasso_scores, f"data/scores_lasso_corr_{corr}.pkl")
 
 
-if __name__ == "__main__":
-    for c in [0, 0.3, 0.5, 0.7, 0.9]:
-        reconstruct_signal(c)
+# if __name__ == "__main__":
+#     corrs = [0, 0.3, 0.5, 0.7, 0.9]
+#     for c in corrs:
+#         reconstruct_signal(c)
+#         n_jobs = min(n_jobs, 15)
+
+corrs = [0, 0.3, 0.5, 0.7, 0.9, 0.99]
+n_jobs = 4
+# n_jobs = len(corrs)
+with parallel_backend("loky", inner_max_num_threads=1):
+    Parallel(
+        n_jobs=n_jobs, verbose=100)(
+        delayed(reconstruct_signal)(corr)
+        for corr in corrs)

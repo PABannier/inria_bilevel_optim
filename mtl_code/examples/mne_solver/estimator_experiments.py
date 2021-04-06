@@ -1,5 +1,6 @@
 import argparse
 import joblib
+from tqdm import tqdm
 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -8,7 +9,6 @@ from numpy.linalg import norm
 
 import mne
 from mne.datasets import sample
-from mne.viz import plot_sparse_source_estimates
 
 from celer import MultiTaskLassoCV, MultiTaskLasso
 
@@ -26,8 +26,6 @@ parser.add_argument(
 
 args = parser.parse_args()
 ESTIMATOR = args.estimator
-
-SIGMA = None
 
 
 def load_data():
@@ -118,7 +116,8 @@ def apply_solver(solver, evoked, forward, noise_cov, loose=0.2, depth=0.8):
         rank=None,
     )
 
-    SIGMA = np.std(whitener)
+    global sigma
+    sigma = np.std(whitener)
 
     # Select channels of interest
     sel = [all_ch_names.index(name) for name in gain_info["ch_names"]]
@@ -143,7 +142,7 @@ def apply_solver(solver, evoked, forward, noise_cov, loose=0.2, depth=0.8):
     return stc
 
 
-def solver(M, G, sigma, n_orient=1):
+def solver(M, G, n_orient=1):
     """Run L2 penalized regression and keep 10 strongest locations.
 
     Parameters
@@ -174,8 +173,6 @@ def solver(M, G, sigma, n_orient=1):
     alphas = np.geomspace(alpha_max / 2, alpha_max / 20, num=15)
     n_folds = 5
 
-    sigma = SIGMA
-
     best_alpha_ = None
 
     if ESTIMATOR == "lasso-cv":
@@ -188,20 +185,25 @@ def solver(M, G, sigma, n_orient=1):
         estimator = MultiTaskLasso(best_alpha_)
         estimator.fit(G, M)
 
+        X = estimator.coef_.T
+
     elif ESTIMATOR == "lasso-sure":
         # SURE computation
         best_sure_ = np.inf
 
-        for alpha in alphas:
+        for alpha in tqdm(alphas, total=len(alphas)):
             estimator = SURE(MultiTaskLasso, sigma, random_state=0)
             sure_val_ = estimator.get_val(G, M, alpha)
             if sure_val_ < best_sure_:
                 best_sure_ = sure_val_
                 best_alpha_ = alpha
+            print(f"best sure: {best_sure_:.2f}")
 
         # Refitting
         estimator = MultiTaskLasso(best_alpha_)
         estimator.fit(G, M)
+
+        X = estimator.coef_.T
 
     elif ESTIMATOR == "adaptive-cv":
         # CV
@@ -213,20 +215,26 @@ def solver(M, G, sigma, n_orient=1):
         estimator = ReweightedMultiTaskLasso(best_alpha_)
         estimator.fit(G, M)
 
+        X = estimator.coef_
+
     elif ESTIMATOR == "adaptive-sure":
         # SURE computation
         best_sure_ = np.inf
 
-        for alpha in alphas:
+        for alpha in tqdm(alphas, total=len(alphas)):
             estimator = SURE(ReweightedMultiTaskLasso, sigma, random_state=0)
             sure_val_ = estimator.get_val(G, M, alpha)
             if sure_val_ < best_sure_:
                 best_sure_ = sure_val_
                 best_alpha_ = alpha
 
+            print(f"best sure: {best_sure_:.2f}")
+
         # Refitting
         estimator = ReweightedMultiTaskLasso(best_alpha_)
         estimator.fit(G, M)
+
+        X = estimator.coef_
 
     else:
         raise ValueError(
@@ -234,9 +242,8 @@ def solver(M, G, sigma, n_orient=1):
             + "lasso-cv, lasso-sure, adaptive-cv or adaptive-sure"
         )
 
-    X = estimator.coef_
-
     indices = norm(X, axis=1) != 0
+    print("\n")
     print("Number of sources:", np.sum(indices))
     # indices = np.argsort(np.sum(X ** 2, axis=1))[-10:]
     active_set = np.zeros(G.shape[1], dtype=bool)

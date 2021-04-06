@@ -5,8 +5,15 @@ import matplotlib.pyplot as plt
 import matplotlib.pylab as pl
 
 import joblib
+import argparse
 
-CORR = 0
+parser = argparse.ArgumentParser()
+parser.add_argument(
+    "--corr", help="Correlation coefficient of the design matrix"
+)
+args = parser.parse_args()
+
+CORR = args.corr
 
 INFILE_REWEIGHTED = f"data/scores_reweighted_corr_{CORR}.pkl"
 INFILE_LASSO = f"data/scores_lasso_corr_{CORR}.pkl"
@@ -99,9 +106,7 @@ plt.show(block=True)
 
 # Save figure in tex article folder
 
-DESTINATION_PATH = (
-    f"../../../tex/article/srcimages/sure_vs_mse_corr_{CORR*100}.png"
-)
+DESTINATION_PATH = f"../../../tex/article/srcimages/sure_vs_mse_corr_{int(float(CORR)*100)}.png"
 
 fig.savefig(DESTINATION_PATH)
 print("Figure saved.")

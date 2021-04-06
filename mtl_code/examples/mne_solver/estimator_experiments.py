@@ -116,9 +116,6 @@ def apply_solver(solver, evoked, forward, noise_cov, loose=0.2, depth=0.8):
         rank=None,
     )
 
-    global sigma
-    sigma = np.std(whitener)
-
     # Select channels of interest
     sel = [all_ch_names.index(name) for name in gain_info["ch_names"]]
     M = evoked.data[sel]
@@ -192,7 +189,7 @@ def solver(M, G, n_orient=1):
         best_sure_ = np.inf
 
         for alpha in tqdm(alphas, total=len(alphas)):
-            estimator = SURE(MultiTaskLasso, sigma, random_state=0)
+            estimator = SURE(MultiTaskLasso, 1, random_state=0)
             sure_val_ = estimator.get_val(G, M, alpha)
             if sure_val_ < best_sure_:
                 best_sure_ = sure_val_
@@ -222,7 +219,7 @@ def solver(M, G, n_orient=1):
         best_sure_ = np.inf
 
         for alpha in tqdm(alphas, total=len(alphas)):
-            estimator = SURE(ReweightedMultiTaskLasso, sigma, random_state=0)
+            estimator = SURE(ReweightedMultiTaskLasso, 1, random_state=0)
             sure_val_ = estimator.get_val(G, M, alpha)
             if sure_val_ < best_sure_:
                 best_sure_ = sure_val_

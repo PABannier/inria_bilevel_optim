@@ -3,29 +3,27 @@ import joblib
 from tqdm import tqdm
 
 import numpy as np
-import matplotlib.pyplot as plt
-import matplotlib.pylab as pl
 from numpy.linalg import norm
 
 import mne
 from mne.datasets import sample
-
-from celer import MultiTaskLassoCV, MultiTaskLasso
+from mne.viz import plot_sparse_source_estimates
 
 from mtl.mtl import ReweightedMultiTaskLasso
-from mtl.cross_validation import ReweightedMultiTaskLassoCV
-from mtl.utils_datasets import compute_alpha_max, plot_sure_mse_path
-from mtl.sure import SURE
+from mtl.utils_datasets import compute_alpha_max
 
 parser = argparse.ArgumentParser()
 parser.add_argument(
-    "--estimator",
-    help="choice of estimator to reconstruct the channels. available: "
-    + "lasso-cv, lasso-sure, adaptive-cv, adaptive-sure",
+    "--alpha",
+    help="regularizing hyperparameter",
 )
 
 args = parser.parse_args()
-ESTIMATOR = args.estimator
+
+if args.alpha is None:
+    raise ValueError(
+        "Please specify a regularizing constant by using --alpha argument."
+    )
 
 
 def load_data():
@@ -164,85 +162,15 @@ def solver(M, G, n_orient=1):
         We have ``X_full[active_set] == X`` where X_full is the full X matrix
         such that ``M = G X_full``.
     """
-    alpha_max = compute_alpha_max(G, M)
-    print("Alpha max for large experiment:", alpha_max)
+    estimator = ReweightedMultiTaskLasso(float(args.alpha))
+    estimator.fit(G, M)
 
-    alphas = np.geomspace(alpha_max / 2, alpha_max / 20, num=15)
-    n_folds = 5
+    X = estimator.coef_
 
-    best_alpha_ = None
-
-    if ESTIMATOR == "lasso-cv":
-        # CV
-        estimator = MultiTaskLassoCV(alphas=alphas, cv=n_folds)
-        estimator.fit(G, M)
-        best_alpha_ = estimator.alpha_
-
-        # Refitting
-        estimator = MultiTaskLasso(best_alpha_)
-        estimator.fit(G, M)
-
-        X = estimator.coef_.T
-
-    elif ESTIMATOR == "lasso-sure":
-        # SURE computation
-        best_sure_ = np.inf
-
-        for alpha in tqdm(alphas, total=len(alphas)):
-            estimator = SURE(MultiTaskLasso, 1, random_state=0)
-            sure_val_ = estimator.get_val(G, M, alpha)
-            if sure_val_ < best_sure_:
-                best_sure_ = sure_val_
-                best_alpha_ = alpha
-            print(f"best sure: {best_sure_:.2f}")
-
-        # Refitting
-        estimator = MultiTaskLasso(best_alpha_)
-        estimator.fit(G, M)
-
-        X = estimator.coef_.T
-
-    elif ESTIMATOR == "adaptive-cv":
-        # CV
-        estimator = ReweightedMultiTaskLassoCV(alphas=alphas, n_folds=n_folds)
-        estimator.fit(G, M)
-        best_alpha_ = estimator.best_alpha_
-
-        # Refitting
-        estimator = ReweightedMultiTaskLasso(best_alpha_)
-        estimator.fit(G, M)
-
-        X = estimator.coef_
-
-    elif ESTIMATOR == "adaptive-sure":
-        # SURE computation
-        best_sure_ = np.inf
-
-        for alpha in tqdm(alphas, total=len(alphas)):
-            estimator = SURE(ReweightedMultiTaskLasso, 1, random_state=0)
-            sure_val_ = estimator.get_val(G, M, alpha)
-            if sure_val_ < best_sure_:
-                best_sure_ = sure_val_
-                best_alpha_ = alpha
-
-            print(f"best sure: {best_sure_:.2f}")
-
-        # Refitting
-        estimator = ReweightedMultiTaskLasso(best_alpha_)
-        estimator.fit(G, M)
-
-        X = estimator.coef_
-
-    else:
-        raise ValueError(
-            "Invalid estimator. Please choose between "
-            + "lasso-cv, lasso-sure, adaptive-cv or adaptive-sure"
-        )
-
-    # indices = norm(X, axis=1) != 0
-    # print("\n")
-    # print("Number of sources:", np.sum(indices))
-    indices = np.argsort(np.sum(X ** 2, axis=1))[-10:]
+    indices = norm(X, axis=1) != 0
+    print("\n")
+    print("Number of sources:", np.sum(indices))
+    # indices = np.argsort(np.sum(X ** 2, axis=1))[-10:]
     active_set = np.zeros(G.shape[1], dtype=bool)
     for idx in indices:
         idx -= idx % n_orient
@@ -256,4 +184,7 @@ if __name__ == "__main__":
     evoked, forward, noise_cov = load_data()
 
     stc = apply_solver(solver, evoked, forward, noise_cov, loose, depth)
-    joblib.dump(stc, f"data/stc_{ESTIMATOR}.pkl")
+
+    plot_sparse_source_estimates(
+        forward["src"], stc, bgcolor=(1, 1, 1), opacity=0.1
+    )

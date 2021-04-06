@@ -5,8 +5,11 @@ from mtl.simulated_data import simulate_data
 from mtl.mtl import ReweightedMultiTaskLasso
 from mtl.cross_validation import ReweightedMultiTaskLassoCV
 
-from utils import compute_alpha_max, plot_original_reconstructed_signal
-from utils import plot_original_reconstructed_signal_band
+from mtl.utils_datasets import (
+    compute_alpha_max,
+    plot_original_reconstructed_signal,
+    plot_original_reconstructed_signal_band,
+)
 
 
 def large_experiment_cv(X, Y, coef):

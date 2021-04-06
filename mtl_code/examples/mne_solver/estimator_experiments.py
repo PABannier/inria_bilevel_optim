@@ -1,15 +1,33 @@
+import argparse
+import joblib
+
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.pylab as pl
 from numpy.linalg import norm
 
-from celer import MultiTaskLasso, MultiTaskLassoCV
-
 import mne
 from mne.datasets import sample
 from mne.viz import plot_sparse_source_estimates
 
-from examples.utils import compute_alpha_max
+from celer import MultiTaskLassoCV, MultiTaskLasso
+
+from mtl.mtl import ReweightedMultiTaskLasso
+from mtl.cross_validation import ReweightedMultiTaskLassoCV
+from mtl.utils_datasets import compute_alpha_max, plot_sure_mse_path
+from mtl.sure import SURE
+
+parser = argparse.ArgumentParser()
+parser.add_argument(
+    "--estimator",
+    help="choice of estimator to reconstruct the channels. available: "
+    + "lasso-cv, lasso-sure, adaptive-cv, adaptive-sure",
+)
+
+args = parser.parse_args()
+ESTIMATOR = args.estimator
+
+SIGMA = None
 
 
 def load_data():
@@ -100,6 +118,8 @@ def apply_solver(solver, evoked, forward, noise_cov, loose=0.2, depth=0.8):
         rank=None,
     )
 
+    SIGMA = np.std(whitener)
+
     # Select channels of interest
     sel = [all_ch_names.index(name) for name in gain_info["ch_names"]]
     M = evoked.data[sel]
@@ -123,7 +143,7 @@ def apply_solver(solver, evoked, forward, noise_cov, loose=0.2, depth=0.8):
     return stc
 
 
-def solver(M, G, n_orient=1):
+def solver(M, G, sigma, n_orient=1):
     """Run L2 penalized regression and keep 10 strongest locations.
 
     Parameters
@@ -151,55 +171,73 @@ def solver(M, G, n_orient=1):
     alpha_max = compute_alpha_max(G, M)
     print("Alpha max for large experiment:", alpha_max)
 
-    alphas = np.geomspace(alpha_max / 5, alpha_max / 50, num=15)
+    alphas = np.geomspace(alpha_max / 2, alpha_max / 20, num=15)
     n_folds = 5
 
-    regressor = MultiTaskLassoCV(alphas=alphas, cv=n_folds, verbose=1)
-    regressor.fit(G, M)
+    sigma = SIGMA
 
-    # Plot MSE path
-    colors = pl.cm.jet(np.linspace(0, 1, n_folds))
+    best_alpha_ = None
 
-    plt.figure(figsize=(8, 6))
+    if ESTIMATOR == "lasso-cv":
+        # CV
+        estimator = MultiTaskLassoCV(alphas=alphas, cv=n_folds)
+        estimator.fit(G, M)
+        best_alpha_ = estimator.alpha_
 
-    for idx_fold in range(n_folds):
-        plt.semilogx(
-            alphas / alpha_max,
-            regressor.mse_path_[:, idx_fold],
-            linestyle="--",
-            color=colors[idx_fold],
-            label=f"Fold {idx_fold + 1}",
+        # Refitting
+        estimator = MultiTaskLasso(best_alpha_)
+        estimator.fit(G, M)
+
+    elif ESTIMATOR == "lasso-sure":
+        # SURE computation
+        best_sure_ = np.inf
+
+        for alpha in alphas:
+            estimator = SURE(MultiTaskLasso, sigma, random_state=0)
+            sure_val_ = estimator.get_val(G, M, alpha)
+            if sure_val_ < best_sure_:
+                best_sure_ = sure_val_
+                best_alpha_ = alpha
+
+        # Refitting
+        estimator = MultiTaskLasso(best_alpha_)
+        estimator.fit(G, M)
+
+    elif ESTIMATOR == "adaptive-cv":
+        # CV
+        estimator = ReweightedMultiTaskLassoCV(alphas=alphas, n_folds=n_folds)
+        estimator.fit(G, M)
+        best_alpha_ = estimator.best_alpha_
+
+        # Refitting
+        estimator = ReweightedMultiTaskLasso(best_alpha_)
+        estimator.fit(G, M)
+
+    elif ESTIMATOR == "adaptive-sure":
+        # SURE computation
+        best_sure_ = np.inf
+
+        for alpha in alphas:
+            estimator = SURE(ReweightedMultiTaskLasso, sigma, random_state=0)
+            sure_val_ = estimator.get_val(G, M, alpha)
+            if sure_val_ < best_sure_:
+                best_sure_ = sure_val_
+                best_alpha_ = alpha
+
+        # Refitting
+        estimator = ReweightedMultiTaskLasso(best_alpha_)
+        estimator.fit(G, M)
+
+    else:
+        raise ValueError(
+            "Invalid estimator. Please choose between "
+            + "lasso-cv, lasso-sure, adaptive-cv or adaptive-sure"
         )
 
-    plt.semilogx(
-        alphas / alpha_max,
-        regressor.mse_path_.mean(axis=1),
-        linewidth=3,
-        color="black",
-        label="Mean",
-    )
-
-    mtl_min_idx = regressor.mse_path_.mean(axis=1).argmin()
-    plt.axvline(
-        x=alphas[mtl_min_idx] / alpha_max,
-        color="black",
-        linestyle="dashed",
-        linewidth=3,
-        label="Best $\lambda$",
-    )
-
-    plt.xlabel("$\lambda / \lambda_{\max}$", fontsize=12)
-    plt.ylabel("MSE", fontsize=12)
-    plt.title("MSE path - Reweighted MTL", fontsize=15, fontweight="bold")
-    plt.legend()
-    plt.show(block=True)
-
-    regressor = MultiTaskLasso(regressor.alpha_)
-    regressor.fit(G, M)
-    X = regressor.coef_.T
+    X = estimator.coef_
 
     indices = norm(X, axis=1) != 0
-    print(np.sum(indices))
+    print("Number of sources:", np.sum(indices))
     # indices = np.argsort(np.sum(X ** 2, axis=1))[-10:]
     active_set = np.zeros(G.shape[1], dtype=bool)
     for idx in indices:
@@ -210,11 +248,8 @@ def solver(M, G, n_orient=1):
 
 
 if __name__ == "__main__":
-    loose, depth = 1.0, 0  # Free orieorientationntation
+    loose, depth = 1.0, 0  # Free orientation
     evoked, forward, noise_cov = load_data()
 
     stc = apply_solver(solver, evoked, forward, noise_cov, loose, depth)
-
-    plot_sparse_source_estimates(
-        forward["src"], stc, bgcolor=(1, 1, 1), opacity=0.1
-    )
+    joblib.dump(stc, f"data/stc_{ESTIMATOR}.pkl")

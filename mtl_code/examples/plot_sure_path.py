@@ -11,7 +11,7 @@ from mtl.simulated_data import simulate_data
 from mtl.mtl import ReweightedMultiTaskLasso
 from mtl.cross_validation import ReweightedMultiTaskLassoCV
 
-from utils import compute_alpha_max, plot_sure_mse_path
+from mtl.utils_datasets import compute_alpha_max, plot_sure_mse_path
 
 
 def sure_mse_path(snr=2, corr=0.5, random_state=2020):

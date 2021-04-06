@@ -9,7 +9,7 @@ from sklearn.linear_model import MultiTaskLassoCV
 from mtl.cross_validation import ReweightedMultiTaskLassoCV
 from mtl.simulated_data import simulate_data
 
-from utils import compute_alpha_max
+from mtl.utils_datasets import compute_alpha_max
 
 
 def plot_mse_path_reweighted_mtl():

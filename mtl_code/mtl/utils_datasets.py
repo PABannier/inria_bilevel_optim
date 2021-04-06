@@ -11,7 +11,7 @@ def compute_alpha_max(X, Y):
 
 
 def plot_sure_mse_path(alphas, alpha_max, mse_metrics, sure_metrics, mse_path):
-    plt.figure(figsize=(8, 6))
+    plt.figure()
 
     plt.semilogx(
         alphas / alpha_max,

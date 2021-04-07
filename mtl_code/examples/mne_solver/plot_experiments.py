@@ -46,7 +46,7 @@ def load_data():
 
 
 if __name__ == "__main__":
-    loose, depth = 0, 0  # Free orientation
+    loose, depth = 0, 0.9  # Free orientation
     evoked, forward, noise_cov = load_data()
 
     stc = joblib.load(f"data/stc_{ESTIMATOR}.pkl")

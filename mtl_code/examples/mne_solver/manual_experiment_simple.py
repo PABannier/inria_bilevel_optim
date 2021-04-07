@@ -24,7 +24,7 @@ def load_data():
     evoked = mne.read_evokeds(
         ave_fname, condition=condition, baseline=(None, 0)
     )
-    evoked.crop(tmin=0.05, tmax=0.15)
+    evoked.crop(tmin=0, tmax=0.3)
 
     evoked = evoked.pick_types(eeg=False, meg=True)
     # Handling forward solution
@@ -163,10 +163,10 @@ def solver(M, G, p_alpha, n_orient=1):
 
 
 if __name__ == "__main__":
-    loose, depth = 0, 0  # Fixed orientation
+    loose, depth = 0, 0.9  # Fixed orientation # very important depth=0.9
     evoked, forward, noise_cov = load_data()
 
-    p_alpha = 0.8
+    p_alpha = 0.55
     stc = apply_solver(
         solver, evoked, forward, noise_cov, p_alpha, loose, depth
     )

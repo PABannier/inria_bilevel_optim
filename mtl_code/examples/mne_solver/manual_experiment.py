@@ -40,7 +40,7 @@ def load_data():
     evoked = mne.read_evokeds(
         ave_fname, condition=condition, baseline=(None, 0)
     )
-    evoked.crop(tmin=0.04, tmax=0.18)
+    evoked.crop(tmin=0.05, tmax=0.15)
 
     evoked = evoked.pick_types(eeg=False, meg=True)
     # Handling forward solution
@@ -120,7 +120,6 @@ def apply_solver(solver, evoked, forward, noise_cov, loose=0.2, depth=0.8):
 
     # Whiten data
     M = np.dot(whitener, M)
-    forward = mne.convert_forward_solution(forward, force_fixed=True)
 
     n_orient = 1 if is_fixed_orient(forward) else 3
     X, active_set = solver(M, gain, n_orient)
@@ -166,21 +165,13 @@ def solver(M, G, n_orient=1):
     estimator.fit(G, M)
 
     X = estimator.coef_
+    active_set = norm(X, axis=1) != 0
 
-    indices = norm(X, axis=1) != 0
-    print("\n")
-    print("Number of sources:", np.sum(indices))
-    # indices = np.argsort(np.sum(X ** 2, axis=1))[-10:]
-    active_set = np.zeros(G.shape[1], dtype=bool)
-    for idx in indices:
-        idx -= idx % n_orient
-        active_set[idx : idx + n_orient] = True
-    X = X[active_set]
-    return X, active_set
+    return X[active_set, :], active_set
 
 
 if __name__ == "__main__":
-    loose, depth = 1.0, 0  # Free orientation
+    loose, depth = 0, 0  # Fixed orientation
     evoked, forward, noise_cov = load_data()
 
     stc = apply_solver(solver, evoked, forward, noise_cov, loose, depth)

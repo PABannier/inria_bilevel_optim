@@ -95,10 +95,13 @@ class ReweightedMultiTaskLassoCV(BaseEstimator, RegressorMixin):
                 "The number of folds can't be greater than the number of samples."
             )
 
-        kf = KFold(self.n_folds, random_state=self.random_state)
+        kf = KFold(self.n_folds, random_state=self.random_state, shuffle=True)
 
         for idx_alpha, alpha_param in enumerate(self.alphas):
-            print("Fitting MTL estimator with alpha =", alpha_param)
+            print(
+                f"[{idx_alpha+1}/{len(self.alphas)}] "
+                + f"Fitting MTL estimator with alpha = {alpha_param}"
+            )
             estimator_ = ReweightedMultiTaskLasso(
                 alpha_param, n_iterations=self.n_iterations, verbose=False
             )

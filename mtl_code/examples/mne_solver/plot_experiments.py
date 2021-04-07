@@ -36,7 +36,7 @@ def load_data():
     evoked = mne.read_evokeds(
         ave_fname, condition=condition, baseline=(None, 0)
     )
-    evoked.crop(tmin=0.04, tmax=0.18)
+    evoked.crop(tmin=0.05, tmax=0.15)
 
     evoked = evoked.pick_types(eeg=False, meg=True)
     # Handling forward solution
@@ -46,7 +46,7 @@ def load_data():
 
 
 if __name__ == "__main__":
-    loose, depth = 1.0, 0  # Free orientation
+    loose, depth = 0, 0  # Free orientation
     evoked, forward, noise_cov = load_data()
 
     stc = joblib.load(f"data/stc_{ESTIMATOR}.pkl")

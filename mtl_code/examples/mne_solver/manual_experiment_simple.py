@@ -34,7 +34,8 @@ def load_data():
 
 
 def apply_solver(
-        solver, evoked, forward, noise_cov, p_alpha=0.7, loose=0.2, depth=0.8):
+    solver, evoked, forward, noise_cov, p_alpha=0.7, loose=0.2, depth=0.8
+):
     """Call a custom solver on evoked data.
 
     This function does all the necessary computation:
@@ -157,7 +158,7 @@ def solver(M, G, p_alpha, n_orient=1):
     indices = norm(X, axis=1) != 0
     print("\n")
     print("Number of sources:", np.sum(indices))
-    active_set = norm(X, axis=1) !=0
+    active_set = norm(X, axis=1) != 0
     return X[active_set, :], active_set
 
 
@@ -167,7 +168,8 @@ if __name__ == "__main__":
 
     p_alpha = 0.8
     stc = apply_solver(
-        solver, evoked, forward, noise_cov, p_alpha, loose, depth)
+        solver, evoked, forward, noise_cov, p_alpha, loose, depth
+    )
 
     plot_sparse_source_estimates(
         forward["src"], stc, bgcolor=(1, 1, 1), opacity=0.1

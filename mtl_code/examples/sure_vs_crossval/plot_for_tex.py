@@ -1,3 +1,4 @@
+import matplotlib as mpl
 import joblib
 from celer.plot_utils import configure_plt
 from seaborn import color_palette
@@ -7,9 +8,23 @@ import matplotlib.pyplot as plt
 
 from mtl.utils_plot import _plot_legend_apart
 
+save_fig = True
+# save_fig = False
+
 configure_plt()
-corrs = [0.5, 0.7, 0.9]
+
+
+fontsize = 18
+
+mpl.rcParams['xtick.labelsize'] = fontsize
+mpl.rcParams['ytick.labelsize'] = fontsize
+
+corrs = [0.5, 0.7, 0.9, 0.99]
 criteria = ["mse", "sure", "f1"]
+criteria_names = {}
+criteria_names["mse"] = "MSE"
+criteria_names["sure"] = "SURE"
+criteria_names["f1"] = "F1"
 
 dict_colors = color_palette("colorblind")
 
@@ -42,6 +57,7 @@ def load_data_for_corr(corr):
 fig, axarr = plt.subplots(len(criteria), len(corrs), sharex="col", sharey="row")
 
 
+
 for idx_corr, corr in enumerate(corrs):
     alphas, cvs = load_data_for_corr(corr)
     for idx_crit, criterion in enumerate(criteria):
@@ -71,13 +87,15 @@ for idx_corr, corr in enumerate(corrs):
                 color=dict_colors[idx_estim],
                 label=r"%s - best $\lambda$" % estimator,
             )
+        # axarr[idx_crit, idx_corr].tick_params(
+        #     axis='both', which='minor', labelsize=40)
 
-    axarr[2, idx_corr].set_xlabel(r"$\lambda / \lambda_{\mathrm{max}}$")
-    axarr[0, idx_corr].set_title(f"Corr = {corr}")
+    axarr[2, idx_corr].set_xlabel(
+        r"$\lambda / \lambda_{\mathrm{max}}$", fontsize=fontsize)
+    axarr[0, idx_corr].set_title(f"Corr = {corr}", fontsize=fontsize)
 
-axarr[0][0].set_ylabel("MSE")
-axarr[1][0].set_ylabel("SURE")
-axarr[2][0].set_ylabel("F1")
+for idx_crit, criterion in enumerate(criteria):
+    axarr[idx_crit, 0].set_ylabel(criteria_names[criterion], fontsize=fontsize)
 
 
 # handles, labels = fig.axes[-1].get_legend_handles_labels()
@@ -89,8 +107,6 @@ fig.show()
 OUT_PATH_1 = f"../../../tex/article/srcimages/sure_mse_f1_comparison"
 OUT_PATH_2 = f"../../../tex/article/srcimages/sure_mse_f1_comparison"
 
-save_fig = True
-# save_fig = False
 if save_fig:
     fig.savefig(OUT_PATH_1 + ".pdf")
     fig.savefig(OUT_PATH_2 + ".svg")

@@ -1,12 +1,17 @@
 import joblib
+from celer.plot_utils import configure_plt
+from seaborn import color_palette
 
 import numpy as np
-from numpy.linalg import norm
-
 import matplotlib.pyplot as plt
-import matplotlib.pylab as pl
 
-corrs = [0.3, 0.7, 0.99]
+from mtl.utils_plot import _plot_legend_apart
+
+configure_plt()
+corrs = [0.5, 0.7, 0.9]
+criteria = ["mse", "sure", "f1"]
+
+dict_colors = color_palette("colorblind")
 
 
 def load_data_for_corr(corr):
@@ -33,119 +38,61 @@ def load_data_for_corr(corr):
 
     return alphas, cvs
 
+# plots criterion * correlation
+fig, axarr = plt.subplots(len(criteria), len(corrs), sharex="col", sharey="row")
 
-fig, axes = plt.subplots(3, len(corrs), sharex="col", sharey="row")
 
-for idx, corr in enumerate(corrs):
-    axarr = axes[:, idx]
+for idx_corr, corr in enumerate(corrs):
     alphas, cvs = load_data_for_corr(corr)
+    for idx_crit, criterion in enumerate(criteria):
+        # MSE
+        for idx_estim, estimator in enumerate(["Lasso", "reweighted Lasso"]):
+            if criterion == "sure":
+                y = cvs[idx_estim][criterion]
+            else:
+                y = cvs[idx_estim][criterion].mean(axis=1)
 
-    # MSE
-    axarr[0].semilogx(
-        alphas / alphas[0],
-        cvs[0]["mse"].mean(axis=1),
-        color="lightskyblue",
-        lw=1,
-        label="lasso",
-    )
-    axarr[0].semilogx(
-        alphas / alphas[0],
-        cvs[1]["mse"].mean(axis=1),
-        color="slateblue",
-        lw=1,
-        label="reweighted",
-    )
-    axarr[0].axvline(
-        alphas[np.argmin(cvs[0]["mse"].mean(axis=1))] / alphas[0],
-        linestyle="--",
-        lw=2,
-        color="lightskyblue",
-        label=r"lasso - best $\lambda$",
-    )
-    axarr[0].axvline(
-        alphas[np.argmin(cvs[1]["mse"].mean(axis=1))] / alphas[0],
-        linestyle="--",
-        lw=2,
-        color="slateblue",
-        label=r"reweighted - best $\lambda$",
-    )
+            if criterion == "f1":
+                idx_opt = np.argmax(y)
+            else:
+                idx_opt = np.argmin(y)
 
-    # SURE
-    axarr[1].semilogx(
-        alphas / alphas[0],
-        cvs[0]["sure"],
-        color="lightskyblue",
-        lw=1,
-        label="lasso",
-    )
-    axarr[1].semilogx(
-        alphas / alphas[0],
-        cvs[1]["sure"],
-        color="slateblue",
-        lw=1,
-        label="reweighted",
-    )
-    axarr[1].axvline(
-        alphas[np.array(cvs[0]["sure"]).argmin()] / alphas[0],
-        linestyle="--",
-        lw=2,
-        color="lightskyblue",
-        label=r"lasso - best $\lambda$",
-    )
-    axarr[1].axvline(
-        alphas[np.array(cvs[1]["sure"]).argmin()] / alphas[0],
-        linestyle="--",
-        lw=2,
-        color="slateblue",
-        label=r"reweighted - best $\lambda$",
-    )
+            axarr[idx_crit, idx_corr].semilogx(
+                alphas / alphas[0],
+                y,
+                color=dict_colors[idx_estim],
+                lw=1,
+                label=estimator,
+            )
+            axarr[idx_crit, idx_corr].axvline(
+                alphas[idx_opt] / alphas[0],
+                linestyle="--",
+                lw=2,
+                color=dict_colors[idx_estim],
+                label=r"%s - best $\lambda$" % estimator,
+            )
 
-    # F1
-    axarr[2].semilogx(
-        alphas / alphas[0],
-        cvs[0]["f1"].mean(axis=1),
-        color="lightskyblue",
-        lw=1,
-        label="lasso",
-    )
-    axarr[2].semilogx(
-        alphas / alphas[0],
-        cvs[1]["f1"].mean(axis=1),
-        color="slateblue",
-        lw=1,
-        label="reweighted",
-    )
-    axarr[2].axvline(
-        alphas[np.argmax(cvs[0]["f1"].mean(axis=1))] / alphas[0],
-        linestyle="--",
-        lw=2,
-        color="lightskyblue",
-        label=r"lasso - best $\lambda$",
-    )
-    axarr[2].axvline(
-        alphas[np.argmax(cvs[1]["f1"].mean(axis=1))] / alphas[0],
-        linestyle="--",
-        lw=2,
-        color="slateblue",
-        label=r"reweighted - best $\lambda$",
-    )
+    axarr[2, idx_corr].set_xlabel(r"$\lambda / \lambda_{\mathrm{max}}$")
+    axarr[0, idx_corr].set_title(f"Corr = {corr}")
 
-    axarr[2].set_xlabel(r"$\lambda / \lambda_{\mathrm{max}}$")
-    axarr[0].set_title(f"Corr = {corr}", fontweight=600)
-
-axes[0][0].set_ylabel("MSE")
-axes[1][0].set_ylabel("SURE")
-axes[2][0].set_ylabel("F1")
+axarr[0][0].set_ylabel("MSE")
+axarr[1][0].set_ylabel("SURE")
+axarr[2][0].set_ylabel("F1")
 
 
-handles, labels = fig.axes[-1].get_legend_handles_labels()
-fig.legend(handles, labels, loc="center right", bbox_to_anchor=(1, 0.5))
-plt.subplots_adjust(right=0.65)
-plt.show(block=True)
+# handles, labels = fig.axes[-1].get_legend_handles_labels()
+# fig.legend(handles, labels, loc="center right", bbox_to_anchor=(1, 0.5))
+# plt.subplots_adjust(right=0.65)
+fig.show()
+# plt.show(block=True)
 
-OUT_PATH_1 = f"../../../tex/article/srcimages/sure_mse_f1_comparison.svg"
-OUT_PATH_2 = f"../../../tex/article/srcimages/sure_mse_f1_comparison.pdf"
+OUT_PATH_1 = f"../../../tex/article/srcimages/sure_mse_f1_comparison"
+OUT_PATH_2 = f"../../../tex/article/srcimages/sure_mse_f1_comparison"
 
-fig.savefig(OUT_PATH_1)
-fig.savefig(OUT_PATH_2)
-print("Figure saved.")
+save_fig = True
+# save_fig = False
+if save_fig:
+    fig.savefig(OUT_PATH_1 + ".pdf")
+    fig.savefig(OUT_PATH_2 + ".svg")
+    _plot_legend_apart(axarr[0, 0], OUT_PATH_1 + "_legend.pdf")
+    print("Figure saved.")

@@ -106,7 +106,7 @@ plt.show(block=True)
 
 # Save figure in tex article folder
 
-DESTINATION_PATH = f"../../../tex/article/srcimages/sure_vs_mse_corr_{int(float(CORR)*100)}.png"
+OUT_PATH = f"../../../tex/article/srcimages/sure_vs_mse_corr_{int(float(CORR)*100)}.svg"
 
-fig.savefig(DESTINATION_PATH)
+fig.savefig(OUT_PATH)
 print("Figure saved.")

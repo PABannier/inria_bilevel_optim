@@ -164,9 +164,9 @@ def solver(M, G, n_orient=1):
         such that ``M = G X_full``.
     """
     alpha_max = compute_alpha_max(G, M)
-    print("Alpha max for large experiment:", alpha_max)
+    print("Alpha max:", alpha_max)
 
-    alphas = np.geomspace(alpha_max, alpha_max / 20, num=100)
+    alphas = np.geomspace(alpha_max, alpha_max / 10, num=15)
     n_folds = 5
 
     best_alpha_ = None
@@ -243,7 +243,7 @@ def solver(M, G, n_orient=1):
 
 
 if __name__ == "__main__":
-    loose, depth = 0, 0  # Fixed orientation
+    loose, depth = 0, 0.9  # Fixed orientation
     evoked, forward, noise_cov = load_data()
 
     stc = apply_solver(solver, evoked, forward, noise_cov, loose, depth)

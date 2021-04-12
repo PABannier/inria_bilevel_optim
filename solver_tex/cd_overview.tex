@@ -1,0 +1,499 @@
+\documentclass[a4paper,10pt]{article}
+\usepackage[margin=2.5cm]{geometry}
+
+\usepackage{amssymb,amsmath,amsthm}
+\usepackage{color}
+\usepackage{enumitem}
+\usepackage{dsfont}
+\usepackage{bm}
+
+
+
+
+\newtheorem{theorem}{Theorem}
+\newtheorem{proposition}{Proposition}
+\newtheorem{cor}{Corollary}
+\theoremstyle{definition}
+\newtheorem{definition}{Definition}
+\newtheorem{remark}{Remark}
+\newtheorem{example}{Example}
+\newtheorem{claim}{Claim}
+\newtheorem{lemma}{Lemma}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Cross-referencing
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\usepackage{hyperref}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Algorithms
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\usepackage{algorithm}
+\usepackage{algorithmic}
+\usepackage[titlenumbered,ruled,noend,algo2e]{algorithm2e}
+\newcommand\mycommfont[1]{\footnotesize\ttfamily\textcolor{blue}{#1}}
+\SetCommentSty{mycommfont}
+\SetEndCharOfAlgoLine{}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Code
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+\usepackage{fancyvrb}                  % for fancy verbatim
+\usepackage{textcomp}
+\usepackage[space=true]{accsupp}
+% requires the latest version of package accsupp
+\newcommand{\copyablespace}{
+    \BeginAccSupp{method=hex,unicode,ActualText=00A0}
+\ %
+    \EndAccSupp{}
+}
+\usepackage[procnames]{listings}
+% \usepackage{setspace} % need for \setstretch{1}
+\lstset{%
+language   = python,%
+ % basicstyle = \ttfamily\setstretch{1},%
+basicstyle = \ttfamily,%
+columns    = flexible,%
+keywordstyle=\color{javared},
+firstnumber=100,
+frame=shadowbox,
+showstringspaces=false,
+morekeywords={import,from,class,def,for,while,if,is,in,elif,
+else,not,and,or,print,break,continue,return,True,False,None,access,
+as,del,except,exec,finally,global,import,lambda,pass,print,raise,try,assert,!=},
+keywordstyle={\color{javared}\bfseries},
+commentstyle=\color{javagreen}, %vsomb_col white comments
+morecomment=[s][\color{javagreen}]{"""}{"""},
+upquote=true,
+%% style for number
+numbers=none,
+resetmargins=true,
+xleftmargin=10pt,
+linewidth= \linewidth,
+numberstyle=\tiny,
+stepnumber=1,
+numbersep=8pt, %
+frame=shadowbox,
+rulesepcolor=\color{black},
+procnamekeys={def,class},
+procnamestyle=\color{oneblue}\textbf,
+literate={á}{{\'a}}1
+{à}{{\`a }}1
+{ã}{{\~a}}1
+{é}{{\'e}}1
+{ê}{{\^e}}1
+{è}{{\`e}}1
+{í}{{\'i}}1
+{î}{{\^i}}1
+{ó}{{\'o}}1
+{õ}{{\~o}}1
+{ô}{{\^o}}1
+{ú}{{\'u}}1
+{ü}{{\"u}}1
+{ç}{{\c{c}}}1
+}
+
+
+\usepackage{times} % use Times
+
+\usepackage{shortcuts_js} % possibly adapted from https://github.com/josephsalmon/OrganizationFiles/sty/shortcuts_js.sty
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% IMAGES
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% Use prebuiltimages/ for images extracted from code (e.g. python)
+% or to share images built from a software not available by the whole team (say matlab .fig, or inskcape .svg).
+% .svg files should be stored in dir srcimages/ and built from moosetex if needed:
+% https://www.charles-deledalle.fr/pages/moosetex.php
+% NEVER (GIT) versions files in images/ : only prebuiltimages/ & srcimages/ !
+
+\usepackage{graphicx} % For figures
+\graphicspath{{images/}, {prebuiltimages/}}
+\usepackage{subcaption}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% For citations
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\usepackage[authoryear]{natbib}
+\usepackage{cleveref} % mandatory for no pbs with hyperlinks theorem etc\dots
+\crefformat{equation}{Eq.~(#2#1#3)} % format for equations
+\Crefformat{equation}{Equation~(#2#1#3)} % format for equations
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Header and document start
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+\author{Pierre-Antoine Bannier}
+\title{How to solve the LASSO?}
+
+\begin{document}
+
+\maketitle
+
+\vskip 0.3in
+
+Now that we have studied LASSO and its variations as well as a brief overview of 
+duality, we can now focus on the optimization algorithms that solve the LASSO problems.
+In particular, we will primarily focus on coordinate descent and its variants applied 
+to solve LASSO and Multi-task LASSO. 
+
+
+
+\section*{Coordinate descent}
+\label{section_1}
+
+\subsection*{Intro to CD}
+
+The intuition of coordinate descent is to iterate over the $p$ features and optimize the
+objective function one coordinate (feature) at a time. CD implies that minimizing a function
+over all its coordinates one by one leads to the convergence to a global minimum.
+\\
+\\
+\underline{Proof}: Consider $f : \bbR^p \rightarrow \bbR$ a smooth and convex function.
+Let $e_i$ be the $i$-th vector in the canonical basis of $\bbR^p$. 
+\\
+\\
+First, 
+\begin{equation*}
+    \forall d \in \bbR, f(x + de_i) \geq f(x) 
+    \Rightarrow 
+    \frac{\partial f}{\partial x^{(i)}}(x) = 0
+    \enspace .
+\end{equation*}
+%
+Therefore,
+\begin{equation*}
+    \nabla f(x) = \left(
+        \frac{\partial f}{\partial x^{(1)}}(x),
+        \dots,
+        \frac{\partial f}{\partial x^{(p)}}(x)
+    \right) = 0
+    \enspace .
+\end{equation*}
+%
+which shows that for a convex and smooth function, we reach a global minimum.
+
+\subsection*{Exact coordinate descent}
+
+Exact coordinate descent consists in cycling through the coordindates in any order
+(using any permutation of $1, \dots, p$) and solving a lot of 1-dimensional optimization
+problems.
+\\
+\\
+For a quick example, let's consider a simple 2-dimensional parabola that we want to minimize.
+At the first iteration, we optimize the first dimension. At the second iteration, the second dimension.
+At the third iteration, the first dimension. At the fourth, the second dimension... until convergence.
+
+\subsection*{Coordinate gradient descent}
+
+Solving 1-dimensional problems can still be expensive. Therefore, we'd rather rely on an approximation of
+a step since we have plenty of iterations left. Therefore, we use gradient descent to make a step in a single
+direction. More formally, let $\gamma_1, \dots, \gamma_p > 0$ be $p$ gradient descent steps. The coordinate
+gradient descent writes:
+
+\begin{align*}
+    &\text{Choose} \enspace i_{k+1} \in \{1, \dots, n\} \\
+    &\begin{cases}
+        x_{k+1}^{(i)} = x_{k}^{(i)} - \gamma_i \nabla_i f(x_k), \quad &\text{if} \enspace i = i_{k+1} \\
+        x_{k+1}^{(i)} = x_{k}^{(i)}, \quad &\text{if} \enspace i \neq i_{k+1} 
+    \end{cases}
+\end{align*}
+%
+\cite{Beck_Tetruashvili13} have found a convergence bound for functions with Lipschitz continuous
+gradients. \cite{Nesterov12} proved a higher convergence speed when cycling randomly and independently
+through the coordinates.
+
+\section*{Proximal gradient descent}
+
+\subsection*{What is a proximal operator?}
+
+In convex optimization, objective functions might not always be smooth (differentiable). Let's consider
+an objective function that is the sum of a smooth data-fitting term and a non-smooth regularizer term.
+
+\begin{equation*}
+    F(w) = L(w) + \lambda R(w)
+\end{equation*}
+%
+where $L$ is a convex smooth function and $R$ is a simple non-smooth function. We want to
+minimize such a function. Using standard gradient descent is not possible since we can't compute the
+gradient of $F$ due to the non-differentiability of $R$. To circumvent this issue, we will derive an
+optimality condition using subgradients. Let $w^*$ be a minimizer of $F$. Then, the Fermat's condition
+writes:
+
+\begin{equation*}
+    0 \in \partial 
+    \left(
+        L(w^*) + \lambda R(w^*)
+    \right) 
+    = \nabla L(w^*) + \lambda \partial R(w^*)
+    \enspace .
+\end{equation*}
+%
+\begin{equation*}
+    - \nabla L(w^*) \in \lambda \partial R(w^*)
+\end{equation*}
+%
+We now have an optimality condition, but we still lack a procedure to minimize $L$. 
+In order to have one, let's rely on the majorization-minimization paradigm. Simply put, 
+we majorize a function and then we minimize that upper-bound. Using the $\mathcal{L}$-smoothness
+of $L$, it follows that:
+
+\begin{equation*}
+    \forall w, y \in \bbR^p,
+    \quad
+    L(w) \leq L(y) + 
+    \langle
+        \nabla L(y),
+        w-y
+    \rangle +
+    \frac{\mathcal{L}}{2} 
+    \norm{w - y}^2
+    \enspace .
+\end{equation*}
+%
+Note that minimizing this upper bound yields the update rule of gradient descent. Now let's add
+the non-smooth regularizer term:
+
+\begin{equation*}
+    \forall w, y \in \bbR^p,
+    \quad
+    L(w) + \lambda R(w) \leq L(y) + 
+    \langle
+        \nabla L(y),
+        w-y
+    \rangle +
+    \frac{\mathcal{L}}{2} 
+    \norm{w - y}^2 
+    + \lambda R(w) 
+    \enspace .
+\end{equation*}
+%
+Now, we want to minimize the upper bound with respect to $w$:
+
+\begin{align*}
+    &\argmin_{w} L(y) + 
+    \langle
+        \nabla L(y),
+        w-y
+    \rangle +
+    \frac{\mathcal{L}}{2} 
+    \norm{w - y}^2 
+    + \lambda R(w) \\
+    %
+    &= \argmin_{w}
+    \langle
+        \nabla L(y),
+        w-y
+    \rangle +
+    \frac{\mathcal{L}}{2} 
+    \norm{w - y}^2 
+    + \lambda R(w) \\
+    %
+    &= \argmin_{w}
+    \frac{1}{2}
+    \norm{
+        w - \left(
+            y - \frac{1}{\mathcal{L}}\nabla L(y)
+        \right)
+    }^2_2 
+    + \frac{\lambda}{\mathcal{L}}R(w) \\
+    %
+    &\triangleq \text{prox}_{\frac{\lambda}{\mathcal{L}}R}
+    (y - \frac{1}{\mathcal{L}}\nabla L(y))
+\end{align*}
+%
+where $\text{prox}$ is the proximal operator. From this equality, we can derive an update
+rule for an optimization algorithm.
+
+\begin{equation*}
+    w^{t+1} = \text{prox}_{\frac{\lambda}{\mathcal{L}}R}
+    (w^t - \frac{1}{\mathcal{L}}\nabla L(w^{t}))
+    \enspace .
+\end{equation*}
+%
+We can view $w^*$ as a fixed point of the proximal operator. Indeed, using Fermat's condition,
+
+\begin{align*}
+    -\nabla L(w^*) \in \lambda \partial R(w^*)
+    & \iff w^* + \frac{1}{\mathcal{L}} \nabla L(w^*) \in w^* - (\lambda\gamma) \partial R(w^*) \\
+    & \iff w^* \in (w^* - \frac{1}{\mathcal{L}} \nabla L(w^*)) - \frac{\lambda}{\mathcal{L}} \partial R(w^*) \\
+    & \iff w^* = \text{prox}_{\frac{\lambda}{\mathcal{L}} R}(w^* - \frac{1}{\mathcal{L}} \nabla L(w^*))
+\end{align*}
+
+\subsection*{ISTA: Iterative Shrinkage Thresholding Algorithm}
+\label{ista}
+
+Let's consider the LASSO problem:
+
+\begin{equation*}
+    \min_{\beta \in \bbR^p} \frac{1}{2}
+    \norm{y - X\beta}_2^2
+    + \lambda \norm{\beta}_1
+    \enspace .
+\end{equation*}
+%
+We see that the objective function is the sum of a smooth data fitting term and
+a non-smooth regularizer. We will derive the proximal operator of the LASSO problem 
+in order to obtain an update rule for ISTA.
+\\
+\\
+First, let's derive the proximal operator for $R(x)=\lambda\abs{x}$. $\text{prox}_R$ is the
+minimizer of the function
+
+\begin{equation*}
+    h(u) = \begin{cases}
+        h_1(u) \triangleq \lambda u + \frac{1}{2}(u-x)^2, \quad &u > 0, \\
+        h_2(u) \triangleq -\lambda u + \frac{1}{2}(u-x)^2, \quad &u \leq 0.
+    \end{cases}
+\end{equation*}
+%
+If the minimizer is attained at $u > 0$ then $0 = h_1'(u)=\lambda + u - x$, meaning that
+$u = x - \lambda$. Therefore, if $x > \lambda$, then $\text{prox}_R(x)=x-\lambda$. The same 
+argument shows that if $x < -\lambda$, then $\text{prox}_R(x)=x+\lambda$. If $\abs{x} \leq \lambda$,
+then $\text{prox}_R(x)$ must be the only point of nondifferentiability of $h$, namely, 0.
+Therefore, we can define the soft-thresholding function as:
+
+\begin{equation*}
+    \mathcal{T}_{\lambda}(x) = \left[\abs{x} - \lambda\right]_+ \text{sgn}(x)
+    \begin{cases}
+        x - \lambda,  \quad &x \geq \lambda \\
+        0, \quad & \abs{x} < \lambda \\
+        x + \lambda, \quad &x \leq -\lambda
+    \end{cases}
+\end{equation*}
+%
+For a vector, we can generalize the notation as follows:
+
+\begin{equation*}
+    \text{prox}_R(\mathbf{x}) = (\mathcal{T}_{\lambda}(x_j))_{j=1}^n
+    = \left[\abs{\mathbf{x}} - \lambda \mathbf{1}\right]_+ \odot \text{sgn}(\mathbf{x})
+    \enspace .
+\end{equation*}
+%
+Now we need to compute the gradient of $L$ with respect to $\beta$, which is given by
+$\nabla L(\beta) = -X^{\top}(y-X\beta)$. Finally, we can replace it in the proximal operator
+which yields:
+
+\begin{equation*}
+    \beta^{t+1} = \mathcal{T}_{\frac{\lambda}{\mathcal{L}}}\left(
+        \beta^{t} + \frac{1}{\mathcal{L}} X^{\top}(y-X\beta^t)
+    \right)
+\end{equation*}
+%
+Note that the Lipschitz constant $\mathcal{L}$ for the LASSO is given by $\norm{X^{\top}X}_2$.
+
+\subsection*{FISTA: Fast ISTA}
+
+The idea of FISTA is the same as acceleration à la Nesterov: finding $\beta^{t+1}$ using
+an interpolation between $\beta^t$ and $\beta^{t+1}$. It implements a simple heuristic to 
+enhance the convergence speed of ISTA (quadratic). In practice, \cite{Bertrand_Massias_Anderson}
+showed that FISTA does not accelerate proximal coordinate descent (next section). They
+introduce a variant of Anderson extrapolation suitable for coordinate descent, that has 
+proved to be very efficient.
+
+\subsection*{Back to CD: proximal coordinate descent}
+
+Let $f : \bbR^p \rightarrow \bbR$ be a convex and differentiable function, and let 
+$g_i$ be convex (possibly non-differentiable) function. Let $F$ be:
+
+\begin{equation*}
+    F(x) = f(x) + \sum_{i=1}^p g_i(x^{(i)})
+\end{equation*}
+%
+In short, we can separate a function $F$ as a smooth and non-smooth parts. Then, using the same notation 
+as previously, the proximal coordinate descent algorithm follows:
+
+\begin{align*}
+    &\text{Choose} \enspace i_{k+1} \in \{1, \dots, n\} \\
+    &\begin{cases}
+        x_{k+1}^{(i)} = \text{prox}_{\gamma_i, g_i}(x_k^{(i)} - \gamma_i \nabla_i f(x_k)) \quad &\text{if} \enspace i = i_{k+1} \\
+        x_{k+1}^{(i)} = x_{k}^{(i)} \quad &\text{if} \enspace i \neq i_{k+1} 
+    \end{cases}
+\end{align*}
+%
+where $\text{prox}_{\gamma_i, g_i}(y)=\argmin_{x \in \bbR^p} g(x) + \frac{1}{2\gamma_i} \norm{x-y}^2$. 
+As we shall see later, a lot of widely-used $g$ have a well-known closed-form solution for proximal operators
+(LASSO in particular).
+%
+In terms of convergence speed, we obtain the same rate as for non-composite objectives.
+
+\subsection*{Active set strategy}
+
+???
+
+
+\subsection*{Block proximal coordinate descent}
+
+In a multi-output regression setting, blocks of coordinates are updated at each iteration. Let's take Multi-Task
+LASSO for instance. 
+
+\begin{equation*}
+    \min_{\bfB \in \bbR^{p \times T}}
+    \frac{1}{2} \norm{\bf{Y - XB}}^2_\text{F}
+    + \sum_{j=1}^p \norm{\bf{B}_{j, :}}_2
+\end{equation*}
+%
+We notice the data-fitting term and a non-smooth regularizing term. When optimizing using
+coordinate descent, blocks of coordinates (the rows of $\bf{B}$) are updated at once.
+
+\subsection*{BCD for Multi-Task LASSO}
+
+Let's consider the Multi-task LASSO problem as presented above. We want to derive the proximal operator
+for this problem as we did for single-task LASSO.
+\\
+\\
+First, let's derive the proximal operator for $R(\mathbf{B}) = \norm{\mathbf{B}}_{2, 1}$. 
+We have shown with ISTA, that the proximal operator for the $\ell_1$ norm is the
+soft-thresholding operator. We can reuse this result to derive the proximal operator for
+the $\ell_{2,1}$-norm. Indeed, remember that the $\ell_{2,1}$ consists in computing the
+$\ell_1$-norm of the row-wise $\ell_2$-norms. The solution is obtained by \textbf{group-soft-thresholding}:
+
+\begin{equation*}
+    \text{prox}_{\lambda \norm{\cdot}_2}
+    (\mathbf{B}_{j:}) = 
+    \left(
+        1 - \frac{\lambda}{\norm{\mathbf{B}_{j:}}_2}
+    \right)_+
+    \mathbf{B}_{j:}
+\end{equation*}
+%
+Now we need to compute the gradient of the data fitting term with respect to $\mathbf{B}_{j:}$
+which is given by: 
+
+\begin{equation*}
+    \nabla_j f(\mathbf{B}_{j:}) 
+    = -\mathbf{X}_{:j}^{\top}
+    (\mathbf{Y} - \mathbf{XB})
+\end{equation*}
+%
+This enables us to find the following update rule:
+
+\begin{equation*}
+    \mathbf{B}_{j:}^{t+1} = 
+    \text{prox}\left(
+        \mathbf{B}_{j:}^{t}
+        + \frac{1}{\mathcal{L}}
+        \mathbf{X}_{:j}^{\top}
+        (\mathbf{Y} - \mathbf{X}\mathbf{B}^t)
+    \right)
+\end{equation*}
+%
+where $\mathcal{L} = \norm{\mathbf{X}_{:j}^{\top}\mathbf{X}_{:j}}_2$ is the Lipschitz constant.
+
+\newpage
+\bibliographystyle{plainnat}
+\bibliography{references_all}
+
+
+
+\end{document}

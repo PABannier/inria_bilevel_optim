@@ -84,30 +84,37 @@ def primal_mtl(R, coef, alpha):
     return p_obj
 
 
-def get_feasible_theta_mtl(R, X, alpha):
-    """Makes Theta dual feasible"""
-    Theta = R / alpha
-    d_norm_theta = norm_l2inf(X.T @ Theta)
-    Theta /= d_norm_theta
-
-    return Theta
-
-
-def dual_mtl(X, Y, Theta, alpha):
+def dual_mtl(X, Y, coef, alpha):
     """Dual objective function for multi-task
     LASSO
     """
+    R = Y - X @ coef
+    Theta = R / alpha
+    d_norm_theta = np.max(norm(X.T @ Theta, axis=1))
+    Theta /= d_norm_theta
+
+    d_obj = norm(Y) ** 2 / 2
+    d_obj -= ((alpha ** 2) / 2) * norm(Theta - Y / alpha) ** 2
+    return d_obj
+
     # n_samples, n_tasks = Y.shape
     # d_obj = norm(Theta) ** 2 + np.trace(Theta.T @ Y)
     # return d_obj
-    d_obj = norm(Theta) ** 2 + np.trace(Theta @ Y.T)
+    """
+    R = y - X @ coef
+    theta = R / alpha
+    d_norm_theta = np.max(np.abs(X.T @ theta))
+    theta /= d_norm_theta
+
+    d_obj = (norm(y) ** 2) / 2
+    d_obj -= ((alpha ** 2) / 2) * norm(theta - y / alpha) ** 2
     return d_obj
+    """
 
 
 def get_duality_gap_mtl(X, Y, coef, alpha):
     R = Y - X @ coef
     p_obj = primal_mtl(R, coef, alpha)
-    # Theta = get_feasible_theta_mtl(R, X, alpha)   # WIPPPP!!!!
     d_obj = dual_mtl(X, Y, coef, alpha)
     return p_obj - d_obj, p_obj, d_obj
 

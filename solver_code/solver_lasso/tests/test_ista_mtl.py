@@ -11,8 +11,8 @@ from celer import MultiTaskLasso
 
 rng = check_random_state(0)
 
-X = rng.randn(10, 15)
-Y = rng.randn(10, 5)
+X = rng.randn(5, 10)
+Y = rng.randn(5, 5)
 
 n_samples, n_features = X.shape
 _, n_tasks = Y.shape
@@ -30,9 +30,14 @@ for iter_idx in range(1000):
     coef += X.T @ (Y - X @ coef) / L
     coef = prox_l21(coef, alpha / L)
     gap, p_obj, d_obj = get_duality_gap_mtl(X, Y, coef, alpha)
-    print(f"Primal: {p_obj}, Dual: {d_obj}, Gap: {gap}")
+    if gap < 1e-4:
+        print("Threshold hit. Fitting done.")
+        break
+    print(
+        f"[{iter_idx}/1000] Primal: {p_obj:.4f}, Dual: {d_obj:.4f}, Gap: {gap:.4f}"
+    )
 
-clf = MultiTaskLasso(alpha / n_samples)
+clf = MultiTaskLasso(alpha / n_samples, max_iter=1000)
 clf.fit(X, Y)
 
 np.testing.assert_allclose(coef, clf.coef_.T, atol=1e-4)

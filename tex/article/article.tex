@@ -107,7 +107,7 @@ literate={á}{{\'a}}1
 % NEVER (GIT) versions files in images/ : only prebuiltimages/ & srcimages/ !
 
 \usepackage{graphicx} % For figures
-\graphicspath{{images/}, {prebuiltimages/}}
+\graphicspath{{images/}, {prebuiltimages/}, {srcimages/}}
 \usepackage{subcaption}
 
 
@@ -126,8 +126,8 @@ literate={á}{{\'a}}1
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 
-\author{Pierre-Antoine}
-\title{Internship}
+\author{Pierre-Antoine Bannier}
+\title{Reweighted Multi-Task LASSO}
 
 \begin{document}
 
@@ -148,12 +148,14 @@ literate={á}{{\'a}}1
 % ...more text here.
 \input{content/algorithm}
 
+\input{content/experiments}
+
 % if needed add appendix here:
 % \input{content/appendix}
 
 \newpage
 \bibliographystyle{plainnat}
-\bibliography{references_all}
+\bibliography{../biblio/references_all}
 % see https://github.com/josephsalmon/OrganizationFiles/biblio/references_all.bib, or adapt your own from that one.
 
 \end{document}

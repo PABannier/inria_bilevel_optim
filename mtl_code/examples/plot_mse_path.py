@@ -9,7 +9,7 @@ from sklearn.linear_model import MultiTaskLassoCV
 from mtl.cross_validation import ReweightedMultiTaskLassoCV
 from mtl.simulated_data import simulate_data
 
-from utils import compute_alpha_max
+from mtl.utils_datasets import compute_alpha_max
 
 
 def plot_mse_path_reweighted_mtl():
@@ -347,9 +347,9 @@ def plot_mse_path_wrt_num_iterations(corr=0.2):
 
     for n_iter, color in zip(n_iterations, colors):
         reweighted_mtl_lasso = ReweightedMultiTaskLassoCV(
-            alphas, n_folds=n_folds
+            alphas, n_folds=n_folds, n_iterations=n_iter
         )
-        reweighted_mtl_lasso.fit(X, Y, n_iterations=n_iter)
+        reweighted_mtl_lasso.fit(X, Y)
 
         y = reweighted_mtl_lasso.mse_path_.mean(axis=1)
 

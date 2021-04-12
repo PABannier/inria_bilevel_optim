@@ -8,6 +8,7 @@ __pycache__
 *.fdb_latexmk
 *.fls
 *.synctex.gz
+*.pkl
 mtl_code/mtl.egg-info/dependency_links.txt
 mtl_code/mtl.egg-info/PKG-INFO
 mtl_code/mtl.egg-info/requires.txt
@@ -20,3 +21,4 @@ mtl_code/examples/.ipynb_checkpoints
 .vscode/settings.json
 tex/memo/lasso_overview.out
 tex/memo/__latexindent_temp.tex
+.DS_Store

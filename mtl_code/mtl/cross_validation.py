@@ -3,7 +3,7 @@ from sklearn.base import BaseEstimator, RegressorMixin
 from sklearn.metrics import mean_squared_error, f1_score, jaccard_score
 from sklearn.model_selection import KFold
 from sklearn.utils.validation import check_X_y, check_is_fitted, check_array
-from mtl.mtl import ReweightedMTL
+from mtl.mtl import ReweightedMultiTaskLasso
 
 
 class ReweightedMultiTaskLassoCV(BaseEstimator, RegressorMixin):
@@ -21,7 +21,7 @@ class ReweightedMultiTaskLassoCV(BaseEstimator, RegressorMixin):
 
     Parameters
     ----------
-    param_grid : list or np.ndarray
+    alphas : list or np.ndarray
         Values of `alpha` to test.
 
     criterion : Callable, default=mean_squared_error
@@ -30,33 +30,38 @@ class ReweightedMultiTaskLassoCV(BaseEstimator, RegressorMixin):
     n_folds : int, default=5
         Number of folds.
 
+    n_iterations : int
+        Number of reweighting iterations performed during fitting.
+
     random_state : int or None
         Seed for reproducible experiments.
     """
 
     def __init__(
         self,
-        param_grid: list,
+        alphas: list,
         criterion=mean_squared_error,
         n_folds: int = 5,
+        n_iterations: int = 5,
         random_state: int = None,
     ):
-        if not isinstance(param_grid, (list, np.ndarray)):
+        if not isinstance(alphas, (list, np.ndarray)):
             raise TypeError(
                 "The parameter grid must be a list or a Numpy array."
             )
 
-        self.param_grid = param_grid
+        self.alphas = alphas
         self.criterion = criterion
         self.n_folds = n_folds
+        self.n_iterations = n_iterations
         self.random_state = random_state
 
         self.best_estimator_ = None
         self.best_cv_, self.best_alpha_ = np.inf, None
 
-        self.mse_path_ = np.zeros((len(param_grid), n_folds))
-        self.f1_path_ = np.zeros((len(param_grid), n_folds))
-        self.jaccard_path_ = np.zeros((len(param_grid), n_folds))
+        self.mse_path_ = np.zeros((len(alphas), n_folds))
+        self.f1_path_ = np.zeros((len(alphas), n_folds))
+        self.jaccard_path_ = np.zeros((len(alphas), n_folds))
 
     @property
     def coef_(self):
@@ -66,7 +71,6 @@ class ReweightedMultiTaskLassoCV(BaseEstimator, RegressorMixin):
         self,
         X: np.ndarray,
         Y: np.ndarray,
-        n_iterations: int = 10,
         coef_true: np.ndarray = None,
     ):
         """Fits the cross-validation error estimator
@@ -80,9 +84,6 @@ class ReweightedMultiTaskLassoCV(BaseEstimator, RegressorMixin):
         Y : np.ndarray of shape (n_samples, n_tasks)
             Target matrix.
 
-        n_iterations : int
-            Number of reweighting iterations performed during fitting.
-
         coef_true : np.ndarray of shape (n_features, n_tasks)
             Coefficient matrix. To compute f1_score and jaccard_score paths,
             it needs to be specified.
@@ -94,12 +95,15 @@ class ReweightedMultiTaskLassoCV(BaseEstimator, RegressorMixin):
                 "The number of folds can't be greater than the number of samples."
             )
 
-        kf = KFold(self.n_folds, random_state=self.random_state)
+        kf = KFold(self.n_folds, random_state=self.random_state, shuffle=True)
 
-        for idx_alpha, alpha_param in enumerate(self.param_grid):
-            print("Fitting MTL estimator with alpha =", alpha_param)
-            estimator_ = ReweightedMTL(
-                alpha_param, n_iterations=n_iterations, verbose=True
+        for idx_alpha, alpha_param in enumerate(self.alphas):
+            print(
+                f"[{idx_alpha+1}/{len(self.alphas)}] "
+                + f"Fitting MTL estimator with alpha = {alpha_param}"
+            )
+            estimator_ = ReweightedMultiTaskLasso(
+                alpha_param, n_iterations=self.n_iterations, verbose=False
             )
 
             Y_oof = np.zeros_like(Y)

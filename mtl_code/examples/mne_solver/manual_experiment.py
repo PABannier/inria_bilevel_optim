@@ -1,15 +1,29 @@
+import argparse
+import joblib
+from tqdm import tqdm
+
 import numpy as np
-import matplotlib.pyplot as plt
-import matplotlib.pylab as pl
 from numpy.linalg import norm
 
 import mne
 from mne.datasets import sample
 from mne.viz import plot_sparse_source_estimates
 
-from mtl.mtl import ReweightedMTL
-from mtl.cross_validation import ReweightedMultiTaskLassoCV
-from utils import compute_alpha_max
+from mtl.mtl import ReweightedMultiTaskLasso
+from mtl.utils_datasets import compute_alpha_max
+
+parser = argparse.ArgumentParser()
+parser.add_argument(
+    "--alpha",
+    help="regularizing hyperparameter",
+)
+
+args = parser.parse_args()
+
+if args.alpha is None:
+    raise ValueError(
+        "Please specify a regularizing constant by using --alpha argument."
+    )
 
 
 def load_data():
@@ -26,7 +40,7 @@ def load_data():
     evoked = mne.read_evokeds(
         ave_fname, condition=condition, baseline=(None, 0)
     )
-    evoked.crop(tmin=0.04, tmax=0.18)
+    evoked.crop(tmin=0.05, tmax=0.15)
 
     evoked = evoked.pick_types(eeg=False, meg=True)
     # Handling forward solution
@@ -106,7 +120,6 @@ def apply_solver(solver, evoked, forward, noise_cov, loose=0.2, depth=0.8):
 
     # Whiten data
     M = np.dot(whitener, M)
-    forward = mne.convert_forward_solution(forward, force_fixed=True)
 
     n_orient = 1 if is_fixed_orient(forward) else 3
     X, active_set = solver(M, gain, n_orient)
@@ -148,68 +161,17 @@ def solver(M, G, n_orient=1):
         We have ``X_full[active_set] == X`` where X_full is the full X matrix
         such that ``M = G X_full``.
     """
-    alpha_max = compute_alpha_max(G, M)
-    print("Alpha max for large experiment:", alpha_max)
+    estimator = ReweightedMultiTaskLasso(float(args.alpha))
+    estimator.fit(G, M)
 
-    alphas = np.geomspace(alpha_max/2, alpha_max / 20, num=15)
-    n_folds = 5
+    X = estimator.coef_
+    active_set = norm(X, axis=1) != 0
 
-    regressor = ReweightedMultiTaskLassoCV(alphas, n_folds=n_folds)
-    regressor.fit(G, M, n_iterations=5)
-
-    # Plot MSE path
-    colors = pl.cm.jet(np.linspace(0, 1, n_folds))
-
-    plt.figure(figsize=(8, 6))
-
-    for idx_fold in range(n_folds):
-        plt.semilogx(
-            alphas / alpha_max,
-            regressor.mse_path_[:, idx_fold],
-            linestyle="--",
-            color=colors[idx_fold],
-            label=f"Fold {idx_fold + 1}",
-        )
-
-    plt.semilogx(
-        alphas / alpha_max,
-        regressor.mse_path_.mean(axis=1),
-        linewidth=3,
-        color="black",
-        label="Mean",
-    )
-
-    mtl_min_idx = regressor.mse_path_.mean(axis=1).argmin()
-    plt.axvline(
-        x=alphas[mtl_min_idx] / alpha_max,
-        color="black",
-        linestyle="dashed",
-        linewidth=3,
-        label="Best $\lambda$",
-    )
-
-    plt.xlabel("$\lambda / \lambda_{\max}$", fontsize=12)
-    plt.ylabel("MSE", fontsize=12)
-    plt.title("MSE path - Reweighted MTL", fontsize=15, fontweight="bold")
-    plt.legend()
-    plt.show(block=True)
-
-    regressor = ReweightedMTL(regressor.best_alpha_, n_iterations=5)
-    regressor.fit(G, M)
-    X = regressor.coef_
-
-    indices = norm(X, axis=1) != 0
-    # indices = np.argsort(np.sum(X ** 2, axis=1))[-10:]
-    active_set = np.zeros(G.shape[1], dtype=bool)
-    for idx in indices:
-        idx -= idx % n_orient
-        active_set[idx : idx + n_orient] = True
-    X = X[active_set]
-    return X, active_set
+    return X[active_set, :], active_set
 
 
 if __name__ == "__main__":
-    loose, depth = 1.0, 0  # Free orieorientationntation
+    loose, depth = 0, 0  # Fixed orientation
     evoked, forward, noise_cov = load_data()
 
     stc = apply_solver(solver, evoked, forward, noise_cov, loose, depth)

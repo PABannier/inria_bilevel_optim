@@ -2,7 +2,8 @@ import numpy as np
 from numpy.linalg import norm
 from sklearn.utils import check_random_state
 
-from mtl.mtl import ReweightedMTL
+from celer import MultiTaskLasso
+from mtl.mtl import ReweightedMultiTaskLasso
 
 
 class SURE:
@@ -40,14 +41,15 @@ class SURE:
 
     """
 
-    def __init__(self, sigma, random_state=None):
+    def __init__(self, clf, sigma, random_state=None):
+        self.clf = clf
         self.sigma = sigma
         self.rng = check_random_state(random_state)
 
         self.eps = None
         self.delta = None
 
-    def get_val(self, X, Y, alpha, n_iterations=10):
+    def get_val(self, X, Y, alpha, n_iterations=5):
         """Performs the double forward step used in finite differences
         and evaluates an Monte-Carlo finite-difference approximation of
         the SURE.
@@ -77,11 +79,17 @@ class SURE:
             self.init_eps_and_delta(n_samples, n_tasks)
 
         # fit 2 models in Y and Y + epsilon * delta
-        model = ReweightedMTL(alpha, n_iterations, verbose=False)
+        model = self.clf(alpha, n_iterations, verbose=False)
         model.fit(X, Y)
         coef1 = model.coef_
         model.fit(X, Y + self.eps * self.delta)
         coef2 = model.coef_
+
+        # Note: Celer returns the transpose of the coefficient
+        # matrix
+        if coef1.shape[0] != X.shape[1]:
+            coef1 = coef1.T
+            coef2 = coef2.T
 
         # compute the dof
         dof = ((X @ coef2 - X @ coef1) * self.delta).sum() / self.eps
@@ -92,15 +100,18 @@ class SURE:
 
         return sure
 
-    def init_eps_and_delta(self, n_features, n_tasks):
+    def init_eps_and_delta(self, n_samples, n_tasks):
         """Implements a heuristic found by [1] to correctly
         set epsilon, and initializes delta with an isotropic
         Gaussian distribution.
 
         Parameters
         ----------
-        n_features: int
-            Number of features in the design matrix.
+        n_samples: int
+            Number of samples in the design matrix.
+
+        n_tasks: int
+            Number of tasks in the problem.
         """
-        self.eps = 2 * self.sigma / (n_features ** 0.3)
-        self.delta = self.rng.randn(n_features, n_tasks)
+        self.eps = 2 * self.sigma / (n_samples ** 0.3)
+        self.delta = self.rng.randn(n_samples, n_tasks)

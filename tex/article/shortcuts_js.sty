@@ -1,10 +1,16 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% reviewing
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+
 \usepackage{color}
+\usepackage[usenames,dvipsnames,svgnames,table]{xcolor}
+
+% Comment the following part when submitting, margin could have change for making the todo notes in the margin.
+\usepackage[textwidth=1.5cm, textsize=scriptsize]{todonotes}
+%\usepackage[textwidth=2.8cm, textsize=scriptsize,disable]{todonotes}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % ACTIVATE this part when writting
-\usepackage[textwidth=1.8cm, textsize=tiny]{todonotes}
+
 % Comment line below to avoid errors with ICML (useful to get readable comments)
 % \setlength{\marginparwidth}{2.6cm} % to comment if todonotes is not used
 
@@ -283,12 +289,3 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% Comments
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-\usepackage{color}
-\usepackage[usenames,dvipsnames,svgnames,table]{xcolor}
-
-% Comment the following part when submitting, margin could have change for making the todo notes in the margin.
-\usepackage[textwidth=1.5cm, textsize=scriptsize]{todonotes}
-%\usepackage[textwidth=2.8cm, textsize=scriptsize,disable]{todonotes}
-\setlength{\marginparwidth}{1.4cm} % to comment if todonotes is not used
-\newcommand{\jo}[1]{\todo[color=green!20]{{\bf Jo:} #1}}
-\newcommand{\hashem}[1]{\textbf{\textcolor{red}{HG: #1}}}

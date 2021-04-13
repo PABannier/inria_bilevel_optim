@@ -5,7 +5,11 @@ from sklearn.base import BaseEstimator, RegressorMixin
 from sklearn.utils.validation import check_X_y, check_is_fitted, check_array
 from sklearn.utils import check_random_state
 
-from solver_lasso.utils import get_duality_gap_mtl, compute_alpha_max, BST
+from solver_lasso.utils import (
+    get_duality_gap_mtl,
+    compute_alpha_max,
+    block_soft_thresh,
+)
 
 from celer import MultiTaskLasso
 
@@ -28,7 +32,7 @@ coef = np.zeros((n_features, n_tasks))
 
 for iter_idx in range(1000):
     coef += X.T @ (Y - X @ coef) / L
-    coef = BST(coef, alpha / L)
+    coef = block_soft_thresh(coef, alpha / L)
     gap, p_obj, d_obj = get_duality_gap_mtl(X, Y, coef, alpha)
     if gap < 1e-4:
         print("Threshold hit. Fitting done.")

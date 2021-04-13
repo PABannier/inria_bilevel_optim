@@ -5,7 +5,7 @@ from sklearn.linear_model import Lasso
 from sklearn.datasets import load_boston
 from sklearn.utils import check_random_state
 
-from solver_lasso.utils import ST, primal, dual, compute_alpha_max
+from solver_lasso.utils import primal, dual, compute_alpha_max
 from solver_lasso.cd import CDLasso
 
 

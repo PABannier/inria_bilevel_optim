@@ -50,7 +50,7 @@ def test_decreasing_loss_every_step(corr):
 
     print(diffs)
 
-    assert (diffs <= 5e-5).sum() == len(diffs)
+    assert np.all(diffs <= 5e-5)
 
 
 ####################

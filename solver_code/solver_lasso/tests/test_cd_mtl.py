@@ -6,7 +6,7 @@ from sklearn.utils.validation import check_X_y, check_is_fitted, check_array
 from sklearn.utils import check_random_state
 
 from solver_lasso.utils import (
-    BST,
+    block_soft_thresh,
     get_duality_gap_mtl,
     compute_alpha_max,
 )
@@ -37,7 +37,9 @@ for iter_idx in range(100):
         tmp[j, :] = 0
         R = Y - X @ tmp
 
-        coef[j, :] = BST(coef[j, :] + X[:, j] @ R / L[j], alpha / L[j])
+        coef[j, :] = block_soft_thresh(
+            coef[j, :] + X[:, j] @ R / L[j], alpha / L[j]
+        )
 
         # coef[j, :] = BST(
         #    coef[j, :] + x_j @ (Y - X @ coef) / L[j], alpha / L[j]

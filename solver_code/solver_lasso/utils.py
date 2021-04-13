@@ -4,20 +4,20 @@ from numba import njit
 
 
 @njit
-def ST(x, lambda_):
+def soft_thresh(x, lambda_):
     """Soft-thresholding operator"""
     return np.sign(x) * np.maximum(0.0, np.abs(x) - lambda_)
 
 
 @njit
-def BST(x, lambda_):
+def block_soft_thresh(x, lambda_):
     """Block soft-thresholding operator"""
     a = 1 - lambda_ / norm(x)
     return np.maximum(0, a) * x
 
 
 @njit
-def norm_l21(X):
+def norm_l2_1(X):
     res = 0
     for j in range(X.shape[0]):
         res += norm(X[j, :])
@@ -25,7 +25,7 @@ def norm_l21(X):
 
 
 @njit
-def norm_l2inf(X):
+def norm_l2_inf(X):
     res = 0
     for j in range(X.shape[0]):
         res = max(res, norm(X[j, :]))
@@ -72,7 +72,7 @@ def primal_mtl(R, coef, alpha):
     LASSO
     """
     p_obj = norm(R) ** 2
-    p_obj += alpha * norm_l21(coef)
+    p_obj += alpha * norm_l2_1(coef)
     return p_obj
 
 
@@ -110,11 +110,10 @@ def get_duality_gap_mtl(X, Y, coef, alpha):
     return p_obj - d_obj, p_obj, d_obj
 
 
-@njit
 def fista_iteration(coef, X, y, t, z, L, alpha):
     coef_old = coef.copy()
     z = z + X.T @ (y - X @ z) / L
-    coef = ST(z, alpha / L)
+    coef = soft_thresh(z, alpha / L)
 
     t0 = t
     t = (1 + np.sqrt(1 + 4 * t ** 2)) / 2
@@ -122,11 +121,10 @@ def fista_iteration(coef, X, y, t, z, L, alpha):
     return coef, t, z
 
 
-@njit
 def ista_iteration(coef, X, y, L, alpha):
     # coef = coef_.copy()
     coef += X.T @ (y - X @ coef) / L
-    coef = ST(coef, alpha / L)
+    coef = soft_thresh(coef, alpha / L)
     return coef
 
 
@@ -137,7 +135,7 @@ def cd_iteration(n_features, X, coef, y, alpha, L):
         tmp[j] = 0
         r = y - X @ tmp
 
-        coef[j] = ST(coef[j] + X[:, j] @ r / L[j], alpha / L[j])
+        coef[j] = soft_thresh(coef[j] + X[:, j] @ r / L[j], alpha / L[j])
     return coef
 
 
@@ -169,6 +167,11 @@ def anderson_extrapolation(X, y, coef, U, last_K_coef, p_obj, alpha, K):
 
     K : int
         Number of previous iterates used to extrapolate
+
+    Returns
+    -------
+    coef : np.ndarray
+        Coefficient matrix.
     """
     for k in range(K):
         U[k] = last_K_coef[k + 1] - last_K_coef[k]

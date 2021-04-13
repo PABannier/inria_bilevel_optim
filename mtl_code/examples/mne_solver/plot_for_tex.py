@@ -8,7 +8,7 @@ from mayavi import mlab
 from mne.datasets import sample
 from mne.inverse_sparse.mxne_inverse import _make_sparse_stc
 
-fig_dir = "../../../tex/article/srcimages/"
+fig_dir = "../../../tex/article/srcimages/blobs/"
 
 
 def plot_blob(
@@ -66,4 +66,6 @@ if __name__ == "__main__":
     estimator = "lasso-sure"
     stc = joblib.load(f"data/stc_{estimator}.pkl")
 
-    plot_blob(stc, fig_dir=fig_dir, save_fname=f"-blob-{estimator}.png")
+    plot_blob(
+        stc, fig_dir=fig_dir, save_fname=f"-blob-left-auditory-{estimator}.png"
+    )

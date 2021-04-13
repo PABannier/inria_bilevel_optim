@@ -47,8 +47,82 @@
 
 \begin{figure}[h]
     \centering
-    \includegraphics[width=\linewidth]{sure_mse_f1_comparison_legend}
-    \includegraphics[width=\linewidth]{sure_mse_f1_comparison}
+    \includegraphics[scale=0.5]{metric_comparison/sure_mse_f1_comparison_legend}
+    \includegraphics[scale=0.5]{metric_comparison/sure_mse_f1_comparison}
     \caption{SURE, MSE, F1 comparison, \textcolor{blue}{TODO explain more in legend}}
     \label{fig:sure_mse_f1_comparison}
+\end{figure}
+
+\subsection{Left-Auditory experiments}
+
+\begin{figure}[t!]
+    \centering
+    %
+    \begin{subfigure}[t]{0.3\textwidth}
+        \centering
+        \begin{subfigure}[t]{0.3\textwidth}
+            \centering
+            \includegraphics[scale=0.1]{blobs/lh-blob-adaptive-cv}
+        \end{subfigure}
+        \hfill
+        \begin{subfigure}[t]{0.3\textwidth}
+            \centering
+            \includegraphics[scale=0.1]{blobs/rh-blob-adaptive-cv}
+        \end{subfigure}
+        \caption{Cross-validation MSE}
+        \label{fig:blob-adaptive-cv}
+    \end{subfigure}
+    %
+    \vfill
+    %
+    \begin{subfigure}[t]{0.3\textwidth}
+        \begin{subfigure}[t]{0.3\textwidth}
+            \centering
+            \includegraphics[scale=0.1]{blobs/lh-blob-adaptive-sure}
+        \end{subfigure}
+        \hfill
+        \begin{subfigure}[t]{0.3\textwidth}
+            \centering
+            \includegraphics[scale=0.1]{blobs/rh-blob-adaptive-sure}
+        \end{subfigure}
+        \caption{SURE}
+        \label{fig:blob-adaptive-sure}
+    \end{subfigure}
+    \caption{Reweighted Multi-Task LASSO}
+\end{figure}
+
+\begin{figure}[t!]
+    \centering
+    %
+    \begin{subfigure}[t]{0.3\textwidth}
+        \centering
+        \begin{subfigure}[t]{0.3\textwidth}
+            \centering
+            \includegraphics[scale=0.1]{blobs/lh-blob-lasso-cv}
+        \end{subfigure}
+        \hfill
+        \begin{subfigure}[t]{0.3\textwidth}
+            \centering
+            \includegraphics[scale=0.1]{blobs/rh-blob-lasso-cv}
+        \end{subfigure}
+        \caption{Cross-validation MSE}
+        \label{fig:blob-lasso-cv}
+    \end{subfigure}
+    %
+    \vfill
+    %
+    \begin{subfigure}[t]{0.3\textwidth}
+        \begin{subfigure}[t]{0.3\textwidth}
+            \centering
+            \includegraphics[scale=0.1]{blobs/lh-blob-lasso-sure}
+        \end{subfigure}
+        \hfill
+        \begin{subfigure}[t]{0.3\textwidth}
+            \centering
+            \includegraphics[scale=0.1]{blobs/rh-blob-lasso-sure}
+        \end{subfigure}
+        \caption{SURE}
+        \label{fig:blob-lasso-sure}
+    \end{subfigure}
+    \caption{Multi-Task LASSO}
 \end{figure}

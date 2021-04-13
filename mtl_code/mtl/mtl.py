@@ -16,8 +16,15 @@ class ReweightedMultiTaskLasso(BaseEstimator, RegressorMixin):
     alpha : float, default=0.1
         Constants that multiplies the L1/L2 mixed norm as a regularizer.
 
+    n_iterations : int
+        Number of reweighting iterations performed during fitting.
+
     verbose : bool, default=True
         Option to print the loss when fitting the estimator.
+
+    penalty : callable, default=None
+        Custom penalty to rescale the weights after one iteration.
+        By default, the penalty is the same as in [1].
 
     Attributes
     ----------
@@ -27,9 +34,6 @@ class ReweightedMultiTaskLasso(BaseEstimator, RegressorMixin):
     loss_history_ : list
         Contains the training loss history after fitting.
 
-    n_iterations : int
-        Number of reweighting iterations performed during fitting.
-
     References
     ----------
     .. [1] Candès et al. (2007), Enhancing sparsity by reweighted l1 minimization
@@ -37,11 +41,22 @@ class ReweightedMultiTaskLasso(BaseEstimator, RegressorMixin):
     """
 
     def __init__(
-        self, alpha: float = 0.1, n_iterations: int = 10, verbose: bool = True
+        self,
+        alpha: float = 0.1,
+        n_iterations: int = 10,
+        verbose: bool = True,
+        penalty: callable = None,
     ):
         self.alpha = alpha
         self.verbose = verbose
         self.n_iterations = n_iterations
+
+        if penalty:
+            self.penablty = penalty
+        else:
+            self.penalty = lambda u: 1 / (
+                2 * np.sqrt(np.linalg.norm(u, axis=1)) + np.finfo(float).eps
+            )
 
         self.coef_ = None
         self.loss_history_ = []
@@ -81,8 +96,7 @@ class ReweightedMultiTaskLasso(BaseEstimator, RegressorMixin):
             coef_hat = (self.clf.coef_ / w).T  # (n_features, n_tasks)
 
             # Updating the weights
-            c = np.linalg.norm(coef_hat, axis=1)
-            w = 1 / (2 * np.sqrt(c) + np.finfo(float).eps)
+            w = self.penalty(coef_hat)
 
             loss = objective(coef_hat)
             self.loss_history_.append(loss)

@@ -41,8 +41,8 @@ class SURE:
 
     """
 
-    def __init__(self, clf, sigma, random_state=None):
-        self.clf = clf
+    def __init__(self, estimator, sigma, random_state=None):
+        self.estimator = estimator
         self.sigma = sigma
         self.rng = check_random_state(random_state)
 
@@ -79,7 +79,7 @@ class SURE:
             self.init_eps_and_delta(n_samples, n_tasks)
 
         # fit 2 models in Y and Y + epsilon * delta
-        model = self.clf(alpha, n_iterations, verbose=False)
+        model = self.estimator(alpha, n_iterations, verbose=False)
         model.fit(X, Y)
         coef1 = model.coef_
         model.fit(X, Y + self.eps * self.delta)

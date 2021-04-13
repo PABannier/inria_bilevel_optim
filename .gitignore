@@ -9,11 +9,6 @@ __pycache__
 *.fls
 *.synctex.gz
 *.pkl
-mtl_code/mtl.egg-info/dependency_links.txt
-mtl_code/mtl.egg-info/PKG-INFO
-mtl_code/mtl.egg-info/requires.txt
-mtl_code/mtl.egg-info/SOURCES.txt
-mtl_code/mtl.egg-info/top_level.txt
 tex/__latexindent_temp.tex
 tex/lasso_overview.out
 tex/bibli/__latexindent_temp.tex
@@ -22,3 +17,5 @@ mtl_code/examples/.ipynb_checkpoints
 tex/memo/lasso_overview.out
 tex/memo/__latexindent_temp.tex
 .DS_Store
+mtl_code/mtl.egg-info/
+solver_code/solver_lasso.egg-info/

@@ -32,14 +32,6 @@ def norm_l2inf(X):
     return res
 
 
-# @njit
-def prox_l21(X, lambda_):
-    """Proximal operator for
-    the l2,1 matrix norm"""
-    x = norm(X, axis=1)
-    return X * np.maximum(1 - lambda_ / np.expand_dims(x, axis=-1), 0)
-
-
 @njit
 def primal(X, y, coef, alpha):
     """Primal objective function for single-task
@@ -84,11 +76,10 @@ def primal_mtl(R, coef, alpha):
     return p_obj
 
 
-def dual_mtl(X, Y, coef, alpha):
+def dual_mtl(R, X, Y, alpha):
     """Dual objective function for multi-task
     LASSO
     """
-    R = Y - X @ coef
     Theta = R / alpha
     d_norm_theta = np.max(norm(X.T @ Theta, axis=1))
     Theta /= d_norm_theta
@@ -115,7 +106,7 @@ def dual_mtl(X, Y, coef, alpha):
 def get_duality_gap_mtl(X, Y, coef, alpha):
     R = Y - X @ coef
     p_obj = primal_mtl(R, coef, alpha)
-    d_obj = dual_mtl(X, Y, coef, alpha)
+    d_obj = dual_mtl(R, X, Y, alpha)
     return p_obj - d_obj, p_obj, d_obj
 
 

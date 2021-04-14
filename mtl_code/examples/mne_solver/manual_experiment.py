@@ -1,6 +1,7 @@
 import argparse
 import joblib
 from tqdm import tqdm
+import os.path as op
 
 import numpy as np
 from numpy.linalg import norm
@@ -10,6 +11,8 @@ from mne.datasets import sample
 from mne.viz import plot_sparse_source_estimates
 
 from mtl.mtl import ReweightedMultiTaskLasso
+from mtl.cross_validation import ReweightedMultiTaskLassoCV
+from mtl.sure import SURE
 from mtl.utils_datasets import compute_alpha_max
 
 parser = argparse.ArgumentParser()
@@ -17,12 +20,14 @@ parser.add_argument(
     "--alpha",
     help="regularizing hyperparameter",
 )
+parser.add_argument("--condition", help="condition")
 
 args = parser.parse_args()
 
-if args.alpha is None:
+if args.condition is None:
     raise ValueError(
-        "Please specify a regularizing constant by using --alpha argument."
+        "Please specify a regularizing constant by using --condition argument. "
+        + "Available condition: Left Auditory, Right Auditory, Left visual, Right visual."
     )
 
 
@@ -31,8 +36,16 @@ def load_data():
     fwd_fname = data_path + "/MEG/sample/sample_audvis-meg-eeg-oct-6-fwd.fif"
     ave_fname = data_path + "/MEG/sample/sample_audvis-ave.fif"
     cov_fname = data_path + "/MEG/sample/sample_audvis-shrunk-cov.fif"
+    trans_fname = op.join(
+        data_path, "MEG", "sample", "sample_audvis_raw-trans.fif"
+    )
     subjects_dir = data_path + "/subjects"
-    condition = "Left Auditory"
+
+    bem_fname = op.join(
+        subjects_dir, "sample", "bem", "sample-5120-bem-sol.fif"
+    )
+
+    condition = args.condition
 
     # Read noise covariance matrix
     noise_cov = mne.read_cov(cov_fname)
@@ -46,7 +59,15 @@ def load_data():
     # Handling forward solution
     forward = mne.read_forward_solution(fwd_fname)
 
-    return evoked, forward, noise_cov
+    return (
+        evoked,
+        forward,
+        noise_cov,
+        cov_fname,
+        bem_fname,
+        trans_fname,
+        subjects_dir,
+    )
 
 
 def apply_solver(solver, evoked, forward, noise_cov, loose=0.2, depth=0.8):
@@ -161,8 +182,29 @@ def solver(M, G, n_orient=1):
         We have ``X_full[active_set] == X`` where X_full is the full X matrix
         such that ``M = G X_full``.
     """
-    estimator = ReweightedMultiTaskLasso(float(args.alpha))
-    estimator.fit(G, M)
+    if args.alpha:
+        estimator = ReweightedMultiTaskLasso(float(args.alpha))
+        estimator.fit(G, M)
+    else:
+        alpha_max = compute_alpha_max(G, M)
+        print("Alpha max:", alpha_max)
+
+        alphas = np.geomspace(alpha_max, alpha_max / 10, num=15)
+        best_alpha_ = None
+        best_sure_ = np.inf
+
+        for alpha in tqdm(alphas, total=len(alphas)):
+            criterion = SURE(ReweightedMultiTaskLasso, 1, random_state=0)
+            sure_val_ = criterion.get_val(G, M, alpha)
+            if sure_val_ < best_sure_:
+                best_sure_ = sure_val_
+                best_alpha_ = alpha
+
+        print("best sure", best_sure_)
+
+        # Refitting
+        estimator = ReweightedMultiTaskLasso(best_alpha_)
+        estimator.fit(G, M)
 
     X = estimator.coef_
     active_set = norm(X, axis=1) != 0
@@ -171,8 +213,16 @@ def solver(M, G, n_orient=1):
 
 
 if __name__ == "__main__":
-    loose, depth = 0, 0  # Fixed orientation
-    evoked, forward, noise_cov = load_data()
+    loose, depth = 0, 0.3  # Fixed orientation
+    (
+        evoked,
+        forward,
+        noise_cov,
+        cov_fname,
+        bem_fname,
+        trans_fname,
+        subjects_dir,
+    ) = load_data()
 
     stc = apply_solver(solver, evoked, forward, noise_cov, loose, depth)
 

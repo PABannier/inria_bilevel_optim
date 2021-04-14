@@ -32,9 +32,6 @@ def plot_source_activations(src, stcs, axes, labels=None, linewidth=2):
     ]
     unique_vertnos = np.unique(np.concatenate(vertnos).ravel())
 
-    # fig = plt.figure()
-    # ax = fig.add_subplot(111)
-
     colors = cycle(colors)
 
     if labels is not None:
@@ -90,10 +87,7 @@ evoked.pick_types(meg="grad").apply_baseline((None, 0.0))
 max_t = evoked.get_peak()[1]
 
 forward = mne.read_forward_solution(fname_fwd)
-# forward = joblib.load("data/forward_lasso-sure.pkl")
-
-# stc = mne.read_source_estimate(fname_stc)
-stc = joblib.load("data/stc_adaptive-sure.pkl")
+stc = joblib.load("left_auditory/data/stc_adaptive-sure.pkl")
 
 colormap = "viridis"
 
@@ -164,13 +158,7 @@ cbar = mne.viz.plot_brain_colorbar(
 
 # tweak margins and spacing
 fig.subplots_adjust(
-    left=0.15,
-    right=0.9,
-    bottom=0.15,
-    top=0.9,
-    wspace=0.1,
-    hspace=0.2
-    # left=0.2, right=0.9, bottom=0.15, top=0.9, wspace=0.1, hspace=0.5,
+    left=0.15, right=0.9, bottom=0.15, top=0.9, wspace=0.1, hspace=0.2
 )
 
 # add subplot labels

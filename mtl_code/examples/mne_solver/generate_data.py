@@ -23,9 +23,15 @@ parser.add_argument(
     help="choice of estimator to reconstruct the channels. available: "
     + "lasso-cv, lasso-sure, adaptive-cv, adaptive-sure",
 )
+parser.add_argument(
+    "--condition",
+    help="choice of condition. available: "
+    + "Left Auditory, Right Auditory, Left visual, Right visual",
+)
 
 args = parser.parse_args()
 ESTIMATOR = args.estimator
+CONDITION = args.condition
 
 
 def load_data():
@@ -34,13 +40,12 @@ def load_data():
     ave_fname = data_path + "/MEG/sample/sample_audvis-ave.fif"
     cov_fname = data_path + "/MEG/sample/sample_audvis-shrunk-cov.fif"
     subjects_dir = data_path + "/subjects"
-    condition = "Left Auditory"
 
     # Read noise covariance matrix
     noise_cov = mne.read_cov(cov_fname)
     # Handling average file
     evoked = mne.read_evokeds(
-        ave_fname, condition=condition, baseline=(None, 0)
+        ave_fname, condition=CONDITION, baseline=(None, 0)
     )
     evoked.crop(tmin=0.05, tmax=0.15)
 
@@ -246,5 +251,7 @@ if __name__ == "__main__":
     loose, depth = 0, 0.9  # Fixed orientation
     evoked, forward, noise_cov = load_data()
 
+    folder_name = CONDITION.lower().replace(" ", "_")
+
     stc = apply_solver(solver, evoked, forward, noise_cov, loose, depth)
-    joblib.dump(stc, f"data/stc_{ESTIMATOR}.pkl")
+    joblib.dump(stc, f"{folder_name}/data/stc_{ESTIMATOR}.pkl")

@@ -145,13 +145,14 @@ brain = stc.plot(
 )
 
 brain.set_time(0.1)
+brain.close()
 
 # Adding foci
 add_foci_to_brain_surface(brain, "lh", "blue")
 add_foci_to_brain_surface(brain, "rh", "red")
 
 screenshot = brain.screenshot()
-brain.close()
+# brain.close()
 
 nonwhite_pix = (screenshot != 255).any(-1)
 nonwhite_row = nonwhite_pix.any(1)

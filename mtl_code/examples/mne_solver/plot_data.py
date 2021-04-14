@@ -41,7 +41,7 @@ def load_data():
     evoked = mne.read_evokeds(
         ave_fname, condition=CONDITION, baseline=(None, 0)
     )
-    evoked.crop(tmin=0.05, tmax=0.15)
+    evoked.crop(tmin=0.05, tmax=0.15)  # 0.05 - 0.15
 
     evoked = evoked.pick_types(eeg=False, meg=True)
     # Handling forward solution

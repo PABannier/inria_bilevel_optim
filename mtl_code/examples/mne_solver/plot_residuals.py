@@ -208,7 +208,7 @@ def solver(M, G, n_orient=1):
 
 
 def generate_report(
-    evoked_fig, evoked_fig_white, residual_fig, residual_fig_white
+    evoked_fig, evoked_fig_white, residual_fig, residual_fig_white, stc
 ):
     report = mne.report.Report(title=args.condition)
 
@@ -218,9 +218,32 @@ def generate_report(
     report.add_figs_to_section(evoked_fig_white, "Evoked - White noise")
     report.add_figs_to_section(residual_fig_white, "Residual - White noise")
 
+    view = "lateral" if "auditory" in args.condition else "caudal"
+
+    figs = list()
+    kwargs = dict(
+        views=view, subjects_dir=subjects_dir, initial_time=0.05, clim="auto"
+    )
+
+    for hemi in ("lh", "rh"):
+        try:
+            brain = stc.plot(hemi=hemi, **kwargs)
+            brain.toggle_interface(False)
+            figs.append(brain.screenshot(time_viewer=True))
+            brain.close()
+        except ValueError:
+            print(f"No data to print for {hemi}")
+
+    if len(figs) > 1:
+        report.add_slider_to_section(figs)
+    elif len(figs) == 1:
+        report.add_figs_to_section(figs[0], "Source estimate")
+    else:
+        raise Exception("No figure to add.")
+
     filename = args.condition.lower().replace(" ", "_")
 
-    report.save(f"reports/report_{filename}.html")
+    report.save(f"reports/report_{filename}.html", overwrite=True)
 
 
 if __name__ == "__main__":
@@ -254,5 +277,5 @@ if __name__ == "__main__":
     residual_fig_white = residual.plot_white(noise_cov=noise_cov)
 
     generate_report(
-        evoked_fig, evoked_fig_white, residual_fig, residual_fig_white
+        evoked_fig, evoked_fig_white, residual_fig, residual_fig_white, stc
     )

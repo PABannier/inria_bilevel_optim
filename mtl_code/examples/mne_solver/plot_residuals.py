@@ -1,10 +1,14 @@
 import argparse
 import joblib
+from pathlib import Path
 from tqdm import tqdm
 import os.path as op
 
 import numpy as np
 from numpy.linalg import norm
+import matplotlib.pyplot as plt
+
+from joblib import Memory
 
 import mne
 from mne.datasets import sample
@@ -27,6 +31,7 @@ if args.condition is None:
         + "Available condition: Left Auditory, Right Auditory, Left visual, Right visual."
     )
 
+mem = Memory('.')
 
 def load_data():
     data_path = sample.data_path()
@@ -156,6 +161,7 @@ def apply_solver(solver, evoked, forward, noise_cov, loose=0.2, depth=0.8):
     return stc, residual
 
 
+@mem.cache
 def solver(M, G, n_orient=1):
     """Run L2 penalized regression and keep 10 strongest locations.
 
@@ -207,54 +213,62 @@ def solver(M, G, n_orient=1):
     return X[active_set, :], active_set
 
 
-def add_foci_to_brain_surface(brain, hemi, color, stc):
-    i = 0 if hemi == "lh" else 1
+def add_foci_to_brain_surface(brain, stc):
+    fig, ax = plt.subplots(figsize=(10, 4))
 
-    try:
-        activation_idx = stc.vertices[i][0]
+    for i_hemi, hemi in enumerate(['lh', 'rh']):
         surface_coords = brain.geo[hemi].coords
+        hemi_data = stc.lh_data if hemi == 'lh' else stc.rh_data
+        for k in range(len(stc.vertices[i_hemi])):
+            activation_idx = stc.vertices[i_hemi][k]
+            foci_coords = surface_coords[activation_idx]
 
-        foci_coords = surface_coords[activation_idx]
+            line, = ax.plot(stc.times, 1e9 * hemi_data[k])
+            brain.add_foci(foci_coords, hemi=hemi, color=line.get_color())
+    
+    ax.set_xlabel('Time (s)')
+    ax.set_ylabel('Amplitude (nAm)')
 
-        brain.add_foci(foci_coords, hemi=hemi, color=color)  # Color???
-    except IndexError:
-        print(f"Could not find an activation for hemisphere {hemi}")
-
+    return fig
 
 def generate_report(
     evoked_fig, evoked_fig_white, residual_fig, residual_fig_white, stc
 ):
     report = mne.report.Report(title=args.condition)
 
-    views = ["lat", "med"] if "Auditory" in args.condition else ["lat", "cau"]
+    # views = ["lat", "med"] if "Auditory" in args.condition else ["lat", "cau"]
+    views = ["lat", "med"]
 
     kwargs = dict(
         views=views,
         hemi="split",
         subjects_dir=subjects_dir,
-        initial_time=0.1,
+        # initial_time=0.1,
+        initial_time=0.,
         clim="auto",
+        colorbar=False,
+        show_traces=False,
+        time_viewer=False
     )
 
     brain = stc.plot(**kwargs)
-    for hemi, col in zip(("lh", "rh"), ("blue", "orange")):
-        add_foci_to_brain_surface(brain, hemi, col, stc)
+    fig_traces = add_foci_to_brain_surface(brain, stc)
 
-    brain.toggle_interface(False)
+    # brain.toggle_interface(False)
     fig = brain.screenshot(time_viewer=True)
     brain.close()
-
     exp_var = norm(residual.data) / norm(evoked.data)
 
+    report.add_figs_to_section(evoked_fig, "Evoked", section='Sensor')
+    report.add_figs_to_section(residual_fig, "Residual", section='Sensor')
+
+    report.add_figs_to_section(evoked_fig_white, "Evoked - White noise", section='Sensor')
+    report.add_figs_to_section(residual_fig_white, "Residual - White noise", section='Sensor')
+
     report.add_figs_to_section(
-        fig, f"Source estimate, explained variance: {exp_var:.2f}"
+        fig, f"Source estimate, explained variance: {exp_var:.2f}", section='Source'
     )
-
-    report.add_figs_to_section(evoked_fig, "Evoked")
-    report.add_figs_to_section(residual_fig, "Residual")
-
-    report.add_figs_to_section(evoked_fig_white, "Evoked - White noise")
-    report.add_figs_to_section(residual_fig_white, "Residual - White noise")
+    report.add_figs_to_section(fig_traces, 'Source Time Courses', section='Source')
 
     filename = args.condition.lower().replace(" ", "_")
 
@@ -274,8 +288,10 @@ if __name__ == "__main__":
     ) = load_data()
 
     folder = args.condition.lower().replace(" ", "_")
-    stc_filepath = f"{folder}/data/stc_adaptive-sure.pkl"
-    residual_filepath = f"{folder}/data/residual_adaptive-sure.pkl"
+    data_folder = Path(f"{folder}/data")
+    data_folder.mkdir(exist_ok=True, parents=True)
+    stc_filepath = data_folder / "stc_adaptive-sure.pkl"
+    residual_filepath = data_folder / "residual_adaptive-sure.pkl"
 
     if op.exists(stc_filepath) and op.exists(residual_filepath):
         stc = joblib.load(stc_filepath)

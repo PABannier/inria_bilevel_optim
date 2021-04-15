@@ -207,39 +207,54 @@ def solver(M, G, n_orient=1):
     return X[active_set, :], active_set
 
 
+def add_foci_to_brain_surface(brain, hemi, color, stc):
+    i = 0 if hemi == "lh" else 1
+
+    try:
+        activation_idx = stc.vertices[i][0]
+        surface_coords = brain.geo[hemi].coords
+
+        foci_coords = surface_coords[activation_idx]
+
+        brain.add_foci(foci_coords, hemi=hemi, color=color)  # Color???
+    except IndexError:
+        print(f"Could not find an activation for hemisphere {hemi}")
+
+
 def generate_report(
     evoked_fig, evoked_fig_white, residual_fig, residual_fig_white, stc
 ):
     report = mne.report.Report(title=args.condition)
+
+    views = ["lat", "med"] if "Auditory" in args.condition else ["lat", "cau"]
+
+    kwargs = dict(
+        views=views,
+        hemi="split",
+        subjects_dir=subjects_dir,
+        initial_time=0.1,
+        clim="auto",
+    )
+
+    brain = stc.plot(**kwargs)
+    for hemi, col in zip(("lh", "rh"), ("blue", "orange")):
+        add_foci_to_brain_surface(brain, hemi, col, stc)
+
+    brain.toggle_interface(False)
+    fig = brain.screenshot(time_viewer=True)
+    brain.close()
+
+    exp_var = norm(residual.data) / norm(evoked.data)
+
+    report.add_figs_to_section(
+        fig, f"Source estimate, explained variance: {exp_var:.2f}"
+    )
 
     report.add_figs_to_section(evoked_fig, "Evoked")
     report.add_figs_to_section(residual_fig, "Residual")
 
     report.add_figs_to_section(evoked_fig_white, "Evoked - White noise")
     report.add_figs_to_section(residual_fig_white, "Residual - White noise")
-
-    view = "lateral" if "auditory" in args.condition else "caudal"
-
-    figs = list()
-    kwargs = dict(
-        views=view, subjects_dir=subjects_dir, initial_time=0.05, clim="auto"
-    )
-
-    for hemi in ("lh", "rh"):
-        try:
-            brain = stc.plot(hemi=hemi, **kwargs)
-            brain.toggle_interface(False)
-            figs.append(brain.screenshot(time_viewer=True))
-            brain.close()
-        except ValueError:
-            print(f"No data to print for {hemi}")
-
-    if len(figs) > 1:
-        report.add_slider_to_section(figs)
-    elif len(figs) == 1:
-        report.add_figs_to_section(figs[0], "Source estimate")
-    else:
-        raise Exception("No figure to add.")
 
     filename = args.condition.lower().replace(" ", "_")
 
@@ -258,9 +273,20 @@ if __name__ == "__main__":
         subjects_dir,
     ) = load_data()
 
-    stc, residual = apply_solver(
-        solver, evoked, forward, noise_cov, loose, depth
-    )
+    folder = args.condition.lower().replace(" ", "_")
+    stc_filepath = f"{folder}/data/stc_adaptive-sure.pkl"
+    residual_filepath = f"{folder}/data/residual_adaptive-sure.pkl"
+
+    if op.exists(stc_filepath) and op.exists(residual_filepath):
+        stc = joblib.load(stc_filepath)
+        residual = joblib.load(residual_filepath)
+    else:
+        stc, residual = apply_solver(
+            solver, evoked, forward, noise_cov, loose, depth
+        )
+
+        joblib.dump(stc, stc_filepath)
+        joblib.dump(residual, residual_filepath)
 
     if args.condition == "Left visual":
         evoked_fig = evoked.plot(ylim=dict(mag=[-250, 250], grad=[-100, 100]))

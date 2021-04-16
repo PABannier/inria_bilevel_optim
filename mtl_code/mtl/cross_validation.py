@@ -47,7 +47,7 @@ class ReweightedMultiTaskLassoCV(BaseEstimator, RegressorMixin):
         n_folds: int = 5,
         n_iterations: int = 5,
         random_state: int = None,
-        warm_start: bool = True,
+        warm_start: bool = False,
     ):
         if not isinstance(alphas, (list, np.ndarray)):
             raise TypeError(

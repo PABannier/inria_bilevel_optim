@@ -215,9 +215,15 @@ fig.subplots_adjust(
 
 fig_dir = (
     "../../../tex/article/srcimages/blobs/"
-    + f"blob-{folder_name}-{ESTIMATOR}.png"
+    + f"blob-{folder_name}-{ESTIMATOR}.svg"
+)
+
+fig_dir_2 = (
+    "../../../tex/article/srcimages/blobs/"
+    + f"blob-{folder_name}-{ESTIMATOR}.pdf"
 )
 
 fig.savefig(fig_dir)
+fig.savefig(fig_dir_2)
 
-plt.show()
+# plt.show()

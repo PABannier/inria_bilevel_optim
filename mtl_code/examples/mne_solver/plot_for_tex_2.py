@@ -89,8 +89,8 @@ def plot_source_activations(src, stcs, axes, labels=None, linewidth=2):
     for tick in axes.xaxis.get_major_ticks():
         tick.label.set_fontsize(8)
 
-    axes.set_xlabel("Time (ms)", fontsize=8, fontweight="bold")
-    axes.set_ylabel("Source amplitude (nAm)", fontsize=8, fontweight="bold")
+    axes.set_xlabel("Time (ms)", fontsize=8)
+    axes.set_ylabel("Source amplitude (nAm)", fontsize=8)
 
     return fig
 
@@ -106,6 +106,8 @@ def add_foci_to_brain_surface(brain, hemi, color):
 
         brain.add_foci(foci_coords, hemi=hemi, color=color)  # Color???
     except IndexError:
+        print(f"Could not find an activation for hemisphere {hemi}")
+    except TypeError:
         print(f"Could not find an activation for hemisphere {hemi}")
 
 
@@ -124,9 +126,19 @@ forward = mne.read_forward_solution(fname_fwd)
 folder_name = CONDITION.lower().replace(" ", "_")
 stc = joblib.load(f"{folder_name}/data/stc_{ESTIMATOR}.pkl")
 
-colormap = "inferno"
+lower_bound = round(stc.data.min() * 1e9)
+upper_bound = round(stc.data.max() * 1e9)
 
-view = "lateral" if "auditory" in CONDITION else "caudal"
+print(lower_bound)
+print(upper_bound)
+
+colormap = "inferno"
+clim = dict(
+    kind="value",
+    lims=(lower_bound, 0, upper_bound),
+)
+
+view = "lateral" if "auditory" in CONDITION.lower() else "caudal"
 
 # Plot the STC, get the brain image, crop it:
 brain = stc.plot(
@@ -145,14 +157,13 @@ brain = stc.plot(
 )
 
 brain.set_time(0.1)
-brain.close()
 
 # Adding foci
 add_foci_to_brain_surface(brain, "lh", "blue")
 add_foci_to_brain_surface(brain, "rh", "red")
 
 screenshot = brain.screenshot()
-# brain.close()
+brain.close()
 
 nonwhite_pix = (screenshot != 255).any(-1)
 nonwhite_row = nonwhite_pix.any(1)
@@ -170,7 +181,7 @@ plt.rcParams.update(
     }
 )
 
-fig = plt.figure(figsize=(4.5, 3.0))
+fig = plt.figure(figsize=(4.5, 4.5))
 axes = [
     plt.subplot2grid((7, 1), (0, 0), rowspan=4),
     plt.subplot2grid((7, 1), (4, 0), rowspan=3),
@@ -190,7 +201,11 @@ divider = make_axes_locatable(axes[brain_idx])
 # cax = divider.append_axes("right", size="5%", pad=0.2)
 cax = divider.append_axes("bottom", size="15%", pad=0.2)
 cbar = mne.viz.plot_brain_colorbar(
-    cax, "auto", colormap, orientation="horizontal"  # label="Activation (F)",
+    cax,
+    clim,
+    colormap,
+    orientation="horizontal",
+    label="",
 )
 
 # tweak margins and spacing

@@ -35,6 +35,9 @@ class ReweightedMultiTaskLassoCV(BaseEstimator, RegressorMixin):
 
     random_state : int or None
         Seed for reproducible experiments.
+
+    warm_start : bool
+        Warm start for Reweighted MultiTaskLasso.
     """
 
     def __init__(
@@ -44,6 +47,7 @@ class ReweightedMultiTaskLassoCV(BaseEstimator, RegressorMixin):
         n_folds: int = 5,
         n_iterations: int = 5,
         random_state: int = None,
+        warm_start: bool = True,
     ):
         if not isinstance(alphas, (list, np.ndarray)):
             raise TypeError(
@@ -55,6 +59,7 @@ class ReweightedMultiTaskLassoCV(BaseEstimator, RegressorMixin):
         self.n_folds = n_folds
         self.n_iterations = n_iterations
         self.random_state = random_state
+        self.warm_start = warm_start
 
         self.best_estimator_ = None
         self.best_cv_, self.best_alpha_ = np.inf, None
@@ -103,7 +108,10 @@ class ReweightedMultiTaskLassoCV(BaseEstimator, RegressorMixin):
                 + f"Fitting MTL estimator with alpha = {alpha_param}"
             )
             estimator_ = ReweightedMultiTaskLasso(
-                alpha_param, n_iterations=self.n_iterations, verbose=False
+                alpha_param,
+                n_iterations=self.n_iterations,
+                verbose=False,
+                warm_start=self.warm_start,
             )
 
             Y_oof = np.zeros_like(Y)

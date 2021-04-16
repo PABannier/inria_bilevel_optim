@@ -9,6 +9,7 @@ from numpy.linalg import norm
 import mne
 from mne.datasets import sample
 from mne.viz import plot_sparse_source_estimates
+from mne.inverse_sparse.mxne_inverse import _compute_residual
 
 from mtl.mtl import ReweightedMultiTaskLasso
 from mtl.cross_validation import ReweightedMultiTaskLassoCV
@@ -21,6 +22,7 @@ parser.add_argument(
     help="regularizing hyperparameter",
 )
 parser.add_argument("--condition", help="condition")
+parser.add_argument("--depth", help="depth")
 
 args = parser.parse_args()
 
@@ -154,7 +156,9 @@ def apply_solver(solver, evoked, forward, noise_cov, loose=0.2, depth=0.8):
         tstep=1.0 / evoked.info["sfreq"],
     )
 
-    return stc
+    residual = _compute_residual(forward, evoked, X, active_set, gain_info)
+
+    return stc, residual
 
 
 def solver(M, G, n_orient=1):
@@ -213,7 +217,7 @@ def solver(M, G, n_orient=1):
 
 
 if __name__ == "__main__":
-    loose, depth = 0, 0.3  # Fixed orientation
+    loose, depth = 0, args.depth if args.depth else 0.9
     (
         evoked,
         forward,
@@ -224,7 +228,13 @@ if __name__ == "__main__":
         subjects_dir,
     ) = load_data()
 
-    stc = apply_solver(solver, evoked, forward, noise_cov, loose, depth)
+    stc, residual = apply_solver(
+        solver, evoked, forward, noise_cov, loose, depth
+    )
+
+    print("=" * 10)
+    print("Explained variance:", norm(residual.data) / norm(evoked.data))
+    print("=" * 10)
 
     plot_sparse_source_estimates(
         forward["src"], stc, bgcolor=(1, 1, 1), opacity=0.1

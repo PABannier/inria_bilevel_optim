@@ -88,7 +88,7 @@ def solver(M, G, n_orient=1):
     alpha_max = compute_alpha_max(G, M)
     print("Alpha max:", alpha_max)
 
-    alphas = np.geomspace(alpha_max, alpha_max / 10, num=50)
+    alphas = np.geomspace(alpha_max, alpha_max / 10, num=20)
     n_folds = 5
 
     best_alpha_ = None

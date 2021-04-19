@@ -55,74 +55,48 @@
 
 \subsection{Left-Auditory experiments}
 
-\begin{figure}[t!]
+
+\begin{figure}
     \centering
     %
-    \begin{subfigure}[t]{0.3\textwidth}
+    \begin{subfigure}[t]{0.4\textwidth}
         \centering
-        \begin{subfigure}[t]{0.3\textwidth}
-            \centering
-            \includegraphics[scale=0.1]{blobs/lh-blob-adaptive-cv}
-        \end{subfigure}
-        \hfill
-        \begin{subfigure}[t]{0.3\textwidth}
-            \centering
-            \includegraphics[scale=0.1]{blobs/rh-blob-adaptive-cv}
-        \end{subfigure}
-        \caption{Cross-validation MSE}
-        \label{fig:blob-adaptive-cv}
+        \includegraphics[scale=0.6]{blobs/blob-left_auditory-lasso-cv}
+        \caption{Held-out MSE loss}
+        \label{subfig:left_auditory_lasso_cv}
     \end{subfigure}
     %
-    \vfill
+    \hfill
     %
-    \begin{subfigure}[t]{0.3\textwidth}
-        \begin{subfigure}[t]{0.3\textwidth}
-            \centering
-            \includegraphics[scale=0.1]{blobs/lh-blob-adaptive-sure}
-        \end{subfigure}
-        \hfill
-        \begin{subfigure}[t]{0.3\textwidth}
-            \centering
-            \includegraphics[scale=0.1]{blobs/rh-blob-adaptive-sure}
-        \end{subfigure}
+    \begin{subfigure}[t]{0.4\textwidth}
+        \centering
+        \includegraphics[scale=0.6]{blobs/blob-left_auditory-lasso-sure}
         \caption{SURE}
-        \label{fig:blob-adaptive-sure}
+        \label{subfig:left_auditory_lasso_sure}
     \end{subfigure}
+
+    \caption{Multi-Task LASSO}
+\end{figure}
+
+\begin{figure}
+    \centering
+    %
+    \begin{subfigure}[t]{0.4\textwidth}
+        \centering
+        \includegraphics[scale=0.6]{blobs/blob-left_auditory-adaptive-cv}
+        \caption{Held-out MSE loss}
+        \label{subfig:left_auditory_adaptive_cv}
+    \end{subfigure}
+    %
+    \hfill
+    %
+    \begin{subfigure}[t]{0.4\textwidth}
+        \centering
+        \includegraphics[scale=0.6]{blobs/blob-left_auditory-adaptive-sure}
+        \caption{SURE}
+        \label{subfig:left_auditory_adaptive_sure}
+    \end{subfigure}
+
     \caption{Reweighted Multi-Task LASSO}
 \end{figure}
 
-\begin{figure}[t!]
-    \centering
-    %
-    \begin{subfigure}[t]{0.3\textwidth}
-        \centering
-        \begin{subfigure}[t]{0.3\textwidth}
-            \centering
-            \includegraphics[scale=0.1]{blobs/lh-blob-lasso-cv}
-        \end{subfigure}
-        \hfill
-        \begin{subfigure}[t]{0.3\textwidth}
-            \centering
-            \includegraphics[scale=0.1]{blobs/rh-blob-lasso-cv}
-        \end{subfigure}
-        \caption{Cross-validation MSE}
-        \label{fig:blob-lasso-cv}
-    \end{subfigure}
-    %
-    \vfill
-    %
-    \begin{subfigure}[t]{0.3\textwidth}
-        \begin{subfigure}[t]{0.3\textwidth}
-            \centering
-            \includegraphics[scale=0.1]{blobs/lh-blob-lasso-sure}
-        \end{subfigure}
-        \hfill
-        \begin{subfigure}[t]{0.3\textwidth}
-            \centering
-            \includegraphics[scale=0.1]{blobs/rh-blob-lasso-sure}
-        \end{subfigure}
-        \caption{SURE}
-        \label{fig:blob-lasso-sure}
-    \end{subfigure}
-    \caption{Multi-Task LASSO}
-\end{figure}

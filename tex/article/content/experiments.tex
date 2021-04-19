@@ -53,50 +53,99 @@
     \label{fig:sure_mse_f1_comparison}
 \end{figure}
 
-\subsection{Left-Auditory experiments}
-
-
-\begin{figure}
-    \centering
-    %
-    \begin{subfigure}[t]{0.4\textwidth}
-        \centering
-        \includegraphics[scale=0.6]{blobs/blob-left_auditory-lasso-cv}
-        \caption{Held-out MSE loss}
-        \label{subfig:left_auditory_lasso_cv}
-    \end{subfigure}
-    %
-    \hfill
-    %
-    \begin{subfigure}[t]{0.4\textwidth}
-        \centering
-        \includegraphics[scale=0.6]{blobs/blob-left_auditory-lasso-sure}
-        \caption{SURE}
-        \label{subfig:left_auditory_lasso_sure}
-    \end{subfigure}
-
-    \caption{Multi-Task LASSO}
-\end{figure}
+\subsection{Left Auditory experiments}
 
 \begin{figure}
     \centering
-    %
-    \begin{subfigure}[t]{0.4\textwidth}
-        \centering
-        \includegraphics[scale=0.6]{blobs/blob-left_auditory-adaptive-cv}
-        \caption{Held-out MSE loss}
-        \label{subfig:left_auditory_adaptive_cv}
+    \begin{subfigure}{6cm}
+        \centering \includegraphics[scale=0.6]{blobs/blob-left_auditory-lasso-cv}
+        \caption{Lasso - Held-out MSE}
     \end{subfigure}
-    %
-    \hfill
-    %
-    \begin{subfigure}[t]{0.4\textwidth}
-        \centering
-        \includegraphics[scale=0.6]{blobs/blob-left_auditory-adaptive-sure}
-        \caption{SURE}
-        \label{subfig:left_auditory_adaptive_sure}
+    \begin{subfigure}{6cm}
+        \centering \includegraphics[scale=0.6]{blobs/blob-left_auditory-lasso-sure}
+        \caption{Lasso - SURE}
     \end{subfigure}
 
-    \caption{Reweighted Multi-Task LASSO}
+    \begin{subfigure}{6cm}
+        \centering \includegraphics[scale=0.6]{blobs/blob-left_auditory-adaptive-cv}
+        \caption{Reweighted - Held-out MSE}
+    \end{subfigure}
+    \begin{subfigure}{6cm}
+        \centering \includegraphics[scale=0.6]{blobs/blob-left_auditory-adaptive-sure}
+        \caption{Reweighted - SURE}
+    \end{subfigure}
 \end{figure}
+
+
+\subsection{Right Auditory experiments}
+
+\begin{figure}
+    \centering
+    \begin{subfigure}{6cm}
+        \centering \includegraphics[scale=0.6]{blobs/blob-right_auditory-lasso-cv}
+        \caption{Lasso - Held-out MSE}
+    \end{subfigure}
+    \begin{subfigure}{6cm}
+        \centering \includegraphics[scale=0.6]{blobs/blob-right_auditory-lasso-sure}
+        \caption{Lasso - SURE}
+    \end{subfigure}
+
+    \begin{subfigure}{6cm}
+        \centering \includegraphics[scale=0.6]{blobs/blob-right_auditory-adaptive-cv}
+        \caption{Reweighted - Held-out MSE}
+    \end{subfigure}
+    \begin{subfigure}{6cm}
+        \centering \includegraphics[scale=0.6]{blobs/blob-right_auditory-adaptive-sure}
+        \caption{Reweighted - SURE}
+    \end{subfigure}
+\end{figure}
+
+
+\subsection{Left visual experiments}
+
+\begin{figure}
+    \centering
+    \begin{subfigure}{6cm}
+        \centering \includegraphics[scale=0.6]{blobs/blob-left_visual-lasso-cv}
+        \caption{Lasso - Held-out MSE}
+    \end{subfigure}
+    \begin{subfigure}{6cm}
+        \centering \includegraphics[scale=0.6]{blobs/blob-left_visual-lasso-sure}
+        \caption{Lasso - SURE}
+    \end{subfigure}
+
+    \begin{subfigure}{6cm}
+        \centering \includegraphics[scale=0.6]{blobs/blob-left_visual-adaptive-cv}
+        \caption{Reweighted - Held-out MSE}
+    \end{subfigure}
+    \begin{subfigure}{6cm}
+        \centering \includegraphics[scale=0.6]{blobs/blob-left_visual-adaptive-sure}
+        \caption{Reweighted - SURE}
+    \end{subfigure}
+\end{figure}
+
+
+\subsection{Right visual experiments}
+
+\begin{figure}
+    \centering
+    \begin{subfigure}{6cm}
+        \centering \includegraphics[scale=0.6]{blobs/blob-right_visual-lasso-cv}
+        \caption{Lasso - Held-out MSE}
+    \end{subfigure}
+    \begin{subfigure}{6cm}
+        \centering \includegraphics[scale=0.6]{blobs/blob-right_visual-lasso-sure}
+        \caption{Lasso - SURE}
+    \end{subfigure}
+
+    \begin{subfigure}{6cm}
+        \centering \includegraphics[scale=0.6]{blobs/blob-right_visual-adaptive-cv}
+        \caption{Reweighted - Held-out MSE}
+    \end{subfigure}
+    \begin{subfigure}{6cm}
+        \centering \includegraphics[scale=0.6]{blobs/blob-right_visual-adaptive-sure}
+        \caption{Reweighted - SURE}
+    \end{subfigure}
+\end{figure}
+
 

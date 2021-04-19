@@ -59,7 +59,7 @@ class ReweightedMultiTaskLasso(BaseEstimator, RegressorMixin):
         self.warm_start = warm_start
 
         if penalty:
-            self.penablty = penalty
+            self.penalty = penalty
         else:
             self.penalty = lambda u: 1 / (
                 2 * np.sqrt(np.linalg.norm(u, axis=1)) + np.finfo(float).eps
@@ -68,7 +68,7 @@ class ReweightedMultiTaskLasso(BaseEstimator, RegressorMixin):
         self.coef_ = None
         self.loss_history_ = []
 
-        self.clf = MultiTaskLasso(
+        self.regressor = MultiTaskLasso(
             alpha=alpha, fit_intercept=False, warm_start=self.warm_start
         )
 
@@ -100,10 +100,10 @@ class ReweightedMultiTaskLasso(BaseEstimator, RegressorMixin):
             X_w = X / w[np.newaxis, :]
 
             # Solving weighted l1 minimization problem
-            self.clf.fit(X_w, Y)
+            self.regressor.fit(X_w, Y)
 
             # Trick: "de-scaling" the weights
-            coef_hat = (self.clf.coef_ / w).T  # (n_features, n_tasks)
+            coef_hat = (self.regressor.coef_ / w).T  # (n_features, n_tasks)
 
             # Updating the weights
             w = self.penalty(coef_hat)

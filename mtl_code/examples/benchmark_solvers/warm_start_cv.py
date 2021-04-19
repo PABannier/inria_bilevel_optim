@@ -1,5 +1,6 @@
 from collections import defaultdict
 import time
+import ipdb
 
 import numpy as np
 from numpy.linalg import norm
@@ -60,8 +61,8 @@ def fit_reweighted_with_grid(X, Y, alpha_grid, n_iter=5, warm_start=True):
     return coefs, losses
 
 
-def cross_val(X, Y, alpha_grid, warm_start=True):
-    kf = KFold()
+def cross_val(X, Y, alpha_grid, random_state, warm_start=True):
+    kf = KFold(5, random_state=random_state, shuffle=True)
 
     scores = [np.inf for _ in range(len(alpha_grid))]
     Y_oofs = [np.zeros((N_SAMPLES, N_TASKS)) for _ in range(len(alpha_grid))]
@@ -90,7 +91,8 @@ def cross_val(X, Y, alpha_grid, warm_start=True):
 
 
 if __name__ == "__main__":
-    rng = np.random.default_rng(42)
+    random_state = 42
+    rng = np.random.default_rng(random_state)
     X = rng.random((N_SAMPLES, N_FEATURES))
     Y = rng.random((N_SAMPLES, N_TASKS))
 
@@ -100,16 +102,29 @@ if __name__ == "__main__":
 
     print("\n")
 
-    # cv_regressor = ReweightedMultiTaskLassoCV(alphas)
-    # cv_regressor.fit(X, Y)
-    # print("\n")
+    cv_regressor = ReweightedMultiTaskLassoCV(alphas)
+    start = time.time()
+    cv_regressor.fit(X, Y)
+    print(f"Warm start=True, {time.time() - start:.2f}s")
 
-    # start = time.time()
-    # cross_val(X, Y, alphas, warm_start=True)
-    # print(f"Warm start=True, {time.time() - start:.2f}s")
+    print("\n")
+
+    cv_regressor = ReweightedMultiTaskLassoCV(alphas, warm_start=False)
+    start = time.time()
+    cv_regressor.fit(X, Y)
+    print(f"Warm start=False, {time.time() - start:.2f}s")
+
+    print("\n")
+    print("=" * 30)
+    print("\n")
+    """
+    start = time.time()
+    cross_val(X, Y, alphas, random_state, warm_start=True)
+    print(f"Warm start=True, {time.time() - start:.2f}s")
 
     print("\n")
 
     start = time.time()
-    cross_val(X, Y, alphas, warm_start=False)
+    cross_val(X, Y, alphas, random_state, warm_start=False)
     print(f"Warm start=False, {time.time() - start:.2f}s")
+    """

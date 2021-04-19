@@ -9,6 +9,7 @@ from numpy.linalg import norm
 
 import mne
 from mne.datasets import sample
+from mne.viz import plot_sparse_source_estimates
 
 from celer import MultiTaskLassoCV, MultiTaskLasso
 
@@ -92,19 +93,24 @@ def solver(M, G, n_orient=1):
 
     best_alpha_ = None
 
-    start = time.time()
-
     estimator = ReweightedMultiTaskLassoCV(
-        alphas=alphas, n_folds=n_folds, warm_start=True
+        alpha_grid=alphas, n_folds=n_folds, warm_start=True
     )
+    start = time.time()
     estimator.fit(G, M)
+    print("Warm start=True", time.time() - start)
     best_alpha_ = estimator.best_alpha_
+
+    estimator2 = ReweightedMultiTaskLassoCV(
+        alpha_grid=alphas, n_folds=n_folds, warm_start=False
+    )
+    start = time.time()
+    estimator2.fit(G, M)
+    print("Warm start=False", time.time() - start)
 
     # Refitting
     estimator = ReweightedMultiTaskLasso(best_alpha_, warm_start=True)
     estimator.fit(G, M)
-
-    print("Time", time.time() - start)
 
     X = estimator.coef_
 
@@ -118,3 +124,7 @@ if __name__ == "__main__":
 
     start = time.time()
     stc = apply_solver(solver, evoked, forward, noise_cov, loose, depth)
+
+    plot_sparse_source_estimates(
+        forward["src"], stc, bgcolor=(1, 1, 1), opacity=0.1
+    )

@@ -60,18 +60,18 @@ def test_decreasing_loss_every_step(corr):
 
 def test_reconstruction():
     X, Y, coef, _ = simulate_data(
-        n_samples=10,
-        n_features=25,
+        n_samples=5,
+        n_features=10,
         n_tasks=8,
-        nnz=3,
+        nnz=2,
         random_state=2020,
     )
 
     alpha_max = compute_alpha_max(X, Y)
-    lb = alpha_max * 0.01
-    hb = alpha_max * 0.3
+    lb = alpha_max * 0.1
+    hb = alpha_max * 0.5
 
-    alphas = np.geomspace(lb, hb, num=60)
+    alphas = np.geomspace(lb, hb, num=15)
     regressor = ReweightedMultiTaskLassoCV(alphas, n_folds=5)
 
     regressor.fit(X, Y)

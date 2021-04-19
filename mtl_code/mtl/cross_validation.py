@@ -1,8 +1,15 @@
+from collections import defaultdict
+
 import numpy as np
+from numpy.linalg import norm
+
 from sklearn.base import BaseEstimator, RegressorMixin
 from sklearn.metrics import mean_squared_error, f1_score, jaccard_score
 from sklearn.model_selection import KFold
 from sklearn.utils.validation import check_X_y, check_is_fitted, check_array
+
+from celer import MultiTaskLasso
+
 from mtl.mtl import ReweightedMultiTaskLasso
 
 
@@ -21,7 +28,7 @@ class ReweightedMultiTaskLassoCV(BaseEstimator, RegressorMixin):
 
     Parameters
     ----------
-    alphas : list or np.ndarray
+    alpha_grid : list or np.ndarray
         Values of `alpha` to test.
 
     criterion : Callable, default=mean_squared_error
@@ -30,31 +37,35 @@ class ReweightedMultiTaskLassoCV(BaseEstimator, RegressorMixin):
     n_folds : int, default=5
         Number of folds.
 
-    n_iterations : int
+    n_iterations : int, default=5
         Number of reweighting iterations performed during fitting.
 
-    random_state : int or None
+    random_state : int or None, default=None
         Seed for reproducible experiments.
 
-    warm_start : bool
+    warm_start : bool, default=True
         Warm start for Reweighted MultiTaskLasso.
+
+    penalty : callable, default=None
+        See docs of ReweightedMultiTaskLasso for more details.
     """
 
     def __init__(
         self,
-        alphas: list,
-        criterion=mean_squared_error,
+        alpha_grid: list,
+        criterion: callable = mean_squared_error,
         n_folds: int = 5,
         n_iterations: int = 5,
         random_state: int = None,
-        warm_start: bool = False,
+        warm_start: bool = True,
+        penalty: callable = None,
     ):
-        if not isinstance(alphas, (list, np.ndarray)):
+        if not isinstance(alpha_grid, (list, np.ndarray)):
             raise TypeError(
                 "The parameter grid must be a list or a Numpy array."
             )
 
-        self.alphas = alphas
+        self.alpha_grid = alpha_grid
         self.criterion = criterion
         self.n_folds = n_folds
         self.n_iterations = n_iterations
@@ -64,9 +75,16 @@ class ReweightedMultiTaskLassoCV(BaseEstimator, RegressorMixin):
         self.best_estimator_ = None
         self.best_cv_, self.best_alpha_ = np.inf, None
 
-        self.mse_path_ = np.zeros((len(alphas), n_folds))
-        self.f1_path_ = np.zeros((len(alphas), n_folds))
-        self.jaccard_path_ = np.zeros((len(alphas), n_folds))
+        self.mse_path_ = np.zeros((len(alpha_grid), n_folds))
+        self.f1_path_ = np.zeros((len(alpha_grid), n_folds))
+        self.jaccard_path_ = np.zeros((len(alpha_grid), n_folds))
+
+        if penalty:
+            self.penalty = penalty
+        else:
+            self.penalty = lambda u: 1 / (
+                2 * np.sqrt(norm(u, axis=1)) + np.finfo(float).eps
+            )
 
     @property
     def coef_(self):
@@ -95,65 +113,91 @@ class ReweightedMultiTaskLassoCV(BaseEstimator, RegressorMixin):
         """
         X, Y = check_X_y(X, Y, multi_output=True)
 
-        if X.shape[0] < self.n_folds:
-            raise ValueError(
-                "The number of folds can't be greater than the number of samples."
-            )
+        n_samples = X.shape[0]
+        n_tasks = Y.shape[1]
+
+        scores_per_alpha_ = [np.inf for _ in range(len(self.alpha_grid))]
+        Y_oofs_ = [
+            np.zeros((n_samples, n_tasks)) for _ in range(len(self.alpha_grid))
+        ]
 
         kf = KFold(self.n_folds, random_state=self.random_state, shuffle=True)
 
-        for idx_alpha, alpha_param in enumerate(self.alphas):
-            print(
-                f"[{idx_alpha+1}/{len(self.alphas)}] "
-                + f"Fitting MTL estimator with alpha = {alpha_param}"
-            )
-            estimator_ = ReweightedMultiTaskLasso(
-                alpha_param,
-                n_iterations=self.n_iterations,
-                verbose=False,
-                warm_start=self.warm_start,
+        for i, (trn_idx, val_idx) in enumerate(kf.split(X, Y)):
+            print(f"Fitting fold {i+1}...")
+            X_train, Y_train = X[trn_idx, :], Y[trn_idx, :]
+            X_valid, Y_valid = X[val_idx, :], Y[val_idx, :]
+
+            coefs_ = self._fit_reweighted_with_grid(
+                X_train, Y_train, X_valid, Y_valid, coef_true, i
             )
 
-            Y_oof = np.zeros_like(Y)
+            predictions_ = [X_valid @ coef for coef in coefs_.values()]
 
-            for idx_fold, (train_indices, valid_indices) in enumerate(
-                kf.split(X, Y)
-            ):
-                X_train, Y_train = X[train_indices, :], Y[train_indices, :]
-                X_valid, Y_valid = X[valid_indices, :], Y[valid_indices, :]
+            for i in range(len(Y_oofs_)):
+                Y_oofs_[i][val_idx, :] = predictions_[i]
 
-                estimator_.fit(X_train, Y_train)
-                Y_pred = estimator_.predict(X_valid)
-                Y_oof[valid_indices, :] = Y_pred
+        for i in range(len(Y_oofs_)):
+            scores_per_alpha_[i] = self.criterion(Y, Y_oofs_[i])
 
-                self.mse_path_[idx_alpha, idx_fold] = mean_squared_error(
-                    Y_valid, Y_pred
-                )
+        self.best_cv_ = np.min(scores_per_alpha_)
+        self.best_alpha_ = self.alpha_grid[np.argmin(scores_per_alpha_)]
 
-                if coef_true is not None:
-                    self.f1_path_[idx_alpha, idx_fold] = f1_score(
-                        coef_true != 0, estimator_.coef_ != 0, average="macro"
-                    )
+        print("Refitting with best alpha...")
+        self.best_estimator_ = ReweightedMultiTaskLasso(
+            self.best_alpha_, penalty=self.penalty, verbose=False
+        )
 
-                    self.jaccard_path_[idx_alpha, idx_fold] = jaccard_score(
-                        coef_true != 0, estimator_.coef_ != 0, average="macro"
-                    )
-
-            cv_score = self.criterion(Y, Y_oof)
-
-            if cv_score < self.best_cv_:
-                print(
-                    f"Criterion reduced from {self.best_cv_:.5f} to "
-                    + f"{cv_score:.5f} for alpha = {alpha_param}"
-                )
-
-                self.best_cv_ = cv_score
-                self.best_alpha_ = alpha_param
-                self.best_estimator_ = estimator_
+        self.best_estimator_.fit(X, Y)
 
         print("\n")
         print(f"Best criterion: {self.best_cv_}")
         print(f"Best alpha: {self.best_alpha_}")
+
+    def _fit_reweighted_with_grid(
+        self, X_train, Y_train, X_valid, Y_valid, coef_true, idx_fold
+    ):
+        n_features = X_train.shape[1]
+        coefs_ = dict()
+        weights_ = defaultdict(lambda: np.ones(n_features))
+
+        for _ in range(self.n_iterations):
+            regressor = MultiTaskLasso(
+                0.1, fit_intercept=False, warm_start=self.warm_start
+            )
+            for j, alpha in enumerate(self.alpha_grid):
+                regressor.alpha = alpha
+
+                coef, w = self._reweight_op(
+                    regressor, X_train, Y_train, weights_[j]
+                )
+
+                coefs_[j] = coef
+                weights_[j] = w
+
+                self.mse_path_[j, idx_fold] = mean_squared_error(
+                    Y_valid, X_valid @ coef
+                )
+
+                if coef_true is not None:
+                    self.f1_path_[j, idx_fold] = f1_score(
+                        coef_true != 0, coef != 0, average="macro"
+                    )
+
+                    self.jaccard_path_[j, idx_fold] = jaccard_score(
+                        coef_true != 0, coef != 0, average="macro"
+                    )
+
+        return coefs_
+
+    def _reweight_op(self, regressor, X, Y, w):
+        X_w = X / w[np.newaxis, :]
+        regressor.fit(X_w, Y)
+
+        coef = (regressor.coef_ / w).T
+        w = self.penalty(coef)
+
+        return coef, w
 
     def predict(self, X: np.ndarray):
         """Predicts data with the fitted coefficients.

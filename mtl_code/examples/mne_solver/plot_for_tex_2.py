@@ -64,10 +64,11 @@ def add_foci_to_brain_surface(brain, stc, ax):
             activation_idx = stc.vertices[i_hemi][k]
             foci_coords = surface_coords[activation_idx]
 
-            (line,) = ax.plot(stc.times, 1e9 * hemi_data[k])
+            # In milliseconds
+            (line,) = ax.plot(stc.times * 1e3, 1e9 * hemi_data[k])
             brain.add_foci(foci_coords, hemi=hemi, color=line.get_color())
 
-    ax.set_xlabel("Time (s)")
+    ax.set_xlabel("Time (ms)")
     ax.set_ylabel("Amplitude (nAm)")
 
 
@@ -166,7 +167,9 @@ brain = stc.plot(
     volume_options=dict(resolution=1),
 )
 
-brain.set_time(0.04)
+t = 0.05 if DATASET == "sample" else 0.04
+
+brain.set_time(t)
 
 
 fig = plt.figure(figsize=(4.5, 4.5))

@@ -1,6 +1,7 @@
 import argparse
 import joblib
 from tqdm import tqdm
+import os.path as op
 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -8,7 +9,7 @@ import matplotlib.pylab as pl
 from numpy.linalg import norm
 
 import mne
-from mne.datasets import sample
+from mne.datasets import sample, somato
 
 from celer import MultiTaskLassoCV, MultiTaskLasso
 
@@ -29,29 +30,89 @@ parser.add_argument(
     + "Left Auditory, Right Auditory, Left visual, Right visual",
 )
 
+parser.add_argument(
+    "--dataset", help="choice of dataset. available: " + "sample or somato"
+)
+
 args = parser.parse_args()
 ESTIMATOR = args.estimator
 CONDITION = args.condition
+DATA = args.dataset
+
+mem = joblib.Memory(location=".")
 
 
+@mem.cache
 def load_data():
-    data_path = sample.data_path()
-    fwd_fname = data_path + "/MEG/sample/sample_audvis-meg-eeg-oct-6-fwd.fif"
-    ave_fname = data_path + "/MEG/sample/sample_audvis-ave.fif"
-    cov_fname = data_path + "/MEG/sample/sample_audvis-shrunk-cov.fif"
-    subjects_dir = data_path + "/subjects"
+    if DATA == "sample":
+        data_path = sample.data_path()
+        fwd_fname = (
+            data_path + "/MEG/sample/sample_audvis-meg-eeg-oct-6-fwd.fif"
+        )
+        ave_fname = data_path + "/MEG/sample/sample_audvis-ave.fif"
+        cov_fname = data_path + "/MEG/sample/sample_audvis-shrunk-cov.fif"
+        subjects_dir = data_path + "/subjects"
 
-    # Read noise covariance matrix
-    noise_cov = mne.read_cov(cov_fname)
-    # Handling average file
-    evoked = mne.read_evokeds(
-        ave_fname, condition=CONDITION, baseline=(None, 0)
-    )
-    evoked.crop(tmin=0.05, tmax=0.15)
+        # Read noise covariance matrix
+        noise_cov = mne.read_cov(cov_fname)
+        # Handling average file
+        evoked = mne.read_evokeds(
+            ave_fname, condition=CONDITION, baseline=(None, 0)
+        )
+        evoked.crop(tmin=0.05, tmax=0.15)
 
-    evoked = evoked.pick_types(eeg=False, meg=True)
-    # Handling forward solution
-    forward = mne.read_forward_solution(fwd_fname)
+        evoked = evoked.pick_types(eeg=False, meg=True)
+        # Handling forward solution
+        forward = mne.read_forward_solution(fwd_fname)
+
+    elif DATA == "somato":
+        data_path = somato.data_path()
+        subject = "01"
+        task = "somato"
+        raw_fname = op.join(
+            data_path,
+            "sub-{}".format(subject),
+            "meg",
+            "sub-{}_task-{}_meg.fif".format(subject, task),
+        )
+        fwd_fname = op.join(
+            data_path,
+            "derivatives",
+            "sub-{}".format(subject),
+            "sub-{}_task-{}-fwd.fif".format(subject, task),
+        )
+
+        condition = "Unknown"
+
+        # Read evoked
+        raw = mne.io.read_raw_fif(raw_fname)
+        events = mne.find_events(raw, stim_channel="STI 014")
+        reject = dict(grad=4000e-13, eog=350e-6)
+        picks = mne.pick_types(raw.info, meg=True, eog=True)
+
+        event_id, tmin, tmax = 1, -1.0, 3.0
+        epochs = mne.Epochs(
+            raw,
+            events,
+            event_id,
+            tmin,
+            tmax,
+            picks=picks,
+            reject=reject,
+            preload=True,
+        )
+        evoked = epochs.filter(1, None).average()
+        evoked = evoked.pick_types(meg=True)
+        evoked.crop(tmin=0.03, tmax=0.05)  # Choose a timeframe not too large
+
+        # Compute noise covariance matrix
+        noise_cov = mne.compute_covariance(epochs, rank="info", tmax=0.0)
+
+        # Handling forward solution
+        forward = mne.read_forward_solution(fwd_fname)
+
+    else:
+        raise Exception("Incorrect dataset")
 
     return evoked, forward, noise_cov
 
@@ -208,7 +269,9 @@ def solver(M, G, n_orient=1):
 
     elif ESTIMATOR == "adaptive-cv":
         # CV
-        estimator = ReweightedMultiTaskLassoCV(alphas=alphas, n_folds=n_folds)
+        estimator = ReweightedMultiTaskLassoCV(
+            alpha_grid=alphas, n_folds=n_folds
+        )
         estimator.fit(G, M)
         best_alpha_ = estimator.best_alpha_
 
@@ -251,7 +314,12 @@ if __name__ == "__main__":
     loose, depth = 0, 0.9  # Fixed orientation
     evoked, forward, noise_cov = load_data()
 
-    folder_name = CONDITION.lower().replace(" ", "_")
-
     stc = apply_solver(solver, evoked, forward, noise_cov, loose, depth)
-    joblib.dump(stc, f"{folder_name}/data/stc_{ESTIMATOR}.pkl")
+
+    if DATA == "sample":
+        folder_name = CONDITION.lower().replace(" ", "_")
+        out_path = f"{folder_name}/data/stc_{ESTIMATOR}.pkl"
+    elif DATA == "somato":
+        out_path = f"somato/stc_{ESTIMATOR}.pkl"
+
+    joblib.dump(stc, out_path)

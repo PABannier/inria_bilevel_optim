@@ -1,31 +1,28 @@
-echo "================================="
-echo "GENERATING DATA FOR LEFT AUDITORY"
-echo "================================="
-python plot_for_tex_2.py --estimator lasso-cv --condition "Left Auditory"
-python plot_for_tex_2.py --estimator lasso-sure --condition "Left Auditory"
-python plot_for_tex_2.py --estimator adaptive-cv --condition "Left Auditory"
-python plot_for_tex_2.py --estimator adaptive-sure --condition "Left Auditory"
+# SAMPLE DATASET
 
-echo "=================================="
-echo "GENERATING DATA FOR RIGHT AUDITORY"
-echo "=================================="
-python plot_for_tex_2.py --estimator lasso-cv --condition "Right Auditory"
-python plot_for_tex_2.py --estimator lasso-sure --condition "Right Auditory"
-python plot_for_tex_2.py --estimator adaptive-cv --condition "Right Auditory"
-python plot_for_tex_2.py --estimator adaptive-sure --condition "Right Auditory"
+estimators=(lasso-cv lasso-sure adaptive-cv adaptive-sure)
+conditions=("Left Auditory" "Right Auditory" "Left visual" "Right visual")
 
-echo "==============================="
-echo "GENERATING DATA FOR LEFT VISUAL"
-echo "==============================="
-python plot_for_tex_2.py --estimator lasso-cv --condition "Left visual"
-python plot_for_tex_2.py --estimator lasso-sure --condition "Left visual"
-python plot_for_tex_2.py --estimator adaptive-cv --condition "Left visual"
-python plot_for_tex_2.py --estimator adaptive-sure --condition "Left visual"
+for i in "${conditions[@]}"
+do
+    echo "================================="
+    echo "GENERATING DATA FOR $i"
+    echo "================================="
 
-echo "================================"
-echo "GENERATING DATA FOR RIGHT VISUAL"
-echo "================================" 
-python plot_for_tex_2.py --estimator lasso-cv --condition "Right visual"
-python plot_for_tex_2.py --estimator lasso-sure --condition "Right visual"
-python plot_for_tex_2.py --estimator adaptive-cv --condition "Right visual"
-python plot_for_tex_2.py --estimator adaptive-sure --condition "Right visual"
+    for j in "${estimators[@]}"
+    do
+        python plot_for_tex_2.py --estimator $j --condition $i --dataset sample
+    done
+done
+
+
+# SOMATO DATASET
+
+echo "=========================="
+echo "GENERATING DATA FOR SOMATO"
+echo "==========================" 
+
+for i in "${estimators[@]}"
+do 
+    python plot_for_tex_2.py --estimator $i --dataset somato
+done

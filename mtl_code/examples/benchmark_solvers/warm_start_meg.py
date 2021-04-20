@@ -88,25 +88,52 @@ def solver(M, G, n_orient=1):
     alpha_max = compute_alpha_max(G, M)
     print("Alpha max:", alpha_max)
 
-    alphas = np.geomspace(alpha_max, alpha_max / 10, num=20)
+    rs = np.random.RandomState(42)
+
+    alphas = np.geomspace(alpha_max, alpha_max / 10, num=15)
     n_folds = 5
 
     best_alpha_ = None
+    best_sure_ = np.inf
 
-    estimator = ReweightedMultiTaskLassoCV(
-        alpha_grid=alphas, n_folds=n_folds, warm_start=True
-    )
-    start = time.time()
-    estimator.fit(G, M)
-    print("Warm start=True", time.time() - start)
-    best_alpha_ = estimator.best_alpha_
+    criterion = SURE(ReweightedMultiTaskLasso, 1, random_state=rs)
 
-    estimator2 = ReweightedMultiTaskLassoCV(
-        alpha_grid=alphas, n_folds=n_folds, warm_start=False
-    )
     start = time.time()
-    estimator2.fit(G, M)
-    print("Warm start=False", time.time() - start)
+    for alpha in alphas:
+        print(alpha)
+        sure_crit_ = criterion.get_val(G, M, alpha)
+        if sure_crit_ < best_sure_:
+            best_alpha_ = alpha
+            best_sure_ = sure_crit_
+
+    print(f"Warm start=True, {time.time() - start:.5f}s")
+
+    best_alpha_ = None
+    best_sure_ = np.inf
+
+    start = time.time()
+    for alpha in alphas:
+        print(alpha)
+        sure_crit_ = criterion.get_val(G, M, alpha, warm_start=False)
+        if sure_crit_ < best_sure_:
+            best_alpha_ = alpha
+            best_sure_ = sure_crit_
+    print(f"Warm start=False, {time.time() - start:.5f}s")
+
+    # estimator = ReweightedMultiTaskLassoCV(
+    #     alpha_grid=alphas, n_folds=n_folds, warm_start=True
+    # )
+    # start = time.time()
+    # estimator.fit(G, M)
+    # print("Warm start=True", time.time() - start)
+    # best_alpha_ = estimator.best_alpha_
+
+    # estimator2 = ReweightedMultiTaskLassoCV(
+    #     alpha_grid=alphas, n_folds=n_folds, warm_start=False
+    # )
+    # start = time.time()
+    # estimator2.fit(G, M)
+    # print("Warm start=False", time.time() - start)
 
     # Refitting
     estimator = ReweightedMultiTaskLasso(best_alpha_, warm_start=True)

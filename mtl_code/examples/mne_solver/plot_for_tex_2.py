@@ -16,6 +16,7 @@ from mpl_toolkits.axes_grid1 import (
 from numba import njit
 
 import mne
+from mne.datasets import somato
 from mne.viz.utils import _get_color_list
 
 plt.rcParams.update(
@@ -41,13 +42,18 @@ parser.add_argument(
     + "Left Auditory, Right Auditory, Left visual, Right visual",
 )
 
+parser.add_argument(
+    "--dataset", help="choice of dataset. available: sample and somato"
+)
+
 args = parser.parse_args()
 
-if args.estimator is None or args.condition is None:
-    raise ValueError("You need to choose an estimator and a condition.")
+if args.estimator is None:
+    raise ValueError("You need to choose an estimator")
 else:
     ESTIMATOR = args.estimator
     CONDITION = args.condition
+    DATASET = args.dataset
 
 
 def add_foci_to_brain_surface(brain, stc, ax):
@@ -65,20 +71,71 @@ def add_foci_to_brain_surface(brain, stc, ax):
     ax.set_ylabel("Amplitude (nAm)")
 
 
-data_path = mne.datasets.sample.data_path()
-subjects_dir = op.join(data_path, "subjects")
-fname_evoked = op.join(data_path, "MEG", "sample", "sample_audvis-ave.fif")
-fname_fwd = data_path + "/MEG/sample/sample_audvis-meg-eeg-oct-6-fwd.fif"
+if DATASET is None or DATASET == "sample":
+    data_path = mne.datasets.sample.data_path()
+    subjects_dir = op.join(data_path, "subjects")
+    fname_evoked = op.join(data_path, "MEG", "sample", "sample_audvis-ave.fif")
+    fname_fwd = data_path + "/MEG/sample/sample_audvis-meg-eeg-oct-6-fwd.fif"
 
+    evoked = mne.read_evokeds(fname_evoked, "Left Auditory")
+    evoked.pick_types(meg="grad").apply_baseline((None, 0.0))
+    max_t = evoked.get_peak()[1]
 
-evoked = mne.read_evokeds(fname_evoked, "Left Auditory")
-evoked.pick_types(meg="grad").apply_baseline((None, 0.0))
-max_t = evoked.get_peak()[1]
+    forward = mne.read_forward_solution(fname_fwd)
 
-forward = mne.read_forward_solution(fname_fwd)
+    folder_name = CONDITION.lower().replace(" ", "_")
+    stc = joblib.load(f"{folder_name}/data/stc_{ESTIMATOR}.pkl")
 
-folder_name = CONDITION.lower().replace(" ", "_")
-stc = joblib.load(f"{folder_name}/data/stc_{ESTIMATOR}.pkl")
+elif DATASET == "somato":
+    data_path = somato.data_path()
+    subject = "01"
+    task = "somato"
+    raw_fname = op.join(
+        data_path,
+        "sub-{}".format(subject),
+        "meg",
+        "sub-{}_task-{}_meg.fif".format(subject, task),
+    )
+    fwd_fname = op.join(
+        data_path,
+        "derivatives",
+        "sub-{}".format(subject),
+        "sub-{}_task-{}-fwd.fif".format(subject, task),
+    )
+
+    subjects_dir = op.join(data_path, "derivatives", "freesurfer", "subjects")
+
+    condition = "Unknown"
+
+    # Read evoked
+    raw = mne.io.read_raw_fif(raw_fname)
+    events = mne.find_events(raw, stim_channel="STI 014")
+    reject = dict(grad=4000e-13, eog=350e-6)
+    picks = mne.pick_types(raw.info, meg=True, eog=True)
+
+    event_id, tmin, tmax = 1, -1.0, 3.0
+    epochs = mne.Epochs(
+        raw,
+        events,
+        event_id,
+        tmin,
+        tmax,
+        picks=picks,
+        reject=reject,
+        preload=True,
+    )
+    evoked = epochs.filter(1, None).average()
+    evoked = evoked.pick_types(meg=True)
+    evoked.crop(tmin=0.03, tmax=0.05)  # Choose a timeframe not too large
+    # max_t = evoked.get_peak()[1]
+
+    # Handling forward solution
+    forward = mne.read_forward_solution(fwd_fname)
+
+    stc = joblib.load(f"somato/stc_{ESTIMATOR}.pkl")
+
+else:
+    raise Exception("Unknown dataset.")
 
 lower_bound = round(stc.data.min() * 1e9)
 upper_bound = round(stc.data.max() * 1e9)
@@ -96,20 +153,20 @@ brain = stc.plot(
     views=["lat", "med"],
     hemi="split",
     size=(1000, 500),
-    subject="sample",
+    # subject="sample",
     subjects_dir=subjects_dir,
-    initial_time=max_t,
+    # initial_time=max_t,
     background="w",
     clim="auto",
     colorbar=False,
     colormap=colormap,
     time_viewer=False,
     show_traces=False,
-    cortex="bone",
+    cortex="low_contrast",
     volume_options=dict(resolution=1),
 )
 
-brain.set_time(0.05)
+brain.set_time(0.04)
 
 
 fig = plt.figure(figsize=(4.5, 4.5))
@@ -155,15 +212,26 @@ fig.subplots_adjust(
     left=0.15, right=0.9, bottom=0.15, top=0.9, wspace=0.1, hspace=0.2
 )
 
-fig_dir = (
-    "../../../tex/article/srcimages/blobs/"
-    + f"blob-{folder_name}-{ESTIMATOR}.svg"
-)
+if DATASET == "sample":
+    fig_dir = (
+        "../../../tex/article/srcimages/blobs/"
+        + f"blob-{folder_name}-{ESTIMATOR}.svg"
+    )
 
-fig_dir_2 = (
-    "../../../tex/article/srcimages/blobs/"
-    + f"blob-{folder_name}-{ESTIMATOR}.pdf"
-)
+    fig_dir_2 = (
+        "../../../tex/article/srcimages/blobs/"
+        + f"blob-{folder_name}-{ESTIMATOR}.pdf"
+    )
+elif DATASET == "somato":
+    fig_dir = (
+        "../../../tex/article/srcimages/blobs/somato/"
+        + f"blob-{ESTIMATOR}.svg"
+    )
+
+    fig_dir_2 = (
+        "../../../tex/article/srcimages/blobs/somato/"
+        + f"blob-{ESTIMATOR}.pdf"
+    )
 
 fig.savefig(fig_dir)
 fig.savefig(fig_dir_2)

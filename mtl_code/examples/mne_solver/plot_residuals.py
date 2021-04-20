@@ -31,7 +31,8 @@ if args.condition is None:
         + "Available condition: Left Auditory, Right Auditory, Left visual, Right visual."
     )
 
-mem = Memory('.')
+mem = Memory(".")
+
 
 def load_data():
     data_path = sample.data_path()
@@ -216,20 +217,21 @@ def solver(M, G, n_orient=1):
 def add_foci_to_brain_surface(brain, stc):
     fig, ax = plt.subplots(figsize=(10, 4))
 
-    for i_hemi, hemi in enumerate(['lh', 'rh']):
+    for i_hemi, hemi in enumerate(["lh", "rh"]):
         surface_coords = brain.geo[hemi].coords
-        hemi_data = stc.lh_data if hemi == 'lh' else stc.rh_data
+        hemi_data = stc.lh_data if hemi == "lh" else stc.rh_data
         for k in range(len(stc.vertices[i_hemi])):
             activation_idx = stc.vertices[i_hemi][k]
             foci_coords = surface_coords[activation_idx]
 
-            line, = ax.plot(stc.times, 1e9 * hemi_data[k])
+            (line,) = ax.plot(stc.times, 1e9 * hemi_data[k])
             brain.add_foci(foci_coords, hemi=hemi, color=line.get_color())
-    
-    ax.set_xlabel('Time (s)')
-    ax.set_ylabel('Amplitude (nAm)')
+
+    ax.set_xlabel("Time (s)")
+    ax.set_ylabel("Amplitude (nAm)")
 
     return fig
+
 
 def generate_report(
     evoked_fig, evoked_fig_white, residual_fig, residual_fig_white, stc
@@ -244,11 +246,12 @@ def generate_report(
         hemi="split",
         subjects_dir=subjects_dir,
         # initial_time=0.1,
-        initial_time=0.,
+        initial_time=0.0,
         clim="auto",
         colorbar=False,
         show_traces=False,
-        time_viewer=False
+        time_viewer=False,
+        cortex="low_contrast",
     )
 
     brain = stc.plot(**kwargs)
@@ -259,16 +262,24 @@ def generate_report(
     brain.close()
     exp_var = norm(residual.data) / norm(evoked.data)
 
-    report.add_figs_to_section(evoked_fig, "Evoked", section='Sensor')
-    report.add_figs_to_section(residual_fig, "Residual", section='Sensor')
-
-    report.add_figs_to_section(evoked_fig_white, "Evoked - White noise", section='Sensor')
-    report.add_figs_to_section(residual_fig_white, "Residual - White noise", section='Sensor')
+    report.add_figs_to_section(evoked_fig, "Evoked", section="Sensor")
+    report.add_figs_to_section(residual_fig, "Residual", section="Sensor")
 
     report.add_figs_to_section(
-        fig, f"Source estimate, explained variance: {exp_var:.2f}", section='Source'
+        evoked_fig_white, "Evoked - White noise", section="Sensor"
     )
-    report.add_figs_to_section(fig_traces, 'Source Time Courses', section='Source')
+    report.add_figs_to_section(
+        residual_fig_white, "Residual - White noise", section="Sensor"
+    )
+
+    report.add_figs_to_section(
+        fig,
+        f"Source estimate, explained variance: {exp_var:.2f}",
+        section="Source",
+    )
+    report.add_figs_to_section(
+        fig_traces, "Source Time Courses", section="Source"
+    )
 
     filename = args.condition.lower().replace(" ", "_")
 

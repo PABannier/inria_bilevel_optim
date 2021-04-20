@@ -2,7 +2,6 @@ __pycache__
 /.pytest_cache
 *.aux
 *.log
-*.pdf
 *.bbl
 *.blg
 *.fdb_latexmk
@@ -19,3 +18,11 @@ tex/memo/__latexindent_temp.tex
 .DS_Store
 mtl_code/mtl.egg-info/
 solver_code/solver_lasso.egg-info/
+solver_tex/cd_overview.pdf
+solver_tex/prebuiltimages/residu_orth.pdf
+.gitignore
+solver_tex/prebuiltimages/umontpellier_logo.pdf
+tex/article/content/__latexindent_temp.tex
+tex/article/article.pdf
+tex/memo/lasso_overview.pdf
+tex/article/content/__latexindent_temp.tex

@@ -227,7 +227,7 @@ an objective function that is the sum of a smooth data-fitting term and a non-sm
 where $L$ is a convex smooth function and $R$ is a simple non-smooth function. We want to
 minimize such a function. Using standard gradient descent is not possible since we can't compute the
 gradient of $F$ due to the non-differentiability of $R$. To circumvent this issue, we will derive an
-optimality condition using subgradients. Let $w^*$ be a minimizer of $F$. Then, the Fermat's condition
+optimality condition using subgradients. Let $w^*$ be a minimizer of $F$. Then, the Fermat's rule
 writes:
 
 \begin{equation*}
@@ -321,7 +321,7 @@ rule for an optimization algorithm.
     \enspace .
 \end{equation*}
 %
-We can view $w^*$ as a fixed point of the proximal operator. Indeed, using Fermat's condition,
+We can view $w^*$ as a fixed point of the proximal operator. Indeed, using Fermat's rule,
 
 \begin{align*}
     -\nabla L(w^*) \in \lambda \partial R(w^*)
@@ -347,42 +347,88 @@ a non-smooth regularizer. We will derive the proximal operator of the LASSO prob
 in order to obtain an update rule for ISTA.
 \\
 \\
-First, let's derive the proximal operator for $R(x)=\lambda\abs{x}$. $\text{prox}_R$ is the
-minimizer of the function
+First, let's compute the proximal operator of the LASSO problem. Remember that:
 
 \begin{equation*}
-    h(u) = \begin{cases}
-        h_1(u) \triangleq \lambda u + \frac{1}{2}(u-x)^2, \quad &u > 0, \\
-        h_2(u) \triangleq -\lambda u + \frac{1}{2}(u-x)^2, \quad &u \leq 0.
-    \end{cases}
-\end{equation*}
-%
-If the minimizer is attained at $u > 0$ then $0 = h_1'(u)=\lambda + u - x$, meaning that
-$u = x - \lambda$. Therefore, if $x > \lambda$, then $\text{prox}_R(x)=x-\lambda$. The same 
-argument shows that if $x < -\lambda$, then $\text{prox}_R(x)=x+\lambda$. If $\abs{x} \leq \lambda$,
-then $\text{prox}_R(x)$ must be the only point of nondifferentiability of $h$, namely, 0.
-Therefore, we can define the soft-thresholding function as:
-
-\begin{equation*}
-    \mathcal{T}_{\lambda}(x) = \left[\abs{x} - \lambda\right]_+ \text{sgn}(x)
-    \begin{cases}
-        x - \lambda,  \quad &x \geq \lambda \\
-        0, \quad & \abs{x} < \lambda \\
-        x + \lambda, \quad &x \leq -\lambda
-    \end{cases}
-\end{equation*}
-%
-For a vector, we can generalize the notation as follows:
-
-\begin{equation*}
-    \text{prox}_R(\mathbf{x}) = (\mathcal{T}_{\lambda}(x_j))_{j=1}^n
-    = \left[\abs{\mathbf{x}} - \lambda \mathbf{1}\right]_+ \odot \text{sgn}(\mathbf{x})
+    \text{prox}_{\lambda\norm{\cdot}_1}
+    = 
+    \argmin_{\beta \in \bbR^p} 
+    \left\{
+        \frac{1}{2}
+        \norm{y - w}_2^2
+        + \lambda \norm{w}_1
+    \right\}
     \enspace .
 \end{equation*}
 %
-Now we need to compute the gradient of $L$ with respect to $\beta$, which is given by
-$\nabla L(\beta) = -X^{\top}(y-X\beta)$. Finally, we can replace it in the proximal operator
-which yields:
+The Fermat's optimality rule writes:
+
+\begin{align*}
+    0 \in \nabla
+    \left(
+        \frac{1}{2}
+        \norm{y - w}_2^2
+    \right) 
+    + \lambda \partial \norm{w}_1
+    &\iff 0 \in
+    w - y + \lambda \partial \norm{w}_1
+    \enspace .
+\end{align*}
+%
+Since the $\ell_1$-norm is separable we can inspect the subgradient component-wise.
+Therefore, we derive the subgradient of the absolute value. We trivially see that
+for $\forall i, w_i \neq 0, \partial \abs{w_i} = \text{sign}(w_i)$.
+Re-writing the Fermat's rule component-wise:
+
+\begin{equation*}
+    0 = w_i - y_i + \lambda \text{sign}(w_i)
+    \iff w_i = y_i - \lambda \text{sign}(w_i)
+    \enspace .
+\end{equation*}
+%
+Note that $w_i > 0 \Rightarrow y_i > \lambda w_i \Rightarrow y_i > 0$ and 
+$w_i < 0 \Rightarrow y_i < -\lambda \Rightarrow y_i < 0$. Therefore, $\text{sign}(w_i^*) = \text{sign}(y_i)$.
+Hence, 
+
+\begin{equation*}
+    w_i = y_i - \lambda \text{sign}(y_i)
+    \enspace .
+\end{equation*}
+%
+In the case where $w_i = 0$, the subdifferential of the absolute value is $[-1, 1]$
+and the optimality condition writes:
+
+\begin{equation*}
+    0 \in -y_i + \lambda [-1, 1] 
+    \iff y_i \in [-\lambda, \lambda]
+    \enspace .
+\end{equation*}
+%
+Therefore, we can define the soft-thresholding function as:
+
+\begin{equation*}
+    \left(\mathcal{T}_{\lambda}(w)\right)_i = \left[\abs{w_i} - \lambda\right]_+ \text{sgn}(w_i)
+    = 
+    \begin{cases}
+        w_i - \lambda,  \quad &w_i \geq \lambda \\
+        0, \quad & \abs{w_i} < \lambda \\
+        w_i + \lambda, \quad &w_i \leq -\lambda
+    \end{cases}
+    \enspace .
+\end{equation*}
+%
+Now, we can switch back to vector notation as follows:
+
+\begin{equation*}
+    \text{prox}_{\norm{\cdot}_1}(\mathbf{w}) = (\mathcal{T}_{\lambda}(w_i))_{i=1}^n
+    = \left[\abs{\mathbf{w}} - \lambda \mathbf{1}\right]_+ \odot \text{sgn}(\mathbf{w})
+    \enspace .
+\end{equation*}
+%
+Having computed the proximal operator for the $\ell_1$-norm, we can now write the update
+rule for LASSO problems. In that vein, we need to compute the gradient of $L$ with respect 
+to $\beta$, which is given by $\nabla L(\beta) = -X^{\top}(y-X\beta)$. Finally, we can replace 
+it in the proximal operator which yields:
 
 \begin{equation*}
     \beta^{t+1} = \mathcal{T}_{\frac{\lambda}{\mathcal{L}}}\left(
@@ -390,7 +436,8 @@ which yields:
     \right)
 \end{equation*}
 %
-Note that the Lipschitz constant $\mathcal{L}$ for the LASSO is given by $\norm{X^{\top}X}_2$.
+Note that the Lipschitz constant $\mathcal{L}$ for the LASSO is given by the sepctral norm
+of $X$, which is the largest singular value of $X$. 
 
 \subsection*{FISTA: Fast ISTA}
 
@@ -480,7 +527,7 @@ This enables us to find the following update rule:
 
 \begin{equation*}
     \mathbf{B}_{j:}^{t+1} = 
-    \text{prox}\left(
+    \text{prox}_{\frac{\lambda}{\mathcal{L}}}\left(
         \mathbf{B}_{j:}^{t}
         + \frac{1}{\mathcal{L}}
         \mathbf{X}_{:j}^{\top}

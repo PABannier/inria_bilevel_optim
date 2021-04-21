@@ -11,7 +11,7 @@ import matplotlib.pyplot as plt
 from joblib import Memory
 
 import mne
-from mne.datasets import sample
+from mne.datasets import sample, somato
 from mne.viz import plot_sparse_source_estimates
 from mne.inverse_sparse.mxne_inverse import _compute_residual
 
@@ -22,53 +22,111 @@ from mtl.utils_datasets import compute_alpha_max
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--condition", help="condition")
+parser.add_argument("--dataset", help="dataset")
 
 args = parser.parse_args()
 
-if args.condition is None:
+if args.dataset is None:
     raise ValueError(
-        "Please specify a regularizing constant by using --condition argument. "
-        + "Available condition: Left Auditory, Right Auditory, Left visual, Right visual."
+        "Please specify a dataset by using --dataset argument. "
+        + "Available dataset: sample, somato."
     )
+elif args.dataset == "sample":
+    if args.condition is None:
+        raise ValueError(
+            "Please specify a regularizing constant by using --condition argument. "
+            + "Available condition: Left Auditory, Right Auditory, Left visual, Right visual."
+        )
+
 
 mem = Memory(".")
 
 
+@mem.cache
 def load_data():
-    data_path = sample.data_path()
-    fwd_fname = data_path + "/MEG/sample/sample_audvis-meg-eeg-oct-6-fwd.fif"
-    ave_fname = data_path + "/MEG/sample/sample_audvis-ave.fif"
-    cov_fname = data_path + "/MEG/sample/sample_audvis-shrunk-cov.fif"
-    trans_fname = op.join(
-        data_path, "MEG", "sample", "sample_audvis_raw-trans.fif"
-    )
-    subjects_dir = data_path + "/subjects"
 
-    bem_fname = op.join(
-        subjects_dir, "sample", "bem", "sample-5120-bem-sol.fif"
-    )
+    if args.dataset == "sample":
+        data_path = sample.data_path()
+        fwd_fname = (
+            data_path + "/MEG/sample/sample_audvis-meg-eeg-oct-6-fwd.fif"
+        )
+        ave_fname = data_path + "/MEG/sample/sample_audvis-ave.fif"
+        cov_fname = data_path + "/MEG/sample/sample_audvis-shrunk-cov.fif"
+        trans_fname = op.join(
+            data_path, "MEG", "sample", "sample_audvis_raw-trans.fif"
+        )
+        subjects_dir = data_path + "/subjects"
 
-    condition = args.condition
+        bem_fname = op.join(
+            subjects_dir, "sample", "bem", "sample-5120-bem-sol.fif"
+        )
 
-    # Read noise covariance matrix
-    noise_cov = mne.read_cov(cov_fname)
-    # Handling average file
-    evoked = mne.read_evokeds(
-        ave_fname, condition=condition, baseline=(None, 0)
-    )
-    evoked.crop(tmin=0.05, tmax=0.15)
+        condition = args.condition
 
-    evoked = evoked.pick_types(eeg=False, meg=True)
-    # Handling forward solution
-    forward = mne.read_forward_solution(fwd_fname)
+        # Read noise covariance matrix
+        noise_cov = mne.read_cov(cov_fname)
+        # Handling average file
+        evoked = mne.read_evokeds(
+            ave_fname, condition=condition, baseline=(None, 0)
+        )
+        evoked.crop(tmin=0.05, tmax=0.15)
+
+        evoked = evoked.pick_types(eeg=False, meg=True)
+        # Handling forward solution
+        forward = mne.read_forward_solution(fwd_fname)
+    else:
+        data_path = somato.data_path()
+        subject = "01"
+        task = "somato"
+        raw_fname = op.join(
+            data_path,
+            "sub-{}".format(subject),
+            "meg",
+            "sub-{}_task-{}_meg.fif".format(subject, task),
+        )
+        fwd_fname = op.join(
+            data_path,
+            "derivatives",
+            "sub-{}".format(subject),
+            "sub-{}_task-{}-fwd.fif".format(subject, task),
+        )
+
+        subjects_dir = op.join(
+            data_path, "derivatives", "freesurfer", "subjects"
+        )
+
+        condition = "Unknown"
+
+        # Read evoked
+        raw = mne.io.read_raw_fif(raw_fname)
+        events = mne.find_events(raw, stim_channel="STI 014")
+        reject = dict(grad=4000e-13, eog=350e-6)
+        picks = mne.pick_types(raw.info, meg=True, eog=True)
+
+        event_id, tmin, tmax = 1, -1.0, 3.0
+        epochs = mne.Epochs(
+            raw,
+            events,
+            event_id,
+            tmin,
+            tmax,
+            picks=picks,
+            reject=reject,
+            preload=True,
+        )
+        evoked = epochs.filter(1, None).average()
+        evoked = evoked.pick_types(meg=True)
+        evoked.crop(tmin=0.03, tmax=0.05)  # Choose a timeframe not too large
+        # max_t = evoked.get_peak()[1]
+
+        # Handling forward solution
+        forward = mne.read_forward_solution(fwd_fname)
+        noise_cov = mne.compute_covariance(epochs, rank="info", tmax=0.0)
 
     return (
         evoked,
         forward,
         noise_cov,
-        cov_fname,
-        bem_fname,
-        trans_fname,
         subjects_dir,
     )
 
@@ -236,9 +294,9 @@ def add_foci_to_brain_surface(brain, stc):
 def generate_report(
     evoked_fig, evoked_fig_white, residual_fig, residual_fig_white, stc
 ):
-    report = mne.report.Report(title=args.condition)
+    title = args.condition if args.dataset == "sample" else "somato"
+    report = mne.report.Report(title=title)
 
-    # views = ["lat", "med"] if "Auditory" in args.condition else ["lat", "cau"]
     views = ["lat", "med"]
 
     kwargs = dict(
@@ -281,7 +339,11 @@ def generate_report(
         fig_traces, "Source Time Courses", section="Source"
     )
 
-    filename = args.condition.lower().replace(" ", "_")
+    filename = (
+        args.condition.lower().replace(" ", "_")
+        if args.dataset == "sample"
+        else "somato"
+    )
 
     report.save(f"reports/report_{filename}.html", overwrite=True)
 
@@ -292,17 +354,20 @@ if __name__ == "__main__":
         evoked,
         forward,
         noise_cov,
-        cov_fname,
-        bem_fname,
-        trans_fname,
         subjects_dir,
     ) = load_data()
 
-    folder = args.condition.lower().replace(" ", "_")
-    data_folder = Path(f"{folder}/data")
-    data_folder.mkdir(exist_ok=True, parents=True)
-    stc_filepath = data_folder / "stc_adaptive-sure.pkl"
-    residual_filepath = data_folder / "residual_adaptive-sure.pkl"
+    if args.dataset == "sample":
+        folder = args.condition.lower().replace(" ", "_")
+        data_folder = Path(f"{folder}/data")
+        data_folder.mkdir(exist_ok=True, parents=True)
+        stc_filepath = data_folder / "stc_adaptive-sure.pkl"
+        residual_filepath = data_folder / "residual_adaptive-sure.pkl"
+    else:
+        folder = "somato"
+        data_folder = Path(folder)
+        stc_filepath = data_folder / "stc_adaptive-sure.pkl"
+        residual_filepath = data_folder / "residual_adaptive-sure.pkl"
 
     if op.exists(stc_filepath) and op.exists(residual_filepath):
         stc = joblib.load(stc_filepath)

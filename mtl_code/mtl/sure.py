@@ -79,9 +79,7 @@ class SURE:
             self.init_eps_and_delta(n_samples, n_tasks)
 
         # fit 2 models in Y and Y + epsilon * delta
-        model = self.estimator(
-            alpha, n_iterations, verbose=False, **estimator_kwargs
-        )
+        model = self.estimator(alpha, n_iterations, **estimator_kwargs)
         model.fit(X, Y)
         coef1 = model.coef_
         model.fit(X, Y + self.eps * self.delta)

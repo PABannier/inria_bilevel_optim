@@ -1,6 +1,9 @@
 import os
 from joblib import parallel_backend
 from joblib import Parallel, delayed
+from tqdm import tqdm
+import time
+import warnings
 
 import numpy as np
 from scipy import sparse
@@ -10,6 +13,7 @@ import pandas as pd
 from sklearn.base import BaseEstimator, ClassifierMixin
 from sklearn.base import TransformerMixin
 from sklearn.base import RegressorMixin
+from sklearn.exceptions import ConvergenceWarning
 
 from sklearn.preprocessing import StandardScaler
 from sklearn.metrics import jaccard_score
@@ -20,9 +24,11 @@ from mtl.mtl import ReweightedMultiTaskLasso
 from mtl.utils_datasets import compute_alpha_max
 
 
-N_JOBS = 30
+N_JOBS = 20
 INNER_MAX_NUM_THREADS = 1
-VERBOSE_SUBJECT = 10
+
+MEMMAP_FOLDER = "."
+OUTPUT_FILENAME_MEMMAP = os.path.join(MEMMAP_FOLDER, "output_memmap")
 
 
 def _get_coef(est):
@@ -57,34 +63,35 @@ class SparseRegressor(BaseEstimator, ClassifierMixin, TransformerMixin):
         norms = np.linalg.norm(L, axis=0)
         L = L / norms[None, :]
 
-        alpha_found = False
+        est_coefs = np.memmap(
+            OUTPUT_FILENAME_MEMMAP,
+            dtype=np.float32,
+            shape=(X.shape[0], L.shape[1]),
+            mode="w+",
+        )
 
-        est_coefs = np.empty((X.shape[0], L.shape[1]))
-        """
-        for idx in tqdm(range(len(X)), total=len(X)):
-            x = X.iloc[idx].values
-            model.fit(L, x)
-            est_coef = np.abs(_get_coef(model))
-            est_coef = est_coef.ravel()
-            # est_coef /= norms
-            est_coefs[idx] = est_coef
-        """
+        start_time = time.time()
+
         with parallel_backend(
             "loky", inner_max_num_threads=INNER_MAX_NUM_THREADS
         ):
             Parallel(N_JOBS)(
-                delayed(self._fit_model)(L, X, idx, est_coefs)
+                delayed(self._fit_model_for_sample)(
+                    L, X, idx, model, est_coefs
+                )
                 for idx in range(len(X))
             )
 
+        print("Fitting duration:", time.time() - start_time)
+
         return est_coefs.T
 
-    def _fit_model(self, L, X, idx, est_coefs):
+    def _fit_model_for_sample(self, L, X, idx, model, est_coefs):
+        if idx % 10 == 0:
+            print(f"Fitting idx #{idx}")
         x = X.iloc[idx].values
-        estimator = self.model()
-        estimator.fit(L, x)
-        est_coef = np.abs(_get_coef(estimator))
-        est_coef = est_coef.ravel()
+        model.fit(L, x)
+        est_coef = np.abs(_get_coef(model)).ravel()
         est_coefs[idx] = est_coef
 
     def decision_function(self, X):
@@ -106,11 +113,7 @@ class SparseRegressor(BaseEstimator, ClassifierMixin, TransformerMixin):
 
         n_parcels = np.max([np.max(s) for s in self.parcel_indices.values()])
         betas = np.empty((len(X), n_parcels))
-
         for subj_idx in np.unique(X["subject"]):
-            if subj_idx % VERBOSE_SUBJECT:
-                print(f"Processing subject #{subj_idx+1}")
-
             L_used = self.Ls[subj_idx]
 
             X_used = X[X["subject"] == subj_idx]
@@ -143,24 +146,34 @@ class CustomSparseEstimator(BaseEstimator, RegressorMixin):
         self.best_alpha_ = None
         self.coef_ = None
 
+        sure_path_ = []
+
         alpha_max = compute_alpha_max(L, x)
         alphas = np.geomspace(alpha_max, alpha_max / 500, 15)
 
-        print("Upper bound:", alpha_max)
-        print("Lower bound:", alpha_max / 500)
+        # print("Upper bound:", alpha_max)
+        # print("Lower bound:", alpha_max / 500)
 
         # Sigma = 1 confirmé???????
         x = np.expand_dims(x, axis=-1)  # Add an extra dim to make MTL work
 
         for alpha in alphas:
             estimator = SURE(ReweightedMultiTaskLasso, 1, random_state=0)
+
             sure_val_ = estimator.get_val(L, x, alpha, verbose=False)
+            sure_path_.append(sure_val_)
+
             if sure_val_ < self.best_sure_:
                 self.best_sure_ = sure_val_
                 self.best_alpha_ = alpha
+            else:
+                diffs = np.diff(sure_path_)
+                if np.all(diffs[-3:] >= 0):
+                    print("Early stopping.")
+                    break
 
-        print("Selected alpha:", self.best_alpha_)
-        print("\n")
+        # print("Selected alpha:", self.best_alpha_)
+        # print("\n")
 
         # Refitting
         estimator = ReweightedMultiTaskLasso(self.best_alpha_, verbose=False)
@@ -171,7 +184,7 @@ class CustomSparseEstimator(BaseEstimator, RegressorMixin):
 
 def get_estimator():
     # Ls, parcel_indices = get_leadfields()
-    # custom_model = CustomSparseEstimator()
-    adaptive_lasso = SparseRegressor(CustomSparseEstimator)
+    custom_model = CustomSparseEstimator()
+    adaptive_lasso = SparseRegressor(custom_model)
 
     return adaptive_lasso

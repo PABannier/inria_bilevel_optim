@@ -142,10 +142,10 @@ literate={á}{{\'a}}1
 
 \vskip 0.3in
 
-Now that we have studied LASSO and its variations as well as a brief overview of 
+Now that we have studied LASSO and its variations as well as a brief overview of
 duality, we can now focus on the optimization algorithms that solve the LASSO problems.
-In particular, we will primarily focus on coordinate descent and its variants applied 
-to solve LASSO and Multi-task LASSO. 
+In particular, we will primarily focus on coordinate descent and its variants applied
+to solve LASSO and Multi-task LASSO.
 
 
 
@@ -160,13 +160,13 @@ over all its coordinates one by one leads to the convergence to a global minimum
 \\
 \\
 \underline{Proof}: Consider $f : \bbR^p \rightarrow \bbR$ a smooth and convex function.
-Let $e_i$ be the $i$-th vector in the canonical basis of $\bbR^p$. 
+Let $e_i$ be the $i$-th vector in the canonical basis of $\bbR^p$.
 \\
 \\
-First, 
+First,
 \begin{equation*}
-    \forall d \in \bbR, f(x + de_i) \geq f(x) 
-    \Rightarrow 
+    \forall d \in \bbR, f(x + de_i) \geq f(x)
+    \Rightarrow
     \frac{\partial f}{\partial x^{(i)}}(x) = 0
     \enspace .
 \end{equation*}
@@ -174,9 +174,9 @@ First,
 Therefore,
 \begin{equation*}
     \nabla f(x) = \left(
-        \frac{\partial f}{\partial x^{(1)}}(x),
-        \dots,
-        \frac{\partial f}{\partial x^{(p)}}(x)
+    \frac{\partial f}{\partial x^{(1)}}(x),
+    \dots,
+    \frac{\partial f}{\partial x^{(p)}}(x)
     \right) = 0
     \enspace .
 \end{equation*}
@@ -202,10 +202,10 @@ direction. More formally, let $\gamma_1, \dots, \gamma_p > 0$ be $p$ gradient de
 gradient descent writes:
 
 \begin{align*}
-    &\text{Choose} \enspace i_{k+1} \in \{1, \dots, n\} \\
-    &\begin{cases}
-        x_{k+1}^{(i)} = x_{k}^{(i)} - \gamma_i \nabla_i f(x_k), \quad &\text{if} \enspace i = i_{k+1} \\
-        x_{k+1}^{(i)} = x_{k}^{(i)}, \quad &\text{if} \enspace i \neq i_{k+1} 
+     & \text{Choose} \enspace i_{k+1} \in \{1, \dots, n\} \\
+     & \begin{cases}
+        x_{k+1}^{(i)} = x_{k}^{(i)} - \gamma_i \nabla_i f(x_k), \quad & \text{if} \enspace i = i_{k+1}    \\
+        x_{k+1}^{(i)} = x_{k}^{(i)}, \quad                            & \text{if} \enspace i \neq i_{k+1}
     \end{cases}
 \end{align*}
 %
@@ -231,10 +231,10 @@ optimality condition using subgradients. Let $w^*$ be a minimizer of $F$. Then, 
 writes:
 
 \begin{equation*}
-    0 \in \partial 
+    0 \in \partial
     \left(
-        L(w^*) + \lambda R(w^*)
-    \right) 
+    L(w^*) + \lambda R(w^*)
+    \right)
     = \nabla L(w^*) + \lambda \partial R(w^*)
     \enspace .
 \end{equation*}
@@ -243,20 +243,20 @@ writes:
     - \nabla L(w^*) \in \lambda \partial R(w^*)
 \end{equation*}
 %
-We now have an optimality condition, but we still lack a procedure to minimize $L$. 
-In order to have one, let's rely on the majorization-minimization paradigm. Simply put, 
+We now have an optimality condition, but we still lack a procedure to minimize $L$.
+In order to have one, let's rely on the majorization-minimization paradigm. Simply put,
 we majorize a function and then we minimize that upper-bound. Using the $\mathcal{L}$-smoothness
 of $L$, it follows that:
 
 \begin{equation*}
     \forall w, y \in \bbR^p,
     \quad
-    L(w) \leq L(y) + 
+    L(w) \leq L(y) +
     \langle
-        \nabla L(y),
-        w-y
+    \nabla L(y),
+    w-y
     \rangle +
-    \frac{\mathcal{L}}{2} 
+    \frac{\mathcal{L}}{2}
     \norm{w - y}^2
     \enspace .
 \end{equation*}
@@ -267,48 +267,48 @@ the non-smooth regularizer term:
 \begin{equation*}
     \forall w, y \in \bbR^p,
     \quad
-    L(w) + \lambda R(w) \leq L(y) + 
+    L(w) + \lambda R(w) \leq L(y) +
     \langle
-        \nabla L(y),
-        w-y
+    \nabla L(y),
+    w-y
     \rangle +
-    \frac{\mathcal{L}}{2} 
-    \norm{w - y}^2 
-    + \lambda R(w) 
+    \frac{\mathcal{L}}{2}
+    \norm{w - y}^2
+    + \lambda R(w)
     \enspace .
 \end{equation*}
 %
 Now, we want to minimize the upper bound with respect to $w$:
 
 \begin{align*}
-    &\argmin_{w} L(y) + 
+     & \argmin_{w} L(y) +
     \langle
-        \nabla L(y),
-        w-y
+    \nabla L(y),
+    w-y
     \rangle +
-    \frac{\mathcal{L}}{2} 
-    \norm{w - y}^2 
-    + \lambda R(w) \\
+    \frac{\mathcal{L}}{2}
+    \norm{w - y}^2
+    + \lambda R(w)                                           \\
     %
-    &= \argmin_{w}
+     & = \argmin_{w}
     \langle
-        \nabla L(y),
-        w-y
+    \nabla L(y),
+    w-y
     \rangle +
-    \frac{\mathcal{L}}{2} 
-    \norm{w - y}^2 
-    + \lambda R(w) \\
+    \frac{\mathcal{L}}{2}
+    \norm{w - y}^2
+    + \lambda R(w)                                           \\
     %
-    &= \argmin_{w}
+     & = \argmin_{w}
     \frac{1}{2}
     \norm{
         w - \left(
-            y - \frac{1}{\mathcal{L}}\nabla L(y)
+        y - \frac{1}{\mathcal{L}}\nabla L(y)
         \right)
-    }^2_2 
-    + \frac{\lambda}{\mathcal{L}}R(w) \\
+    }^2_2
+    + \frac{\lambda}{\mathcal{L}}R(w)                        \\
     %
-    &\triangleq \text{prox}_{\frac{\lambda}{\mathcal{L}}R}
+     & \triangleq \text{prox}_{\frac{\lambda}{\mathcal{L}}R}
     (y - \frac{1}{\mathcal{L}}\nabla L(y))
 \end{align*}
 %
@@ -325,9 +325,9 @@ We can view $w^*$ as a fixed point of the proximal operator. Indeed, using Ferma
 
 \begin{align*}
     -\nabla L(w^*) \in \lambda \partial R(w^*)
-    & \iff w^* + \frac{1}{\mathcal{L}} \nabla L(w^*) \in w^* - (\lambda\gamma) \partial R(w^*) \\
-    & \iff w^* \in (w^* - \frac{1}{\mathcal{L}} \nabla L(w^*)) - \frac{\lambda}{\mathcal{L}} \partial R(w^*) \\
-    & \iff w^* = \text{prox}_{\frac{\lambda}{\mathcal{L}} R}(w^* - \frac{1}{\mathcal{L}} \nabla L(w^*))
+     & \iff w^* + \frac{1}{\mathcal{L}} \nabla L(w^*) \in w^* - (\lambda\gamma) \partial R(w^*)               \\
+     & \iff w^* \in (w^* - \frac{1}{\mathcal{L}} \nabla L(w^*)) - \frac{\lambda}{\mathcal{L}} \partial R(w^*) \\
+     & \iff w^* = \text{prox}_{\frac{\lambda}{\mathcal{L}} R}(w^* - \frac{1}{\mathcal{L}} \nabla L(w^*))
 \end{align*}
 
 \subsection*{ISTA: Iterative Shrinkage Thresholding Algorithm}
@@ -343,7 +343,7 @@ Let's consider the LASSO problem:
 \end{equation*}
 %
 We see that the objective function is the sum of a smooth data fitting term and
-a non-smooth regularizer. We will derive the proximal operator of the LASSO problem 
+a non-smooth regularizer. We will derive the proximal operator of the LASSO problem
 in order to obtain an update rule for ISTA.
 \\
 \\
@@ -351,12 +351,12 @@ First, let's compute the proximal operator of the LASSO problem. Remember that:
 
 \begin{equation*}
     \text{prox}_{\lambda\norm{\cdot}_1}
-    = 
-    \argmin_{\beta \in \bbR^p} 
+    =
+    \argmin_{\beta \in \bbR^p}
     \left\{
-        \frac{1}{2}
-        \norm{y - w}_2^2
-        + \lambda \norm{w}_1
+    \frac{1}{2}
+    \norm{y - w}_2^2
+    + \lambda \norm{w}_1
     \right\}
     \enspace .
 \end{equation*}
@@ -366,11 +366,11 @@ The Fermat's optimality rule writes:
 \begin{align*}
     0 \in \nabla
     \left(
-        \frac{1}{2}
-        \norm{y - w}_2^2
-    \right) 
+    \frac{1}{2}
+    \norm{y - w}_2^2
+    \right)
     + \lambda \partial \norm{w}_1
-    &\iff 0 \in
+     & \iff 0 \in
     w - y + \lambda \partial \norm{w}_1
     \enspace .
 \end{align*}
@@ -386,9 +386,9 @@ Re-writing the Fermat's rule component-wise:
     \enspace .
 \end{equation*}
 %
-Note that $w_i > 0 \Rightarrow y_i > \lambda w_i \Rightarrow y_i > 0$ and 
+Note that $w_i > 0 \Rightarrow y_i > \lambda w_i \Rightarrow y_i > 0$ and
 $w_i < 0 \Rightarrow y_i < -\lambda \Rightarrow y_i < 0$. Therefore, $\text{sign}(w_i^*) = \text{sign}(y_i)$.
-Hence, 
+Hence,
 
 \begin{equation*}
     w_i = y_i - \lambda \text{sign}(y_i)
@@ -399,7 +399,7 @@ In the case where $w_i = 0$, the subdifferential of the absolute value is $[-1, 
 and the optimality condition writes:
 
 \begin{equation*}
-    0 \in -y_i + \lambda [-1, 1] 
+    0 \in -y_i + \lambda [-1, 1]
     \iff y_i \in [-\lambda, \lambda]
     \enspace .
 \end{equation*}
@@ -408,11 +408,11 @@ Therefore, we can define the soft-thresholding function as:
 
 \begin{equation*}
     \left(\mathcal{T}_{\lambda}(w)\right)_i = \left[\abs{w_i} - \lambda\right]_+ \text{sgn}(w_i)
-    = 
+    =
     \begin{cases}
-        w_i - \lambda,  \quad &w_i \geq \lambda \\
-        0, \quad & \abs{w_i} < \lambda \\
-        w_i + \lambda, \quad &w_i \leq -\lambda
+        w_i - \lambda,  \quad & w_i \geq \lambda    \\
+        0, \quad              & \abs{w_i} < \lambda \\
+        w_i + \lambda, \quad  & w_i \leq -\lambda
     \end{cases}
     \enspace .
 \end{equation*}
@@ -426,49 +426,49 @@ Now, we can switch back to vector notation as follows:
 \end{equation*}
 %
 Having computed the proximal operator for the $\ell_1$-norm, we can now write the update
-rule for LASSO problems. In that vein, we need to compute the gradient of $L$ with respect 
-to $\beta$, which is given by $\nabla L(\beta) = -X^{\top}(y-X\beta)$. Finally, we can replace 
+rule for LASSO problems. In that vein, we need to compute the gradient of $L$ with respect
+to $\beta$, which is given by $\nabla L(\beta) = -X^{\top}(y-X\beta)$. Finally, we can replace
 it in the proximal operator which yields:
 
 \begin{equation*}
     \beta^{t+1} = \mathcal{T}_{\frac{\lambda}{\mathcal{L}}}\left(
-        \beta^{t} + \frac{1}{\mathcal{L}} X^{\top}(y-X\beta^t)
+    \beta^{t} + \frac{1}{\mathcal{L}} X^{\top}(y-X\beta^t)
     \right)
 \end{equation*}
 %
 Note that the Lipschitz constant $\mathcal{L}$ for the LASSO is given by the sepctral norm
-of $X$, which is the largest singular value of $X$. 
+of $X$, which is the largest singular value of $X$.
 
 \subsection*{FISTA: Fast ISTA}
 
 The idea of FISTA is the same as acceleration à la Nesterov: finding $\beta^{t+1}$ using
-an interpolation between $\beta^t$ and $\beta^{t+1}$. It implements a simple heuristic to 
+an interpolation between $\beta^t$ and $\beta^{t+1}$. It implements a simple heuristic to
 enhance the convergence speed of ISTA (quadratic). In practice, \cite{Bertrand_Massias_Anderson}
 showed that FISTA does not accelerate proximal coordinate descent (next section). They
-introduce a variant of Anderson extrapolation suitable for coordinate descent, that has 
+introduce a variant of Anderson extrapolation suitable for coordinate descent, that has
 proved to be very efficient.
 
 \subsection*{Back to CD: proximal coordinate descent}
 
-Let $f : \bbR^p \rightarrow \bbR$ be a convex and differentiable function, and let 
+Let $f : \bbR^p \rightarrow \bbR$ be a convex and differentiable function, and let
 $g_i$ be convex (possibly non-differentiable) function. Let $F$ be:
 
 \begin{equation*}
     F(x) = f(x) + \sum_{i=1}^p g_i(x^{(i)})
 \end{equation*}
 %
-In short, we can separate a function $F$ as a smooth and non-smooth parts. Then, using the same notation 
+In short, we can separate a function $F$ as a smooth and non-smooth parts. Then, using the same notation
 as previously, the proximal coordinate descent algorithm follows:
 
 \begin{align*}
-    &\text{Choose} \enspace i_{k+1} \in \{1, \dots, n\} \\
-    &\begin{cases}
-        x_{k+1}^{(i)} = \text{prox}_{\gamma_i, g_i}(x_k^{(i)} - \gamma_i \nabla_i f(x_k)) \quad &\text{if} \enspace i = i_{k+1} \\
-        x_{k+1}^{(i)} = x_{k}^{(i)} \quad &\text{if} \enspace i \neq i_{k+1} 
+     & \text{Choose} \enspace i_{k+1} \in \{1, \dots, n\} \\
+     & \begin{cases}
+        x_{k+1}^{(i)} = \text{prox}_{\gamma_i, g_i}(x_k^{(i)} - \gamma_i \nabla_i f(x_k)) \quad & \text{if} \enspace i = i_{k+1}    \\
+        x_{k+1}^{(i)} = x_{k}^{(i)} \quad                                                       & \text{if} \enspace i \neq i_{k+1}
     \end{cases}
 \end{align*}
 %
-where $\text{prox}_{\gamma_i, g_i}(y)=\argmin_{x \in \bbR^p} g(x) + \frac{1}{2\gamma_i} \norm{x-y}^2$. 
+where $\text{prox}_{\gamma_i, g_i}(y)=\argmin_{x \in \bbR^p} g(x) + \frac{1}{2\gamma_i} \norm{x-y}^2$.
 As we shall see later, a lot of widely-used $g$ have a well-known closed-form solution for proximal operators
 (LASSO in particular).
 %
@@ -482,7 +482,7 @@ In terms of convergence speed, we obtain the same rate as for non-composite obje
 \subsection*{Block proximal coordinate descent}
 
 In a multi-output regression setting, blocks of coordinates are updated at each iteration. Let's take Multi-Task
-LASSO for instance. 
+LASSO for instance.
 
 \begin{equation*}
     \min_{\bfB \in \bbR^{p \times T}}
@@ -499,7 +499,7 @@ Let's consider the Multi-task LASSO problem as presented above. We want to deriv
 for this problem as we did for single-task LASSO.
 \\
 \\
-First, let's derive the proximal operator for $R(\mathbf{B}) = \norm{\mathbf{B}}_{2, 1}$. 
+First, let's derive the proximal operator for $R(\mathbf{B}) = \norm{\mathbf{B}}_{2, 1}$.
 We have shown with ISTA, that the proximal operator for the $\ell_1$ norm is the
 soft-thresholding operator. We can reuse this result to derive the proximal operator for
 the $\ell_{2,1}$-norm. Indeed, remember that the $\ell_{2,1}$ consists in computing the
@@ -507,18 +507,18 @@ $\ell_1$-norm of the row-wise $\ell_2$-norms. The solution is obtained by \textb
 
 \begin{equation*}
     \text{prox}_{\lambda \norm{\cdot}_2}
-    (\mathbf{B}_{j:}) = 
+    (\mathbf{B}_{j:}) =
     \left(
-        1 - \frac{\lambda}{\norm{\mathbf{B}_{j:}}_2}
+    1 - \frac{\lambda}{\norm{\mathbf{B}_{j:}}_2}
     \right)_+
     \mathbf{B}_{j:}
 \end{equation*}
 %
 Now we need to compute the gradient of the data fitting term with respect to $\mathbf{B}_{j:}$
-which is given by: 
+which is given by:
 
 \begin{equation*}
-    \nabla_j f(\mathbf{B}_{j:}) 
+    \nabla_j f(\mathbf{B}_{j:})
     = -\mathbf{X}_{:j}^{\top}
     (\mathbf{Y} - \mathbf{XB})
 \end{equation*}
@@ -526,16 +526,16 @@ which is given by:
 This enables us to find the following update rule:
 
 \begin{equation*}
-    \mathbf{B}_{j:}^{t+1} = 
+    \mathbf{B}_{j:}^{t+1} =
     \text{prox}_{\frac{\lambda}{\mathcal{L}}}\left(
-        \mathbf{B}_{j:}^{t}
-        + \frac{1}{\mathcal{L}}
-        \mathbf{X}_{:j}^{\top}
-        (\mathbf{Y} - \mathbf{X}\mathbf{B}^t)
+    \mathbf{B}_{j:}^{t}
+    + \frac{1}{\mathcal{L}_j}
+    \mathbf{X}_{:j}^{\top}
+    (\mathbf{Y} - \mathbf{X}\mathbf{B}^t)
     \right)
 \end{equation*}
 %
-where $\mathcal{L} = \norm{\mathbf{X}_{:j}^{\top}\mathbf{X}_{:j}}_2$ is the Lipschitz constant.
+where $\mathcal{L}_j = \norm{\mathbf{X}_{:j}^{\top}\mathbf{X}_{:j}}_2$ is the Lipschitz constant.
 
 \newpage
 \bibliographystyle{plainnat}

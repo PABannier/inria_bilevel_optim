@@ -87,7 +87,7 @@ class ReweightedMultiTaskLasso(BaseEstimator, RegressorMixin):
             Target matrix.
         """
         X, Y = check_X_y(X, Y, multi_output=True)
-        n_samples, n_features = X.shape[0], X.shape[1]
+        n_samples, n_features = X.shape
 
         w = np.ones(n_features)
 

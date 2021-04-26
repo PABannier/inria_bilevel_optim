@@ -3,32 +3,33 @@ from joblib import parallel_backend
 from joblib import Parallel, delayed
 from tqdm import tqdm
 import time
-import warnings
 
 import numpy as np
-from scipy import sparse
+from numpy.linalg import norm
 import matplotlib.pyplot as plt
 import pandas as pd
 
+from sklearn.utils import check_X_y, check_array
+from sklearn.utils.validation import check_is_fitted
+from sklearn.utils import check_random_state
+
 from sklearn.base import BaseEstimator, ClassifierMixin
-from sklearn.base import TransformerMixin
-from sklearn.base import RegressorMixin
-from sklearn.exceptions import ConvergenceWarning
+from sklearn.base import TransformerMixin, RegressorMixin
 
 from sklearn.preprocessing import StandardScaler
 from sklearn.metrics import jaccard_score
 from sklearn.linear_model import LassoLars
 
-from mtl.sure import SURE
-from mtl.mtl import ReweightedMultiTaskLasso
-from mtl.utils_datasets import compute_alpha_max
 
-
-N_JOBS = 20
+N_JOBS = 20  # -1
 INNER_MAX_NUM_THREADS = 1
 
 MEMMAP_FOLDER = "."
 OUTPUT_FILENAME_MEMMAP = os.path.join(MEMMAP_FOLDER, "output_memmap")
+
+
+def compute_alpha_max(X, y):
+    return np.max(np.abs(X.T @ y)) / len(X)
 
 
 def _get_coef(est):
@@ -91,7 +92,7 @@ class SparseRegressor(BaseEstimator, ClassifierMixin, TransformerMixin):
             print(f"Fitting idx #{idx}")
         x = X.iloc[idx].values
         model.fit(L, x)
-        est_coef = np.abs(_get_coef(model)).ravel()
+        est_coef = np.abs(_get_coef(model))
         est_coefs[idx] = est_coef
 
     def decision_function(self, X):
@@ -151,16 +152,12 @@ class CustomSparseEstimator(BaseEstimator, RegressorMixin):
         alpha_max = compute_alpha_max(L, x)
         alphas = np.geomspace(alpha_max, alpha_max / 500, 15)
 
-        # print("Upper bound:", alpha_max)
-        # print("Lower bound:", alpha_max / 500)
-
         # Sigma = 1 confirmé???????
-        x = np.expand_dims(x, axis=-1)  # Add an extra dim to make MTL work
 
         for alpha in alphas:
-            estimator = SURE(ReweightedMultiTaskLasso, 1, random_state=0)
+            estimator = SURE(SingleTaskReweightedLASSO, 1, random_state=0)
 
-            sure_val_ = estimator.get_val(L, x, alpha, verbose=False)
+            sure_val_ = estimator.get_val(L, x, alpha)
             sure_path_.append(sure_val_)
 
             if sure_val_ < self.best_sure_:
@@ -168,23 +165,103 @@ class CustomSparseEstimator(BaseEstimator, RegressorMixin):
                 self.best_alpha_ = alpha
             else:
                 diffs = np.diff(sure_path_)
-                if np.all(diffs[-3:] >= 0):
+                if np.all(diffs[-5:] >= 0):
                     print("Early stopping.")
                     break
 
-        # print("Selected alpha:", self.best_alpha_)
-        # print("\n")
-
         # Refitting
-        estimator = ReweightedMultiTaskLasso(self.best_alpha_, verbose=False)
+        estimator = SingleTaskReweightedLASSO(self.best_alpha_)
         estimator.fit(L, x)
 
         self.coef_ = estimator.coef_
 
 
 def get_estimator():
-    # Ls, parcel_indices = get_leadfields()
     custom_model = CustomSparseEstimator()
     adaptive_lasso = SparseRegressor(custom_model)
 
     return adaptive_lasso
+
+
+# ====================================================================
+# ============================= UTILS ================================
+# ====================================================================
+
+
+class SingleTaskReweightedLASSO(BaseEstimator, RegressorMixin):
+    def __init__(self, alpha=0.1, n_iterations=10, warm_start=True):
+        self.alpha = alpha
+        self.n_iterations = n_iterations
+        self.warm_start = warm_start
+
+        self.coef_ = None
+
+        self.regressor = LassoLars(
+            alpha=alpha, fit_intercept=False, normalize=False
+        )
+
+        self.penalty = lambda w: 1.0 / (
+            2.0 * np.sqrt(np.abs(w)) + np.finfo(float).eps
+        )
+
+    def fit(self, X, y):
+        X, y = check_X_y(X, y)
+        n_samples, n_features = X.shape
+
+        w = np.ones(n_features)
+
+        for k in range(self.n_iterations):
+            X_w = X / w[np.newaxis, :]
+            self.regressor.fit(X_w, y)
+            coef_ = self.regressor.coef_ / w
+
+            w = self.penalty(coef_)
+
+        self.coef_ = coef_
+
+    def predict(self, X):
+        check_is_fitted(self)
+        X = check_array(X)
+        return X @ self.coef_
+
+
+class SURE:
+    def __init__(self, estimator, sigma, random_state=None):
+        self.estimator = estimator
+        self.sigma = sigma
+        self.rng = check_random_state(random_state)
+
+        self.eps = None
+        self.delta = None
+
+    def get_val(self, X, Y, alpha, n_iterations=5, **estimator_kwargs):
+        n_samples = Y.shape[0]
+
+        if self.delta is None or self.eps is None:
+            self.init_eps_and_delta(n_samples)
+
+        # fit 2 models in Y and Y + epsilon * delta
+        model = self.estimator(alpha, n_iterations, **estimator_kwargs)
+        model.fit(X, Y)
+        coef1 = model.coef_
+        model.fit(X, Y + self.eps * self.delta)
+        coef2 = model.coef_
+
+        # Note: Celer returns the transpose of the coefficient
+        # matrix
+        if coef1.shape[0] != X.shape[1]:
+            coef1 = coef1.T
+            coef2 = coef2.T
+
+        # compute the dof
+        dof = ((X @ coef2 - X @ coef1) * self.delta).sum() / self.eps
+        # compute the SURE
+        sure = norm(Y - X @ coef1) ** 2
+        sure -= n_samples * self.sigma ** 2
+        sure += 2 * dof * self.sigma ** 2
+
+        return sure
+
+    def init_eps_and_delta(self, n_samples):
+        self.eps = 2 * self.sigma / (n_samples ** 0.3)
+        self.delta = self.rng.randn(n_samples)

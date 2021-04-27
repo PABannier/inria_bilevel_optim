@@ -94,16 +94,14 @@ def _bcd(X, coef, Y, list_X_j_c, R, lipschitz_consts, n_orient):
         idx = slice(j * n_orient, (j + 1) * n_orient)
         coef_j = coef[idx, :].copy()
 
-        coef_j_new = (X_j_c.T @ R) / lipschitz_consts[j]
+        coef_j_new = (X_j_c.T @ R) / -lipschitz_consts[j]
         coef_j_new += coef_j
 
         coef[idx, :] = block_soft_thresh(
             coef_j_new, alpha / lipschitz_consts[j], n_orient
         )
 
-        R += X_j_c @ (coef_j - coef[idx, :])
-
-    return coef
+        R += X_j_c @ (coef[idx, :] - coef_j)
 
 
 if __name__ == "__main__":
@@ -114,13 +112,13 @@ if __name__ == "__main__":
 
     X = np.asfortranarray(X)
 
-    MAX_ITER = 100
+    MAX_ITER = 300
     CHECK_DGAP_FREQ = 5
     TOL = 1e-8
 
     n_samples, n_features = X.shape
     _, n_tasks = Y.shape
-    n_orient = 1
+    n_orient = 3
 
     n_positions = n_features // n_orient
 
@@ -130,7 +128,7 @@ if __name__ == "__main__":
     alpha = alpha_max * 0.1
 
     coef_ = np.zeros((n_features, n_tasks))
-    R = Y.copy()
+    R = Y.copy()  # init residual
 
     # Storing list of contiguous arrays
     list_X_j_c = []
@@ -143,9 +141,7 @@ if __name__ == "__main__":
 
     all_p_obj = []
     for iter_idx in range(MAX_ITER):
-        # ipdb.set_trace()
-
-        coef_ = _bcd(X, coef_, Y, list_X_j_c, R, lipschitz_consts, n_orient)
+        _bcd(X, coef_, Y, list_X_j_c, R, lipschitz_consts, n_orient)
 
         if iter_idx % CHECK_DGAP_FREQ == 0:
             gap, p_obj, d_obj = get_duality_gap(X, coef_, Y, alpha, n_orient)

@@ -1,4 +1,5 @@
 import numpy as np
+from numpy.lib.function_base import place
 from numpy.linalg import norm
 
 from sklearn.utils import check_random_state
@@ -85,28 +86,22 @@ def get_duality_gap(X, coef, Y, alpha, n_orient):
     return gap, p_obj, d_obj
 
 
-def _bcd(X, coef, Y, list_X_j_c, lipschitz_consts, n_orient):
+def _bcd(X, coef, Y, list_X_j_c, R, lipschitz_consts, n_orient):
     """Implements one full pass of BCD.
     BCD stands for Block Coordinate Descent.
     """
-    R = Y - X @ coef
-    coef_j_new = np.zeros_like(X[0:n_orient, :], order="C")
-
     for j, X_j_c in enumerate(list_X_j_c):
         idx = slice(j * n_orient, (j + 1) * n_orient)
-        X_j = X[:, idx]
-        coef_j = coef[idx, :]
+        coef_j = coef[idx, :].copy()
 
-        coef_j_new = X_j.T @ R  # / lipschitz_consts[j]
+        coef_j_new = (X_j_c.T @ R) / lipschitz_consts[j]
         coef_j_new += coef_j
 
         coef[idx, :] = block_soft_thresh(
             coef_j_new, alpha / lipschitz_consts[j], n_orient
         )
 
-        # alpha_lc = alpha / lipschitz_consts[j]
-
-        # coef[idx, :] = block_soft_thresh(coef_j_new, alpha_lc, n_orient)
+        R += X_j_c @ (coef_j - coef[idx, :])
 
     return coef
 
@@ -135,19 +130,22 @@ if __name__ == "__main__":
     alpha = alpha_max * 0.1
 
     coef_ = np.zeros((n_features, n_tasks))
-
-    lipschitz_consts = (X ** 2).sum(axis=0)
+    R = Y.copy()
 
     # Storing list of contiguous arrays
     list_X_j_c = []
+    lipschitz_consts = np.empty(n_positions)
     for j in range(n_positions):
         idx = slice(j * n_orient, (j + 1) * n_orient)
-        list_X_j_c.append(np.ascontiguousarray(X[:, idx]))
+        X_j = X[:, idx]
+        lipschitz_consts[j] = np.linalg.norm(X_j.T @ X_j, ord=2)
+        list_X_j_c.append(np.ascontiguousarray(X_j))
 
+    all_p_obj = []
     for iter_idx in range(MAX_ITER):
         # ipdb.set_trace()
 
-        coef_ = _bcd(X, coef_, Y, list_X_j_c, lipschitz_consts, n_orient)
+        coef_ = _bcd(X, coef_, Y, list_X_j_c, R, lipschitz_consts, n_orient)
 
         if iter_idx % CHECK_DGAP_FREQ == 0:
             gap, p_obj, d_obj = get_duality_gap(X, coef_, Y, alpha, n_orient)
@@ -158,3 +156,9 @@ if __name__ == "__main__":
             if gap < TOL:
                 print("Threshold reached. Stopped fitting.")
                 break
+
+            all_p_obj.append(p_obj)
+
+    import matplotlib.pyplot as plt
+    plt.plot(all_p_obj)
+    plt.show()

@@ -10,10 +10,15 @@ from celer import MultiTaskLasso
 
 class SUREForReweightedMultiTaskLasso:
     def __init__(
-        self, sigma, alphas, n_iterations=5, penalty=None, random_state=None
+        self,
+        sigma,
+        alpha_grid,
+        n_iterations=5,
+        penalty=None,
+        random_state=None,
     ):
         self.sigma = sigma
-        self.alphas = alphas
+        self.alpha_grid = alpha_grid
         self.n_iterations = n_iterations
         self.random_state = random_state
 
@@ -34,7 +39,7 @@ class SUREForReweightedMultiTaskLasso:
             self._init_eps_and_delta(n_samples, n_tasks)
 
         X, Y = check_X_y(X, Y, multi_output=True)
-        score_grid_ = np.array([np.inf for _ in range(len(self.alphas))])
+        score_grid_ = np.array([np.inf for _ in range(len(self.alpha_grid))])
 
         coefs_grid_1, coefs_grid_2 = self._fit_reweighted_with_grid(X, Y)
 
@@ -43,7 +48,7 @@ class SUREForReweightedMultiTaskLasso:
             score_grid_[i] = sure_val
 
         best_sure_ = np.min(score_grid_)
-        best_alpha_ = self.alphas[np.argmin(score_grid_)]
+        best_alpha_ = self.alpha_grid[np.argmin(score_grid_)]
 
         return best_sure_, best_alpha_
 
@@ -79,7 +84,7 @@ class SUREForReweightedMultiTaskLasso:
     def _fit_reweighted_with_grid(self, X, Y):
         _, n_features = X.shape
         _, n_tasks = Y.shape
-        n_alphas = len(self.alphas)
+        n_alphas = len(self.alpha_grid)
 
         coef1_0 = np.empty((n_alphas, n_features, n_tasks))
         coef2_0 = np.empty((n_alphas, n_features, n_tasks))
@@ -95,7 +100,7 @@ class SUREForReweightedMultiTaskLasso:
         )
 
         # Copy grid of first iteration (leverages convexity)
-        for j, alpha in enumerate(self.alphas):
+        for j, alpha in enumerate(self.alpha_grid):
             regressor1.alpha = alpha
             regressor2.alpha = alpha
             coef1_0[j] = regressor1.fit(X, Y).coef_.T
@@ -107,7 +112,7 @@ class SUREForReweightedMultiTaskLasso:
         coefs_1_ = coef1_0.copy()
         coefs_2_ = coef2_0.copy()
 
-        for j, alpha in enumerate(self.alphas):
+        for j, alpha in enumerate(self.alpha_grid):
             regressor1.alpha = alpha
             regressor2.alpha = alpha
 

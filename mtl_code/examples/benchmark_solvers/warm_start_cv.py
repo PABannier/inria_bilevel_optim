@@ -109,6 +109,7 @@ if __name__ == "__main__":
 
     print("\n")
 
+    """
     cv_regressor = ReweightedMultiTaskLassoCV(alphas, warm_start=False)
     start = time.time()
     cv_regressor.fit(X, Y)
@@ -127,3 +128,4 @@ if __name__ == "__main__":
     start = time.time()
     cross_val(X, Y, alphas, random_state, warm_start=False)
     print(f"Warm start=False, {time.time() - start:.2f}s")
+    """

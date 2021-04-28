@@ -43,9 +43,6 @@ class ReweightedMultiTaskLassoCV(BaseEstimator, RegressorMixin):
     random_state : int or None, default=None
         Seed for reproducible experiments.
 
-    warm_start : bool, default=True
-        Warm start for Reweighted MultiTaskLasso.
-
     penalty : callable, default=None
         See docs of ReweightedMultiTaskLasso for more details.
     """
@@ -57,7 +54,6 @@ class ReweightedMultiTaskLassoCV(BaseEstimator, RegressorMixin):
         n_folds: int = 5,
         n_iterations: int = 5,
         random_state: int = None,
-        warm_start: bool = True,
         penalty: callable = None,
     ):
         if not isinstance(alpha_grid, (list, np.ndarray)):
@@ -70,7 +66,6 @@ class ReweightedMultiTaskLassoCV(BaseEstimator, RegressorMixin):
         self.n_folds = n_folds
         self.n_iterations = n_iterations
         self.random_state = random_state
-        self.warm_start = warm_start
 
         self.best_estimator_ = None
         self.best_cv_, self.best_alpha_ = np.inf, None
@@ -78,6 +73,8 @@ class ReweightedMultiTaskLassoCV(BaseEstimator, RegressorMixin):
         self.mse_path_ = np.zeros((len(alpha_grid), n_folds))
         self.f1_path_ = np.zeros((len(alpha_grid), n_folds))
         self.jaccard_path_ = np.zeros((len(alpha_grid), n_folds))
+
+        self.n_alphas = len(self.alpha_grid)
 
         if penalty:
             self.penalty = penalty
@@ -116,9 +113,9 @@ class ReweightedMultiTaskLassoCV(BaseEstimator, RegressorMixin):
         n_samples = X.shape[0]
         n_tasks = Y.shape[1]
 
-        scores_per_alpha_ = [np.inf for _ in range(len(self.alpha_grid))]
+        scores_per_alpha_ = [np.inf for _ in range(self.n_alphas)]
         Y_oofs_ = [
-            np.zeros((n_samples, n_tasks)) for _ in range(len(self.alpha_grid))
+            np.zeros((n_samples, n_tasks)) for _ in range(self.n_alphas)
         ]
 
         kf = KFold(self.n_folds, random_state=self.random_state, shuffle=True)
@@ -132,7 +129,7 @@ class ReweightedMultiTaskLassoCV(BaseEstimator, RegressorMixin):
                 X_train, Y_train, X_valid, Y_valid, coef_true, i
             )
 
-            predictions_ = [X_valid @ coef for coef in coefs_.values()]
+            predictions_ = [X_valid @ coefs_[j] for j in range(self.n_alphas)]
 
             for i in range(len(Y_oofs_)):
                 Y_oofs_[i][val_idx, :] = predictions_[i]
@@ -158,37 +155,50 @@ class ReweightedMultiTaskLassoCV(BaseEstimator, RegressorMixin):
         self, X_train, Y_train, X_valid, Y_valid, coef_true, idx_fold
     ):
         n_features = X_train.shape[1]
-        coefs_ = dict()
-        weights_ = defaultdict(lambda: np.ones(n_features))
+        n_tasks = Y_train.shape[1]
 
-        for _ in range(self.n_iterations):
-            regressor = MultiTaskLasso(
-                0.1, fit_intercept=False, warm_start=self.warm_start
-            )
-            for j, alpha in enumerate(self.alpha_grid):
-                regressor.alpha = alpha
+        coef_0 = np.empty((self.n_alphas, n_features, n_tasks))
 
-                coef, w = self._reweight_op(
-                    regressor, X_train, Y_train, weights_[j]
-                )
+        regressor = MultiTaskLasso(
+            np.nan, fit_intercept=False, warm_start=True
+        )
 
-                coefs_[j] = coef
-                weights_[j] = w
+        # Copy grid of first iteration (leverages convexity)
+        for j, alpha in enumerate(self.alpha_grid):
+            regressor.alpha = alpha
+            coef_0[j] = regressor.fit(X_train, Y_train).coef_.T
 
-                self.mse_path_[j, idx_fold] = mean_squared_error(
-                    Y_valid, X_valid @ coef
-                )
+        regressor.warm_start = False
+        coefs = coef_0.copy()
 
-                if coef_true is not None:
-                    self.f1_path_[j, idx_fold] = f1_score(
-                        coef_true != 0, coef != 0, average="macro"
+        for j, alpha in enumerate(self.alpha_grid):
+            regressor.alpha = alpha
+
+            w = self.penalty(coef_0[j])
+
+            for _ in range(self.n_iterations - 1):
+                mask = w != 1.0 / np.finfo(float).eps
+                coefs[j][~mask] = 0.0
+
+                if mask.sum():
+                    coefs[j][mask], w[mask] = self._reweight_op(
+                        regressor, X_train[:, mask], Y_train, w[mask]
                     )
 
-                    self.jaccard_path_[j, idx_fold] = jaccard_score(
-                        coef_true != 0, coef != 0, average="macro"
+                    self.mse_path_[j, idx_fold] = mean_squared_error(
+                        Y_valid, X_valid @ coefs[j]
                     )
 
-        return coefs_
+                    if coef_true is not None:
+                        self.f1_path_[j, idx_fold] = f1_score(
+                            coef_true != 0, coefs[j] != 0, average="macro"
+                        )
+
+                        self.jaccard_path_[j, idx_fold] = jaccard_score(
+                            coef_true != 0, coefs[j] != 0, average="macro"
+                        )
+
+        return coefs
 
     def _reweight_op(self, regressor, X, Y, w):
         X_w = X / w[np.newaxis, :]

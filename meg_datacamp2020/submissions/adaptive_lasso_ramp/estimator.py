@@ -165,7 +165,7 @@ class CustomSparseEstimator(BaseEstimator, RegressorMixin):
                 self.best_alpha_ = alpha
             else:
                 diffs = np.diff(sure_path_)
-                if np.all(diffs[-7:] >= 0):
+                if np.all(diffs[-10:] >= 0):
                     print("Early stopping.")
                     break
 

@@ -150,7 +150,11 @@ class CustomSparseEstimator(BaseEstimator, RegressorMixin):
         sure_path_ = []
 
         alpha_max = compute_alpha_max(L, x)
-        alphas = np.geomspace(alpha_max, alpha_max / 500, 15)
+
+        upper_bound = alpha_max / 2
+        lower_bound = alpha_max / 20
+
+        alphas = np.geomspace(upper_bound, lower_bound, 15)
 
         # Sigma = 1 confirmé???????
 

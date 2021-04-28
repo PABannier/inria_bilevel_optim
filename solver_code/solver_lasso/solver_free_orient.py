@@ -8,8 +8,6 @@ from mtl.utils_datasets import compute_alpha_max
 
 from celer import MultiTaskLasso
 
-# import ipdb
-
 
 # Utils functions
 
@@ -48,17 +46,18 @@ def get_duality_gap(X, coef, Y, alpha, n_orient):
 
     # Primal
     penalty = norm_l_2_1(coef, n_orient)
-    nR2 = sum_squared(R)
+    nR2 = sum_squared(R) / np.prod(X.shape)
     p_obj = 0.5 * nR2 + alpha * penalty
 
     # Dual
+    # Scalar chosen to make theta dual feasible
     dual_norm = norm_l_2_inf(X.T @ R, n_orient)
     scaling = alpha / dual_norm
     scaling = min(scaling, 1.0)
 
-    d_obj = (scaling - 0.5 * (scaling ** 2)) * nR2 + scaling * np.sum(
-        R * Y_hat
-    )
+    d_obj = (
+        scaling - np.prod(X.shape) * 0.5 * (scaling ** 2)
+    ) * nR2 + scaling * np.sum(R * Y_hat)
 
     gap = p_obj - d_obj
     return gap, p_obj, d_obj

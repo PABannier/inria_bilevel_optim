@@ -150,7 +150,7 @@ class CustomSparseEstimator(BaseEstimator, RegressorMixin):
         sure_path_ = []
 
         alpha_max = compute_alpha_max(L, x)
-        alphas = np.geomspace(alpha_max, alpha_max / 500, 15)
+        alphas = np.geomspace(alpha_max, alpha_max / 20, 15)
 
         # Sigma = 1 confirmé???????
 
@@ -165,7 +165,7 @@ class CustomSparseEstimator(BaseEstimator, RegressorMixin):
                 self.best_alpha_ = alpha
             else:
                 diffs = np.diff(sure_path_)
-                if np.all(diffs[-3:] >= 0):
+                if np.all(diffs[-7:] >= 0):
                     print("Early stopping.")
                     break
 

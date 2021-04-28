@@ -17,6 +17,7 @@ from mtl.mtl import ReweightedMultiTaskLasso
 from mtl.cross_validation import ReweightedMultiTaskLassoCV
 from mtl.utils_datasets import compute_alpha_max, plot_sure_mse_path
 from mtl.sure import SURE
+from mtl.sure_warm_start import SUREForReweightedMultiTaskLasso
 
 parser = argparse.ArgumentParser()
 parser.add_argument(
@@ -283,6 +284,8 @@ def solver(M, G, n_orient=1):
 
     elif ESTIMATOR == "adaptive-sure":
         # SURE computation
+
+        """
         best_sure_ = np.inf
 
         for alpha in tqdm(alphas, total=len(alphas)):
@@ -291,11 +294,16 @@ def solver(M, G, n_orient=1):
             if sure_val_ < best_sure_:
                 best_sure_ = sure_val_
                 best_alpha_ = alpha
+        """
 
-        print("best sure", best_sure_)
+        criterion = SUREForReweightedMultiTaskLasso(1, alphas, random_state=0)
+        best_sure, best_alpha = criterion.get_val(G, M)
+
+        print("best sure", best_sure)
+        print("best alpha", best_alpha)
 
         # Refitting
-        estimator = ReweightedMultiTaskLasso(best_alpha_)
+        estimator = ReweightedMultiTaskLasso(best_alpha)
         estimator.fit(G, M)
 
         X = estimator.coef_

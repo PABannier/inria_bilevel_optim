@@ -35,3 +35,10 @@ tex/memo/lasso_overview.pdf
 mtl_code/examples/benchmark_solvers/mne_solver/joblib
 mtl_code/examples/mne_solver/joblib/
 tex/article/content/__latexindent_temp.tex
+
+meg_datacamp2020/.travis.yml
+meg_datacamp2020/figs/
+meg_datacamp2020/meg_starting_kit.ipynb
+.gitignore
+meg_datacamp2020/README.md
+meg_datacamp2020/plot_topomap.py

@@ -13,6 +13,7 @@ from mne.inverse_sparse.mxne_inverse import _compute_residual
 
 from mtl.mtl import ReweightedMultiTaskLasso
 from mtl.cross_validation import ReweightedMultiTaskLassoCV
+from mtl.sure_warm_start import SUREForReweightedMultiTaskLasso
 from mtl.sure import SURE
 from mtl.utils_datasets import compute_alpha_max
 
@@ -194,20 +195,21 @@ def solver(M, G, n_orient=1):
         print("Alpha max:", alpha_max)
 
         alphas = np.geomspace(alpha_max, alpha_max / 10, num=15)
-        best_alpha_ = None
-        best_sure_ = np.inf
 
-        for alpha in tqdm(alphas, total=len(alphas)):
-            criterion = SURE(ReweightedMultiTaskLasso, 1, random_state=0)
-            sure_val_ = criterion.get_val(G, M, alpha)
-            if sure_val_ < best_sure_:
-                best_sure_ = sure_val_
-                best_alpha_ = alpha
+        import time
 
-        print("best sure", best_sure_)
+        start = time.time()
+
+        criterion = SUREForReweightedMultiTaskLasso(1, alphas)
+        best_sure, best_alpha = criterion.get_val(G, M)
+
+        print("Duration:", time.time() - start)
+
+        print("Best SURE:", best_sure)
+        print("Best alpha:", best_alpha)
 
         # Refitting
-        estimator = ReweightedMultiTaskLasso(best_alpha_)
+        estimator = ReweightedMultiTaskLasso(best_alpha)
         estimator.fit(G, M)
 
     X = estimator.coef_

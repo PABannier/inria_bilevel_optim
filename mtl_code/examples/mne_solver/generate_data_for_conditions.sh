@@ -1,31 +1,26 @@
-echo "================================="
-echo "GENERATING DATA FOR LEFT AUDITORY"
-echo "================================="
-python generate_data.py --estimator lasso-cv --condition "Left Auditory"
-python generate_data.py --estimator lasso-sure --condition "Left Auditory"
-python generate_data.py --estimator adaptive-cv --condition "Left Auditory"
-python generate_data.py --estimator adaptive-sure --condition "Left Auditory"
+estimators=(lasso-cv lasso-sure adaptive-cv adaptive-sure)
+conditions=("Left Auditory" "Right Auditory" "Left visual" "Right visual")
 
-echo "=================================="
-echo "GENERATING DATA FOR RIGHT AUDITORY"
-echo "=================================="
-python generate_data.py --estimator lasso-cv --condition "Right Auditory"
-python generate_data.py --estimator lasso-sure --condition "Right Auditory"
-python generate_data.py --estimator adaptive-cv --condition "Right Auditory"
-python generate_data.py --estimator adaptive-sure --condition "Right Auditory"
+for i in "${conditions[@]}"
+do
+    echo "================================="
+    echo "GENERATING DATA FOR $i"
+    echo "================================="
 
-echo "==============================="
-echo "GENERATING DATA FOR LEFT VISUAL"
-echo "==============================="
-python generate_data.py --estimator lasso-cv --condition "Left visual"
-python generate_data.py --estimator lasso-sure --condition "Left visual"
-python generate_data.py --estimator adaptive-cv --condition "Left visual"
-python generate_data.py --estimator adaptive-sure --condition "Left visual"
+    for j in "${estimators[@]}"
+    do
+        python generate_data.py --estimator $j --condition $i --dataset sample
+    done
+done
 
-echo "================================"
-echo "GENERATING DATA FOR RIGHT VISUAL"
-echo "================================" 
-python generate_data.py --estimator lasso-cv --condition "Right visual"
-python generate_data.py --estimator lasso-sure --condition "Right visual"
-python generate_data.py --estimator adaptive-cv --condition "Right visual"
-python generate_data.py --estimator adaptive-sure --condition "Right visual"
+
+# SOMATO DATASET
+
+echo "=========================="
+echo "GENERATING DATA FOR SOMATO"
+echo "==========================" 
+
+for i in "${estimators[@]}"
+do 
+    python generate_data.py --estimator $i --dataset somato
+done

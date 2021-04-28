@@ -26,6 +26,9 @@ class ReweightedMultiTaskLasso(BaseEstimator, RegressorMixin):
         Custom penalty to rescale the weights after one iteration.
         By default, the penalty is the same as in [1].
 
+    tol : float, default=1e-4
+        Duality gap tolerance for MultiTaskLASSO solver.
+
     warm_start : bool, default=True
         Enables MultiTaskLasso to start from the previous fit if available.
         It might cause some issue if the right version of Celer is not installed
@@ -51,12 +54,14 @@ class ReweightedMultiTaskLasso(BaseEstimator, RegressorMixin):
         n_iterations: int = 10,
         verbose: bool = True,
         penalty: callable = None,
+        tol: float = 1e-4,
         warm_start: bool = True,
     ):
         self.alpha = alpha
         self.verbose = verbose
         self.n_iterations = n_iterations
         self.warm_start = warm_start
+        self.tol = tol
 
         if penalty:
             self.penalty = penalty
@@ -69,7 +74,10 @@ class ReweightedMultiTaskLasso(BaseEstimator, RegressorMixin):
         self.loss_history_ = []
 
         self.regressor = MultiTaskLasso(
-            alpha=alpha, fit_intercept=False, warm_start=self.warm_start
+            alpha=alpha,
+            fit_intercept=False,
+            warm_start=self.warm_start,
+            tol=self.tol,
         )
 
     def fit(self, X: np.ndarray, Y: np.ndarray):

@@ -38,9 +38,7 @@ def get_val(X, Y, sigma, alphas, n_iterations, random_state):
         X, Y, n_iterations, alphas, eps, delta
     )
 
-    for i, (coef1, coef2) in enumerate(
-        zip(coefs_grid_1, coefs_grid_2)
-    ):
+    for i, (coef1, coef2) in enumerate(zip(coefs_grid_1, coefs_grid_2)):
         sure_val = _compute_sure_val(coef1, coef2, X, Y, sigma, eps, delta)
         score_grid_[i] = sure_val
 
@@ -54,7 +52,7 @@ def get_val(X, Y, sigma, alphas, n_iterations, random_state):
 
 
 def penalty(u):
-    return 1. / (2 * np.sqrt(np.linalg.norm(u, axis=1)) + np.finfo(float).eps)
+    return 1.0 / (2 * np.sqrt(np.linalg.norm(u, axis=1)) + np.finfo(float).eps)
 
 
 def _reweight_op(regressor, X, Y, w):
@@ -125,15 +123,19 @@ def _fit_reweighted_with_grid(X, Y, n_iterations, alphas, eps, delta):
         w2 = penalty(coef2_0[j])
 
         for _ in range(n_iterations - 1):
-            mask1 = (w1 != 1. / np.finfo(float).eps)
-            mask2 = (w2 != 1. / np.finfo(float).eps)
-            coefs_1_[j][~mask1] = 0.
-            coefs_2_[j][~mask2] = 0.
+            mask1 = w1 != 1.0 / np.finfo(float).eps
+            mask2 = w2 != 1.0 / np.finfo(float).eps
+            coefs_1_[j][~mask1] = 0.0
+            coefs_2_[j][~mask2] = 0.0
 
             if mask1.sum():
-                coefs_1_[j][mask1], w1[mask1] = _reweight_op(regressor1, X[:, mask1], Y, w1[mask1])
+                coefs_1_[j][mask1], w1[mask1] = _reweight_op(
+                    regressor1, X[:, mask1], Y, w1[mask1]
+                )
             if mask2.sum():
-                coefs_2_[j][mask2], w2[mask2] = _reweight_op(regressor2, X[:, mask2], Y_eps, w2[mask2])
+                coefs_2_[j][mask2], w2[mask2] = _reweight_op(
+                    regressor2, X[:, mask2], Y_eps, w2[mask2]
+                )
 
     return coefs_1_, coefs_2_
 
@@ -142,7 +144,7 @@ if __name__ == "__main__":
     random_state = 42
 
     N_SAMPLES = 102
-    N_FEATURES = 100
+    N_FEATURES = 1000
     N_TASKS = 100
     NNZ = 4
 
@@ -151,7 +153,7 @@ if __name__ == "__main__":
     # N_TASKS = 2
     # NNZ = 2
 
-    n_alphas = 100
+    n_alphas = 20
     n_iterations = 5
 
     X, Y, _, sigma = simulate_data(
@@ -163,17 +165,29 @@ if __name__ == "__main__":
     alphas = np.geomspace(max_alpha, max_alpha / 30, n_alphas)
 
     start_time = time.time()
-    best_sure_, best_alpha_ = \
-        get_val(X, Y, sigma, alphas, n_iterations=n_iterations, random_state=random_state)
+    best_sure_, best_alpha_ = get_val(
+        X,
+        Y,
+        sigma,
+        alphas,
+        n_iterations=n_iterations,
+        random_state=random_state,
+    )
     print("Duration (with warm start):", time.time() - start_time)
 
-    criterion = SURE(ReweightedMultiTaskLasso, sigma, random_state=random_state)
+    criterion = SURE(
+        ReweightedMultiTaskLasso, sigma, random_state=random_state
+    )
     start_time = time.time()
     best_sure, best_alpha = np.inf, None
     for alpha in alphas:
         sure_val = criterion.get_val(
-            X, Y, alpha, warm_start=False, verbose=False,
-            n_iterations=n_iterations
+            X,
+            Y,
+            alpha,
+            warm_start=False,
+            verbose=False,
+            n_iterations=n_iterations,
         )
         if sure_val < best_sure:
             best_sure = sure_val

@@ -21,7 +21,7 @@ def compute_alpha_max(X, Y):
     return np.max(b) / X.shape[0]
 
 
-def get_val(X, Y, sigma, alpha_grid, random_state):
+def get_val(X, Y, sigma, alphas, n_iterations, random_state):
     def _init_eps_and_delta(n_samples, n_tasks):
         rng = check_random_state(random_state)
         eps = 2 * sigma / (n_samples ** 0.3)
@@ -32,20 +32,20 @@ def get_val(X, Y, sigma, alpha_grid, random_state):
     eps, delta = _init_eps_and_delta(n_samples, n_tasks)
 
     X, Y = check_X_y(X, Y, multi_output=True)
-    score_grid_ = np.array([np.inf for _ in range(len(alpha_grid))])
+    score_grid_ = np.array([np.inf for _ in range(len(alphas))])
 
     coefs_grid_1, coefs_grid_2 = _fit_reweighted_with_grid(
-        X, Y, 5, alpha_grid, eps, delta
+        X, Y, n_iterations, alphas, eps, delta
     )
 
     for i, (coef1, coef2) in enumerate(
-        zip(coefs_grid_1.values(), coefs_grid_2.values())
+        zip(coefs_grid_1, coefs_grid_2)
     ):
         sure_val = _compute_sure_val(coef1, coef2, X, Y, sigma, eps, delta)
         score_grid_[i] = sure_val
 
     best_sure_ = np.min(score_grid_)
-    best_alpha_ = alpha_grid[np.argmin(score_grid_)]
+    best_alpha_ = alphas[np.argmin(score_grid_)]
 
     print(f"Best SURE: {best_sure_}")
     print(f"Best alpha: {best_alpha_}")
@@ -53,10 +53,11 @@ def get_val(X, Y, sigma, alpha_grid, random_state):
     return best_sure_, best_alpha_
 
 
+def penalty(u):
+    return 1. / (2 * np.sqrt(np.linalg.norm(u, axis=1)) + np.finfo(float).eps)
+
+
 def _reweight_op(regressor, X, Y, w):
-    penalty = lambda u: 1 / (
-        2 * np.sqrt(np.linalg.norm(u, axis=1)) + np.finfo(float).eps
-    )
     X_w = X / w[np.newaxis, :]
     regressor.fit(X_w, Y)
 
@@ -78,7 +79,7 @@ def _compute_sure_val(coef1, coef2, X, Y, sigma, eps, delta):
         coef2 = coef2.T
 
     # Compute the dof
-    dof = ((X @ coef2 - X @ coef1) * delta).sum() / eps
+    dof = ((X @ (coef2 - coef1)) * delta).sum() / eps
     # compute the SURE
     sure = norm(Y - X @ coef1) ** 2
     sure -= n_samples * n_tasks * sigma ** 2
@@ -87,28 +88,52 @@ def _compute_sure_val(coef1, coef2, X, Y, sigma, eps, delta):
     return sure
 
 
-def _fit_reweighted_with_grid(X, Y, n_iterations, alpha_grid, eps, delta):
-    n_samples, n_features = X.shape
-    n_samples, n_tasks = Y.shape
+def _fit_reweighted_with_grid(X, Y, n_iterations, alphas, eps, delta):
+    _, n_features = X.shape
+    _, n_tasks = Y.shape
+    n_alphas = len(alphas)
 
-    coefs_1_ = dict()
-    coefs_2_ = dict()
+    coef1_0 = np.empty((n_alphas, n_features, n_tasks))
+    coef2_0 = np.empty((n_alphas, n_features, n_tasks))
 
-    weights_1_ = defaultdict(lambda: np.ones(n_features))
-    weights_2_ = defaultdict(lambda: np.ones(n_features))
+    assert np.all(np.diff(alphas) < 0)
 
-    for _ in range(n_iterations):
-        regressor = MultiTaskLasso(0.1, fit_intercept=False, warm_start=True)
-        for j, alpha in enumerate(alpha_grid):
-            regressor.alpha = alpha
+    Y_eps = Y + eps * delta
 
-            coef1, w1 = _reweight_op(regressor, X, Y, weights_1_[j])
-            coef2, w2 = _reweight_op(
-                regressor, X, Y + eps * delta, weights_2_[j]
-            )
+    # Warm start first iteration
+    regressor1 = MultiTaskLasso(np.nan, fit_intercept=False, warm_start=True)
+    regressor2 = MultiTaskLasso(np.nan, fit_intercept=False, warm_start=True)
 
-            coefs_1_[j], weights_1_[j] = coef1, w1
-            coefs_2_[j], weights_2_[j] = coef2, w2
+    # Copy grid of first iteration (leverages convexity)
+    for j, alpha in enumerate(alphas):
+        regressor1.alpha = alpha
+        regressor2.alpha = alpha
+        coef1_0[j] = regressor1.fit(X, Y).coef_.T
+        coef2_0[j] = regressor2.fit(X, Y_eps).coef_.T
+
+    regressor1.warm_start = False
+    regressor2.warm_start = False
+
+    coefs_1_ = coef1_0.copy()
+    coefs_2_ = coef2_0.copy()
+
+    for j, alpha in enumerate(alphas):
+        regressor1.alpha = alpha
+        regressor2.alpha = alpha
+
+        w1 = penalty(coef1_0[j])
+        w2 = penalty(coef2_0[j])
+
+        for _ in range(n_iterations - 1):
+            mask1 = (w1 != 1. / np.finfo(float).eps)
+            mask2 = (w2 != 1. / np.finfo(float).eps)
+            coefs_1_[j][~mask1] = 0.
+            coefs_2_[j][~mask2] = 0.
+
+            if mask1.sum():
+                coefs_1_[j][mask1], w1[mask1] = _reweight_op(regressor1, X[:, mask1], Y, w1[mask1])
+            if mask2.sum():
+                coefs_2_[j][mask2], w2[mask2] = _reweight_op(regressor2, X[:, mask2], Y_eps, w2[mask2])
 
     return coefs_1_, coefs_2_
 
@@ -117,30 +142,42 @@ if __name__ == "__main__":
     random_state = 42
 
     N_SAMPLES = 102
-    N_FEATURES = 1000
+    N_FEATURES = 100
     N_TASKS = 100
     NNZ = 4
 
-    X, Y, _, sigma = simulate_data(N_SAMPLES, N_FEATURES, N_TASKS, NNZ)
+    # N_SAMPLES = 10
+    # N_FEATURES = 20
+    # N_TASKS = 2
+    # NNZ = 2
+
+    n_alphas = 100
+    n_iterations = 5
+
+    X, Y, _, sigma = simulate_data(
+        N_SAMPLES, N_FEATURES, N_TASKS, NNZ, random_state=random_state
+    )
 
     max_alpha = compute_alpha_max(X, Y)
     print("alpha max", max_alpha)
-    alphas = np.geomspace(max_alpha, max_alpha / 30, 100)
-
-    print("\n")
+    alphas = np.geomspace(max_alpha, max_alpha / 30, n_alphas)
 
     start_time = time.time()
-    get_val(X, Y, sigma, alphas, random_state)
+    best_sure_, best_alpha_ = \
+        get_val(X, Y, sigma, alphas, n_iterations=n_iterations, random_state=random_state)
     print("Duration (with warm start):", time.time() - start_time)
 
-    criterion = SURE(ReweightedMultiTaskLasso, sigma)
+    criterion = SURE(ReweightedMultiTaskLasso, sigma, random_state=random_state)
     start_time = time.time()
     best_sure, best_alpha = np.inf, None
     for alpha in alphas:
         sure_val = criterion.get_val(
-            X, Y, alpha, warm_start=False, verbose=False
+            X, Y, alpha, warm_start=False, verbose=False,
+            n_iterations=n_iterations
         )
         if sure_val < best_sure:
             best_sure = sure_val
             best_alpha = alpha
+    print(f"Best SURE: {best_sure}")
+    print(f"Best alpha: {best_alpha}")
     print("Duration (without warm start):", time.time() - start_time)

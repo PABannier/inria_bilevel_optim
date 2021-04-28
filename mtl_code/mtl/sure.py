@@ -79,11 +79,13 @@ class SURE:
             self.init_eps_and_delta(n_samples, n_tasks)
 
         # fit 2 models in Y and Y + epsilon * delta
-        model = self.estimator_factory(alpha, n_iterations, **estimator_kwargs)
-        model.fit(X, Y)
-        coef1 = model.coef_
-        model.fit(X, Y + self.eps * self.delta)
-        coef2 = model.coef_
+        model1 = self.estimator_factory(alpha, n_iterations, **estimator_kwargs)
+        model2 = self.estimator_factory(alpha, n_iterations, **estimator_kwargs)
+        model1.fit(X, Y)
+        coef1 = model1.coef_
+        Y_eps = Y + self.eps * self.delta
+        model2.fit(X, Y_eps)
+        coef2 = model2.coef_
 
         # Note: Celer returns the transpose of the coefficient
         # matrix

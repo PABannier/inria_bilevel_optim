@@ -69,8 +69,10 @@ class SUREForReweightedMultiTaskLasso:
         penalty=None,
         random_state=None,
     ):
-        self.estimator = MultiTaskLasso()
         self.sigma = sigma
+        self.alpha_grid = alpha_grid
+        self.n_iterations = n_iterations
+
         self.rng = check_random_state(random_state)
 
         self.eps = None
@@ -104,24 +106,28 @@ class SUREForReweightedMultiTaskLasso:
         X, Y = check_X_y(X, Y, multi_output=True)
         score_grid_ = np.array([np.inf for _ in range(len(self.alpha_grid))])
 
+        if self.delta is None or self.eps is None:
+            self._init_eps_and_delta(n_samples, n_tasks)
+
         coefs_grid_1, coefs_grid_2 = self._fit_reweighted_with_grid(X, Y)
 
-        for i, (coef1, coef2) in enumerate(zip(coefs_grid_1, coefs_grid_2)):
-            sure_val = compute_sure_val(coef1, coef2, X, Y)
+        for i, (coef1, coef2) in enumerate(
+            zip(coefs_grid_1.values(), coefs_grid_2.values())
+        ):
+            sure_val = self._compute_sure_val(coef1, coef2, X, Y)
             score_grid_[i] = sure_val
 
         self.best_sure_ = np.min(score_grid_)
-        self.best_alpha = self.alpha_grid[np.argmin(score_grid_)]
+        self.best_alpha_ = self.alpha_grid[np.argmin(score_grid_)]
 
         print(f"Best SURE: {self.best_sure_}")
         print(f"Best alpha: {self.best_alpha_}")
 
+        return self.best_sure_, self.best_alpha_
+
     def _fit_reweighted_with_grid(self, X, Y):
         n_samples, n_features = X.shape
         n_samples, n_tasks = Y.shape
-
-        if self.delta is None or self.eps is None:
-            self._init_eps_and_delta(n_samples, n_tasks)
 
         coefs_1_ = dict()
         coefs_2_ = dict()
@@ -146,7 +152,7 @@ class SUREForReweightedMultiTaskLasso:
 
         return coefs_1_, coefs_2_
 
-    def compute_sure_val(self, coef1, coef2, X, Y):
+    def _compute_sure_val(self, coef1, coef2, X, Y):
         n_samples, n_features = X.shape
         n_samples, n_tasks = Y.shape
 

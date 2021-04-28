@@ -117,7 +117,7 @@ if __name__ == "__main__":
     print("\n")
     print("=" * 30)
     print("\n")
-    """
+
     start = time.time()
     cross_val(X, Y, alphas, random_state, warm_start=True)
     print(f"Warm start=True, {time.time() - start:.2f}s")
@@ -127,4 +127,3 @@ if __name__ == "__main__":
     start = time.time()
     cross_val(X, Y, alphas, random_state, warm_start=False)
     print(f"Warm start=False, {time.time() - start:.2f}s")
-    """

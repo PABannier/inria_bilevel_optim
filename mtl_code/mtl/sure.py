@@ -41,8 +41,8 @@ class SURE:
 
     """
 
-    def __init__(self, estimator, sigma, random_state=None):
-        self.estimator = estimator
+    def __init__(self, estimator_factory, sigma, random_state=None):
+        self.estimator_factory = estimator_factory
         self.sigma = sigma
         self.rng = check_random_state(random_state)
 
@@ -79,7 +79,7 @@ class SURE:
             self.init_eps_and_delta(n_samples, n_tasks)
 
         # fit 2 models in Y and Y + epsilon * delta
-        model = self.estimator(alpha, n_iterations, **estimator_kwargs)
+        model = self.estimator_factory(alpha, n_iterations, **estimator_kwargs)
         model.fit(X, Y)
         coef1 = model.coef_
         model.fit(X, Y + self.eps * self.delta)
@@ -92,7 +92,7 @@ class SURE:
             coef2 = coef2.T
 
         # compute the dof
-        dof = ((X @ coef2 - X @ coef1) * self.delta).sum() / self.eps
+        dof = (X @ (coef2 - coef1) * self.delta).sum() / self.eps
         # compute the SURE
         sure = norm(Y - X @ coef1) ** 2
         sure -= n_samples * n_tasks * self.sigma ** 2

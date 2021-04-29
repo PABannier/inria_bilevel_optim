@@ -143,21 +143,16 @@ class CustomSparseEstimator(BaseEstimator, RegressorMixin):
 
     def fit(self, L, x):
         L = StandardScaler().fit_transform(L)
-        self.best_sure_ = np.inf
-        self.best_alpha_ = None
-        self.coef_ = None
-
-        sure_path_ = []
 
         alpha_max = compute_alpha_max(L, x)
         alphas = np.geomspace(alpha_max, alpha_max / 20, 15)
 
-        # Sigma = 1 confirmé???????
-        criterion = SUREForAdaptiveLasso(1, alphas, random_state=0)
+        # Sigma: TBD
+        criterion = SUREForAdaptiveLasso(0.5, alphas, random_state=0)
         best_sure, best_alpha = criterion.get_val(L, x)
 
         # Refitting
-        estimator = SingleTaskReweightedLASSO(self.best_alpha_)
+        estimator = SingleTaskReweightedLASSO(best_alpha)
         estimator.fit(L, x)
 
         self.coef_ = estimator.coef_
@@ -198,11 +193,11 @@ class SUREForAdaptiveLasso:
             self.penalty = penalty
         else:
             self.penalty = lambda u: 1.0 / (
-                2 * np.sqrt(np.linalg.norm(u, axis=1)) + np.finfo(float).eps
+                2 * np.sqrt(np.abs(u) + np.finfo(float).eps)
             )
 
     def get_val(self, X, y):
-        n_samples = Y.shape[0]
+        n_samples = y.shape[0]
 
         if self.eps is None or self.delta is None:
             self._init_eps_and_delta(n_samples)
@@ -235,7 +230,7 @@ class SUREForAdaptiveLasso:
 
         dof = ((X @ (coef2 - coef1)) * self.delta).sum() / self.eps
 
-        sure = norm(Y - X @ coef1) ** 2
+        sure = norm(y - X @ coef1) ** 2
         sure -= n_samples * self.sigma ** 2
         sure += 2 * dof * self.sigma ** 2
 

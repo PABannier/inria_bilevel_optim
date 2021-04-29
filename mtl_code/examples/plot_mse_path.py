@@ -34,7 +34,7 @@ def plot_mse_path_reweighted_mtl():
     print("alpha max for large experiment:", alpha_max)
     print("\n")
 
-    alphas = np.geomspace(alpha_max / 10, alpha_max, num=20)
+    alphas = np.geomspace(alpha_max, alpha_max / 10, num=20)
     regressor = ReweightedMultiTaskLassoCV(alphas, n_folds=n_folds)
     regressor.fit(X, Y)
 

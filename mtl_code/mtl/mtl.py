@@ -16,8 +16,23 @@ class ReweightedMultiTaskLasso(BaseEstimator, RegressorMixin):
     alpha : float, default=0.1
         Constants that multiplies the L1/L2 mixed norm as a regularizer.
 
+    n_iterations : int
+        Number of reweighting iterations performed during fitting.
+
     verbose : bool, default=True
         Option to print the loss when fitting the estimator.
+
+    penalty : callable, default=None
+        Custom penalty to rescale the weights after one iteration.
+        By default, the penalty is the same as in [1].
+
+    tol : float, default=1e-4
+        Duality gap tolerance for MultiTaskLASSO solver.
+
+    warm_start : bool, default=True
+        Enables MultiTaskLasso to start from the previous fit if available.
+        It might cause some issue if the right version of Celer is not installed
+        in the system. If you have any issues, set it to False to solve the issue.
 
     Attributes
     ----------
@@ -27,9 +42,6 @@ class ReweightedMultiTaskLasso(BaseEstimator, RegressorMixin):
     loss_history_ : list
         Contains the training loss history after fitting.
 
-    n_iterations : int
-        Number of reweighting iterations performed during fitting.
-
     References
     ----------
     .. [1] Candès et al. (2007), Enhancing sparsity by reweighted l1 minimization
@@ -37,15 +49,36 @@ class ReweightedMultiTaskLasso(BaseEstimator, RegressorMixin):
     """
 
     def __init__(
-        self, alpha: float = 0.1, n_iterations: int = 10, verbose: bool = True
+        self,
+        alpha: float = 0.1,
+        n_iterations: int = 10,
+        verbose: bool = True,
+        penalty: callable = None,
+        tol: float = 1e-4,
+        warm_start: bool = True,
     ):
         self.alpha = alpha
         self.verbose = verbose
         self.n_iterations = n_iterations
+        self.warm_start = warm_start
+        self.tol = tol
+
+        if penalty:
+            self.penalty = penalty
+        else:
+            self.penalty = lambda u: 1 / (
+                2 * np.sqrt(np.linalg.norm(u, axis=1)) + np.finfo(float).eps
+            )
 
         self.coef_ = None
         self.loss_history_ = []
-        self.clf = MultiTaskLasso(alpha=alpha, fit_intercept=False)
+
+        self.regressor = MultiTaskLasso(
+            alpha=alpha,
+            fit_intercept=False,
+            warm_start=self.warm_start,
+            tol=self.tol,
+        )
 
     def fit(self, X: np.ndarray, Y: np.ndarray):
         """Fits estimator to the data.
@@ -62,7 +95,7 @@ class ReweightedMultiTaskLasso(BaseEstimator, RegressorMixin):
             Target matrix.
         """
         X, Y = check_X_y(X, Y, multi_output=True)
-        n_samples, n_features = X.shape[0], X.shape[1]
+        n_samples, n_features = X.shape
 
         w = np.ones(n_features)
 
@@ -75,14 +108,13 @@ class ReweightedMultiTaskLasso(BaseEstimator, RegressorMixin):
             X_w = X / w[np.newaxis, :]
 
             # Solving weighted l1 minimization problem
-            self.clf.fit(X_w, Y)
+            self.regressor.fit(X_w, Y)
 
             # Trick: "de-scaling" the weights
-            coef_hat = (self.clf.coef_ / w).T  # (n_features, n_tasks)
+            coef_hat = (self.regressor.coef_ / w).T  # (n_features, n_tasks)
 
             # Updating the weights
-            c = np.linalg.norm(coef_hat, axis=1)
-            w = 1 / (2 * np.sqrt(c) + np.finfo(float).eps)
+            w = self.penalty(coef_hat)
 
             loss = objective(coef_hat)
             self.loss_history_.append(loss)

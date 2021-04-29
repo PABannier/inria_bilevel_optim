@@ -16,8 +16,8 @@ configure_plt()
 
 fontsize = 18
 
-mpl.rcParams['xtick.labelsize'] = fontsize
-mpl.rcParams['ytick.labelsize'] = fontsize
+mpl.rcParams["xtick.labelsize"] = fontsize
+mpl.rcParams["ytick.labelsize"] = fontsize
 
 corrs = [0.5, 0.7, 0.9, 0.99]
 criteria = ["mse", "sure", "f1"]
@@ -53,9 +53,11 @@ def load_data_for_corr(corr):
 
     return alphas, cvs
 
-# plots criterion * correlation
-fig, axarr = plt.subplots(len(criteria), len(corrs), sharex="col", sharey="row")
 
+# plots criterion * correlation
+fig, axarr = plt.subplots(
+    len(criteria), len(corrs), sharex="col", sharey="row"
+)
 
 
 for idx_corr, corr in enumerate(corrs):
@@ -91,11 +93,14 @@ for idx_corr, corr in enumerate(corrs):
         #     axis='both', which='minor', labelsize=40)
 
     axarr[2, idx_corr].set_xlabel(
-        r"$\lambda / \lambda_{\mathrm{max}}$", fontsize=fontsize)
+        r"$\lambda / \lambda_{\mathrm{max}}$", fontsize=fontsize
+    )
     axarr[0, idx_corr].set_title(f"Corr = {corr}", fontsize=fontsize)
 
 for idx_crit, criterion in enumerate(criteria):
     axarr[idx_crit, 0].set_ylabel(criteria_names[criterion], fontsize=fontsize)
+
+plt.tight_layout()
 
 
 # handles, labels = fig.axes[-1].get_legend_handles_labels()
@@ -104,8 +109,12 @@ for idx_crit, criterion in enumerate(criteria):
 fig.show()
 # plt.show(block=True)
 
-OUT_PATH_1 = f"../../../tex/article/srcimages/sure_mse_f1_comparison"
-OUT_PATH_2 = f"../../../tex/article/srcimages/sure_mse_f1_comparison"
+OUT_PATH_1 = (
+    f"../../../tex/article/srcimages/metric_comparison/sure_mse_f1_comparison"
+)
+OUT_PATH_2 = (
+    f"../../../tex/article/srcimages/metric_comparison/sure_mse_f1_comparison"
+)
 
 if save_fig:
     fig.savefig(OUT_PATH_1 + ".pdf")

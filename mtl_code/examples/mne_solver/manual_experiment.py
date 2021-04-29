@@ -1,6 +1,7 @@
 import argparse
 import joblib
 from tqdm import tqdm
+import os.path as op
 
 import numpy as np
 from numpy.linalg import norm
@@ -8,8 +9,12 @@ from numpy.linalg import norm
 import mne
 from mne.datasets import sample
 from mne.viz import plot_sparse_source_estimates
+from mne.inverse_sparse.mxne_inverse import _compute_residual
 
 from mtl.mtl import ReweightedMultiTaskLasso
+from mtl.cross_validation import ReweightedMultiTaskLassoCV
+from mtl.sure_warm_start import SUREForReweightedMultiTaskLasso
+from mtl.sure import SURE
 from mtl.utils_datasets import compute_alpha_max
 
 parser = argparse.ArgumentParser()
@@ -17,12 +22,15 @@ parser.add_argument(
     "--alpha",
     help="regularizing hyperparameter",
 )
+parser.add_argument("--condition", help="condition")
+parser.add_argument("--depth", help="depth")
 
 args = parser.parse_args()
 
-if args.alpha is None:
+if args.condition is None:
     raise ValueError(
-        "Please specify a regularizing constant by using --alpha argument."
+        "Please specify a regularizing constant by using --condition argument. "
+        + "Available condition: Left Auditory, Right Auditory, Left visual, Right visual."
     )
 
 
@@ -31,8 +39,16 @@ def load_data():
     fwd_fname = data_path + "/MEG/sample/sample_audvis-meg-eeg-oct-6-fwd.fif"
     ave_fname = data_path + "/MEG/sample/sample_audvis-ave.fif"
     cov_fname = data_path + "/MEG/sample/sample_audvis-shrunk-cov.fif"
+    trans_fname = op.join(
+        data_path, "MEG", "sample", "sample_audvis_raw-trans.fif"
+    )
     subjects_dir = data_path + "/subjects"
-    condition = "Left Auditory"
+
+    bem_fname = op.join(
+        subjects_dir, "sample", "bem", "sample-5120-bem-sol.fif"
+    )
+
+    condition = args.condition
 
     # Read noise covariance matrix
     noise_cov = mne.read_cov(cov_fname)
@@ -46,7 +62,15 @@ def load_data():
     # Handling forward solution
     forward = mne.read_forward_solution(fwd_fname)
 
-    return evoked, forward, noise_cov
+    return (
+        evoked,
+        forward,
+        noise_cov,
+        cov_fname,
+        bem_fname,
+        trans_fname,
+        subjects_dir,
+    )
 
 
 def apply_solver(solver, evoked, forward, noise_cov, loose=0.2, depth=0.8):
@@ -133,7 +157,9 @@ def apply_solver(solver, evoked, forward, noise_cov, loose=0.2, depth=0.8):
         tstep=1.0 / evoked.info["sfreq"],
     )
 
-    return stc
+    residual = _compute_residual(forward, evoked, X, active_set, gain_info)
+
+    return stc, residual
 
 
 def solver(M, G, n_orient=1):
@@ -161,8 +187,30 @@ def solver(M, G, n_orient=1):
         We have ``X_full[active_set] == X`` where X_full is the full X matrix
         such that ``M = G X_full``.
     """
-    estimator = ReweightedMultiTaskLasso(float(args.alpha))
-    estimator.fit(G, M)
+    if args.alpha:
+        estimator = ReweightedMultiTaskLasso(float(args.alpha))
+        estimator.fit(G, M)
+    else:
+        alpha_max = compute_alpha_max(G, M)
+        print("Alpha max:", alpha_max)
+
+        alphas = np.geomspace(alpha_max, alpha_max / 10, num=15)
+
+        import time
+
+        start = time.time()
+
+        criterion = SUREForReweightedMultiTaskLasso(1, alphas)
+        best_sure, best_alpha = criterion.get_val(G, M)
+
+        print("Duration:", time.time() - start)
+
+        print("Best SURE:", best_sure)
+        print("Best alpha:", best_alpha)
+
+        # Refitting
+        estimator = ReweightedMultiTaskLasso(best_alpha)
+        estimator.fit(G, M)
 
     X = estimator.coef_
     active_set = norm(X, axis=1) != 0
@@ -171,10 +219,24 @@ def solver(M, G, n_orient=1):
 
 
 if __name__ == "__main__":
-    loose, depth = 0, 0  # Fixed orientation
-    evoked, forward, noise_cov = load_data()
+    loose, depth = 0, args.depth if args.depth else 0.9
+    (
+        evoked,
+        forward,
+        noise_cov,
+        cov_fname,
+        bem_fname,
+        trans_fname,
+        subjects_dir,
+    ) = load_data()
 
-    stc = apply_solver(solver, evoked, forward, noise_cov, loose, depth)
+    stc, residual = apply_solver(
+        solver, evoked, forward, noise_cov, loose, depth
+    )
+
+    print("=" * 10)
+    print("Explained variance:", norm(residual.data) / norm(evoked.data))
+    print("=" * 10)
 
     plot_sparse_source_estimates(
         forward["src"], stc, bgcolor=(1, 1, 1), opacity=0.1

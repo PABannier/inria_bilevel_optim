@@ -41,15 +41,15 @@ class SURE:
 
     """
 
-    def __init__(self, clf, sigma, random_state=None):
-        self.clf = clf
+    def __init__(self, estimator_factory, sigma, random_state=None):
+        self.estimator_factory = estimator_factory
         self.sigma = sigma
         self.rng = check_random_state(random_state)
 
         self.eps = None
         self.delta = None
 
-    def get_val(self, X, Y, alpha, n_iterations=5):
+    def get_val(self, X, Y, alpha, n_iterations=5, **estimator_kwargs):
         """Performs the double forward step used in finite differences
         and evaluates an Monte-Carlo finite-difference approximation of
         the SURE.
@@ -79,11 +79,13 @@ class SURE:
             self.init_eps_and_delta(n_samples, n_tasks)
 
         # fit 2 models in Y and Y + epsilon * delta
-        model = self.clf(alpha, n_iterations, verbose=False)
-        model.fit(X, Y)
-        coef1 = model.coef_
-        model.fit(X, Y + self.eps * self.delta)
-        coef2 = model.coef_
+        model1 = self.estimator_factory(alpha, n_iterations, **estimator_kwargs)
+        model2 = self.estimator_factory(alpha, n_iterations, **estimator_kwargs)
+        model1.fit(X, Y)
+        coef1 = model1.coef_
+        Y_eps = Y + self.eps * self.delta
+        model2.fit(X, Y_eps)
+        coef2 = model2.coef_
 
         # Note: Celer returns the transpose of the coefficient
         # matrix
@@ -92,7 +94,7 @@ class SURE:
             coef2 = coef2.T
 
         # compute the dof
-        dof = ((X @ coef2 - X @ coef1) * self.delta).sum() / self.eps
+        dof = (X @ (coef2 - coef1) * self.delta).sum() / self.eps
         # compute the SURE
         sure = norm(Y - X @ coef1) ** 2
         sure -= n_samples * n_tasks * self.sigma ** 2

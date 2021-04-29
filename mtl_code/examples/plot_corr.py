@@ -15,7 +15,7 @@ def experiment_cv(X, Y, coef):
     alpha_max = compute_alpha_max(X, Y)
     print("alpha max for large experiment:", alpha_max)
 
-    alphas = np.geomspace(5e-4, 5e-3, num=20)
+    alphas = np.geomspace(alpha_max * 0.2, alpha_max * 0.08, num=20)
     regressor = ReweightedMultiTaskLassoCV(alphas, n_folds=3)
 
     regressor.fit(X, Y)
@@ -37,9 +37,9 @@ def plot_correlation_performance(**data_params):
 
     for rho in np.linspace(0, 0.9, 10):
         data_params["corr"] = rho
-        X, Y, coef = simulate_data(**data_params)
+        X, Y, coef, sigma = simulate_data(**data_params)
 
-        alphas = np.geomspace(1e-4, 5e-2, num=15)
+        alphas = np.geomspace(5e-2, 1e-4, num=15)
         regressor = ReweightedMultiTaskLassoCV(alphas, n_folds=3)
 
         regressor.fit(X, Y)
@@ -60,12 +60,20 @@ def plot_correlation_performance(**data_params):
 
 
 if __name__ == "__main__":
-    # X, Y, coef = simulate_data(
-    #    n_samples=50, n_features=250, n_tasks=25, nnz=5, corr=0.6, random_state=1
-    # )
+    print("====== Running experiment CV ======")
+    X, Y, coef, _ = simulate_data(
+        n_samples=10,
+        n_features=15,
+        n_tasks=13,
+        nnz=3,
+        snr=3,
+        corr=0.6,
+        random_state=1,
+    )
+    experiment_cv(X, Y, coef)
 
-    # experiment_cv(X, Y, coef)
+    print("====== Plotting rho vs MSE ======")
     data_params = dict(
-        n_samples=100, n_features=250, n_tasks=25, nnz=5, snr=3, random_state=0
+        n_samples=10, n_features=15, n_tasks=13, nnz=3, snr=3, random_state=0
     )
     plot_correlation_performance(**data_params)

@@ -47,8 +47,129 @@
 
 \begin{figure}[h]
     \centering
-    \includegraphics[width=\linewidth]{sure_mse_f1_comparison_legend}
-    \includegraphics[width=\linewidth]{sure_mse_f1_comparison}
+    \includegraphics[scale=0.5]{metric_comparison/sure_mse_f1_comparison_legend}
+    \includegraphics[scale=0.5]{metric_comparison/sure_mse_f1_comparison}
     \caption{SURE, MSE, F1 comparison, \textcolor{blue}{TODO explain more in legend}}
     \label{fig:sure_mse_f1_comparison}
 \end{figure}
+
+\subsection{Left Auditory experiments}
+
+\begin{figure}
+    \centering
+    \begin{subfigure}{6cm}
+        \centering \includegraphics[scale=0.6]{blobs/blob-left_auditory-lasso-cv}
+        \caption{Multi-Task Lasso - Held-out MSE}
+    \end{subfigure}
+    \begin{subfigure}{6cm}
+        \centering \includegraphics[scale=0.6]{blobs/blob-left_auditory-lasso-sure}
+        \caption{Multi-Task Lasso - SURE}
+    \end{subfigure}
+
+    \begin{subfigure}{6cm}
+        \centering \includegraphics[scale=0.6]{blobs/blob-left_auditory-adaptive-cv}
+        \caption{Reweighted Multi-Task Lasso - Held-out MSE}
+    \end{subfigure}
+    \begin{subfigure}{6cm}
+        \centering \includegraphics[scale=0.6]{blobs/blob-left_auditory-adaptive-sure}
+        \caption{Reweighted Multi-Task Lasso - SURE}
+    \end{subfigure}
+\end{figure}
+
+
+\subsection{Right Auditory experiments}
+
+\begin{figure}
+    \centering
+    \begin{subfigure}{6cm}
+        \centering \includegraphics[scale=0.6]{blobs/blob-right_auditory-lasso-cv}
+        \caption{Multi-Task Lasso - Held-out MSE}
+    \end{subfigure}
+    \begin{subfigure}{6cm}
+        \centering \includegraphics[scale=0.6]{blobs/blob-right_auditory-lasso-sure}
+        \caption{Multi-Task Lasso - SURE}
+    \end{subfigure}
+
+    \begin{subfigure}{6cm}
+        \centering \includegraphics[scale=0.6]{blobs/blob-right_auditory-adaptive-cv}
+        \caption{Reweighted Multi-Task Lasso - Held-out MSE}
+    \end{subfigure}
+    \begin{subfigure}{6cm}
+        \centering \includegraphics[scale=0.6]{blobs/blob-right_auditory-adaptive-sure}
+        \caption{Reweighted Multi-Task Lasso - SURE}
+    \end{subfigure}
+\end{figure}
+
+
+\subsection{Left visual experiments}
+
+\begin{figure}
+    \centering
+    \begin{subfigure}{6cm}
+        \centering \includegraphics[scale=0.6]{blobs/blob-left_visual-lasso-cv}
+        \caption{Multi-Task Lasso - Held-out MSE}
+    \end{subfigure}
+    \begin{subfigure}{6cm}
+        \centering \includegraphics[scale=0.6]{blobs/blob-left_visual-lasso-sure}
+        \caption{Multi-Task Lasso - SURE}
+    \end{subfigure}
+
+    \begin{subfigure}{6cm}
+        \centering \includegraphics[scale=0.6]{blobs/blob-left_visual-adaptive-cv}
+        \caption{Reweighted Multi-Task Lasso - Held-out MSE}
+    \end{subfigure}
+    \begin{subfigure}{6cm}
+        \centering \includegraphics[scale=0.6]{blobs/blob-left_visual-adaptive-sure}
+        \caption{Reweighted Multi-Task Lasso - SURE}
+    \end{subfigure}
+\end{figure}
+
+
+\subsection{Right visual experiments}
+
+\begin{figure}
+    \centering
+    \begin{subfigure}{6cm}
+        \centering \includegraphics[scale=0.6]{blobs/blob-right_visual-lasso-cv}
+        \caption{Multi-Task Lasso - Held-out MSE}
+    \end{subfigure}
+    \begin{subfigure}{6cm}
+        \centering \includegraphics[scale=0.6]{blobs/blob-right_visual-lasso-sure}
+        \caption{Multi-Task Lasso - SURE}
+    \end{subfigure}
+
+    \begin{subfigure}{6cm}
+        \centering \includegraphics[scale=0.6]{blobs/blob-right_visual-adaptive-cv}
+        \caption{Reweighted Multi-Task Lasso - Held-out MSE}
+    \end{subfigure}
+    \begin{subfigure}{6cm}
+        \centering \includegraphics[scale=0.6]{blobs/blob-right_visual-adaptive-sure}
+        \caption{Reweighted Multi-Task Lasso - SURE}
+    \end{subfigure}
+\end{figure}
+
+
+\subsection{Somato dataset}
+
+\begin{figure}
+    \centering
+    \begin{subfigure}{6cm}
+        \centering \includegraphics[scale=0.6]{blobs/somato/blob-lasso-cv}
+        \caption{Multi-Task Lasso - Held-out MSE}
+    \end{subfigure}
+    \begin{subfigure}{6cm}
+        \centering \includegraphics[scale=0.6]{blobs/somato/blob-lasso-sure}
+        \caption{Multi-Task Lasso - SURE}
+    \end{subfigure}
+
+    \begin{subfigure}{6cm}
+        \centering \includegraphics[scale=0.6]{blobs/somato/blob-adaptive-cv}
+        \caption{Reweighted Multi-Task Lasso - Held-out MSE}
+    \end{subfigure}
+    \begin{subfigure}{6cm}
+        \centering \includegraphics[scale=0.6]{blobs/somato/blob-adaptive-sure}
+        \caption{Reweighted Multi-Task Lasso - SURE}
+    \end{subfigure}
+\end{figure}
+
+

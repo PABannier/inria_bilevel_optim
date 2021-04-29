@@ -5,9 +5,12 @@ import matplotlib.pyplot as plt
 
 
 def compute_alpha_max(X, Y):
-    B = X.T @ Y
-    b = norm(B, axis=1)
-    return np.max(b) / X.shape[0]
+    if len(Y.shape) > 1:
+        B = X.T @ Y
+        b = norm(B, axis=1)
+        return np.max(b) / X.shape[0]
+    else:
+        return np.max(np.abs(X.T @ Y)) / len(X)
 
 
 def plot_sure_mse_path(alphas, alpha_max, mse_metrics, sure_metrics, mse_path):

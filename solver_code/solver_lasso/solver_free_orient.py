@@ -69,7 +69,7 @@ def compute_lipschitz_constants(X, n_positions, n_orient):
     lc = np.empty(n_positions)
     for j in range(n_positions):
         idx = slice(j * n_orient, (j + 1) * n_orient)
-        lc[j] = norm(X[:, idx].T @ X[:, idx])
+        lc[j] = norm(X[:, idx], ord=2) ** 2
     return lc
 
 

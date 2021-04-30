@@ -21,7 +21,7 @@ from sklearn.metrics import jaccard_score
 from sklearn.linear_model import Lasso
 
 
-N_JOBS = 20  # -1
+N_JOBS = 1  # -1
 INNER_MAX_NUM_THREADS = 1
 
 MEMMAP_FOLDER = "."

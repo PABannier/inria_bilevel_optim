@@ -1,8 +1,13 @@
+import time
+
 import numpy as np
 from numpy.linalg import norm
 
 from mtl.simulated_data import simulate_data
 from mtl.utils_datasets import compute_alpha_max
+
+import solver_free_orient
+import celer
 
 
 def sum_squared(X):
@@ -34,6 +39,15 @@ def norm_l2inf(A, n_orient, copy=True):
     return np.sqrt(np.max(groups_norm2(A, n_orient)))
 
 
+def primal_l21(M, G, X, active_set, alpha, n_orient):
+    GX = np.dot(G[:, active_set], X)
+    R = M - GX
+    penalty = norm_l21(X, n_orient, copy=True)
+    nR2 = sum_squared(R)
+    p_obj = 0.5 * nR2 + alpha * penalty
+    return p_obj
+
+
 def dgap_l21(M, G, X, active_set, alpha, n_orient):
     GX = np.dot(G[:, active_set], X)
     R = M - GX
@@ -48,6 +62,41 @@ def dgap_l21(M, G, X, active_set, alpha, n_orient):
 
     gap = p_obj - d_obj
     return gap, p_obj, d_obj, R
+
+
+def anderson_extrapolation(
+    X, Y, coef, active_set, U, last_K_coef, p_obj, alpha, K, n_orient
+):
+    """Anderson extrapolation for Block Coordinate Descent"""
+    n_times = Y.shape[1]
+
+    for k in range(K):
+        U[k] = last_K_coef[k + 1] - last_K_coef[k]
+
+        for l in range(n_times):
+            C = U[:, :, l] @ U[:, :, l].T
+
+            try:
+                z = np.linalg.solve(C[:, :, l], np.ones(K))
+                c = z / z.sum()
+
+                # coef_acc = np.sum(last_K_coef[:-1] * c[:, None], axis=0)
+                coef_acc = np.sum(
+                    last_K_coef[:-1, :, l] * np.expand_dims(c, axis=-1), axis=0
+                )
+
+                p_obj_acc = primal_l21(
+                    Y, X, coef_acc, active_set, alpha, n_orient
+                )
+
+                if p_obj_acc < p_obj:
+                    print("True")
+                    coef[:, l] = coef_acc
+
+            except:  # Numba does not support custom Numpy LinAlg exception
+                pass
+
+    return coef
 
 
 def _bcd(
@@ -100,11 +149,16 @@ def _mixed_norm_solver_bcd(
     init=None,
     n_orient=1,
     dgap_freq=10,
+    K=5,
+    accelerated=True,
 ):
     """Solve L21 inverse problem with block coordinate descent."""
     n_sensors, n_times = M.shape
     n_sensors, n_sources = G.shape
     n_positions = n_sources // n_orient
+
+    last_K_coef = np.zeros((K + 1, n_sources, n_times))
+    U = np.zeros((K, n_sources, n_times))
 
     if init is None:
         X = np.zeros((n_sources, n_times))
@@ -165,6 +219,25 @@ def _mixed_norm_solver_bcd(
                 print("Convergence reached ! (gap: %s < %s)" % (gap, tol))
                 break
 
+        # Quid de l'active set????
+        if accelerated:
+            last_K_coef[i % (K + 1)] = X
+            p_obj = primal_l21(M, G, X, active_set, alpha, n_orient)
+
+            if i % (K + 1) == K:
+                X = anderson_extrapolation(
+                    G,
+                    M,
+                    X,
+                    active_set,
+                    U,
+                    last_K_coef,
+                    p_obj,
+                    alpha,
+                    K,
+                    n_orient,
+                )
+
     X = X[active_set]
 
     return X, active_set, E
@@ -174,7 +247,23 @@ if __name__ == "__main__":
     X, Y, W, _ = simulate_data(
         n_samples=10, n_features=15, n_tasks=10, nnz=4, random_state=0
     )
-    n_orient = 1
+
+    alpha_max = compute_alpha_max(X, Y)
+
+    start = time.time()
+    estimator = solver_free_orient.MultiTaskLasso(
+        n_orient=1, verbose=False, max_iter=3000
+    )
+    estimator.fit(X, Y, alpha_max / 10)
+    print("(Custom) Duration:", time.time() - start)
+
+    start = time.time()
+    estimator2 = celer.MultiTaskLasso(alpha_max / 10)
+    estimator2.fit(X, Y)
+    print("(Celer) Duration:", time.time() - start)
+
+    """
+    n_orient = 3
 
     n_positions = X.shape[1] // n_orient
 
@@ -189,6 +278,18 @@ if __name__ == "__main__":
         lipschitz_constant[j] = norm(X[:, idx].T @ X[:, idx])
 
     # Call solver
+    start = time.time()
     _mixed_norm_solver_bcd(
-        Y, X, alpha_max / 10, lipschitz_constant, n_orient=n_orient, maxit=200
+        Y,
+        X,
+        alpha_max / 10,
+        lipschitz_constant,
+        n_orient=n_orient,
+        maxit=10000,
+        tol=1e-5,
     )
+
+    print("Duration:", time.time() - start)
+
+    # 0.17914271354675293s
+    """

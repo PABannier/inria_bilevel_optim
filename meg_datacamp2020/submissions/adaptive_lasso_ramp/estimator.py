@@ -32,8 +32,8 @@ def plot_sure_path(alphas, sure_metrics):
     alpha_max = alphas[0]
 
     fig = plt.figure()
-    fig.set_title("SURE path")
-    fig.set_xlabel("$\lambda / \lambda_{\max}$")
+    plt.title("SURE path")
+    plt.xlabel("$\lambda / \lambda_{\max}$")
 
     vline_idx = np.array(sure_metrics).argmin()
 

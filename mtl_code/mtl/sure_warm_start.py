@@ -1,4 +1,5 @@
 from collections import defaultdict
+from tqdm import tqdm
 import time
 
 import numpy as np
@@ -22,6 +23,8 @@ class SUREForReweightedMultiTaskLasso:
         self.n_iterations = n_iterations
         self.random_state = random_state
 
+        self.n_alphas = len(self.alpha_grid)
+
         self.eps = None
         self.delta = None
 
@@ -39,7 +42,7 @@ class SUREForReweightedMultiTaskLasso:
             self._init_eps_and_delta(n_samples, n_tasks)
 
         X, Y = check_X_y(X, Y, multi_output=True)
-        score_grid_ = np.array([np.inf for _ in range(len(self.alpha_grid))])
+        score_grid_ = np.array([np.inf for _ in range(self.n_alphas)])
 
         coefs_grid_1, coefs_grid_2 = self._fit_reweighted_with_grid(X, Y)
 
@@ -100,7 +103,8 @@ class SUREForReweightedMultiTaskLasso:
         )
 
         # Copy grid of first iteration (leverages convexity)
-        for j, alpha in enumerate(self.alpha_grid):
+        print("First iteration")
+        for j, alpha in tqdm(enumerate(self.alpha_grid), total=self.n_alphas):
             regressor1.alpha = alpha
             regressor2.alpha = alpha
             coef1_0[j] = regressor1.fit(X, Y).coef_.T
@@ -112,7 +116,8 @@ class SUREForReweightedMultiTaskLasso:
         coefs_1_ = coef1_0.copy()
         coefs_2_ = coef2_0.copy()
 
-        for j, alpha in enumerate(self.alpha_grid):
+        print("Next iterations...")
+        for j, alpha in tqdm(enumerate(self.alpha_grid), total=self.n_alphas):
             regressor1.alpha = alpha
             regressor2.alpha = alpha
 

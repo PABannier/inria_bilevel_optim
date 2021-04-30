@@ -28,6 +28,29 @@ MEMMAP_FOLDER = "."
 OUTPUT_FILENAME_MEMMAP = os.path.join(MEMMAP_FOLDER, "output_memmap")
 
 
+def plot_sure_path(alphas, sure_metrics):
+    alpha_max = alphas[0]
+
+    fig = plt.figure()
+    fig.set_title("SURE path")
+    fig.set_xlabel("$\lambda / \lambda_{\max}$")
+
+    vline_idx = np.array(sure_metrics).argmin()
+
+    plt.semilogx(alphas / alpha_max, sure_metrics, color="deepskyblue")
+
+    plt.axvline(
+        x=alphas[vline_idx] / alpha_max,
+        color="midnightblue",
+        linestyle="dashed",
+        linewidth=3,
+        label="Best $\lambda$",
+    )
+
+    plt.legend()
+    plt.show()
+
+
 def compute_alpha_max(X, y):
     return np.max(np.abs(X.T @ y)) / len(X)
 
@@ -185,6 +208,7 @@ class SUREForAdaptiveLasso:
         self.random_state = random_state
 
         self.n_alphas = len(self.alpha_grid)
+        self.sure_path_ = np.empty((self.n_alphas))
 
         self.eps = None
         self.delta = None
@@ -203,16 +227,17 @@ class SUREForAdaptiveLasso:
             self._init_eps_and_delta(n_samples)
 
         X, y = check_X_y(X, y)
-        score_grid_ = np.array([np.inf for _ in range(self.n_alphas)])
 
         coefs_grid_1, coefs_grid_2 = self._fit_reweighted_with_grid(X, y)
 
         for i, (coef1, coef2) in enumerate(zip(coefs_grid_1, coefs_grid_2)):
             sure_val = self._compute_sure_val(coef1, coef2, X, y)
-            score_grid_[i] = sure_val
+            self.sure_path_[i] = sure_val
 
-        best_sure_ = np.min(score_grid_)
-        best_alpha_ = self.alpha_grid[np.argmin(score_grid_)]
+        best_sure_ = np.min(self.sure_path_)
+        best_alpha_ = self.alpha_grid[np.argmin(self.sure_path_)]
+
+        plot_sure_path(self.alpha_grid, self.sure_path_)
 
         return best_sure_, best_alpha_
 

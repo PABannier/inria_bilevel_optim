@@ -18,7 +18,7 @@ from sklearn.base import TransformerMixin, RegressorMixin
 
 from sklearn.preprocessing import StandardScaler
 from sklearn.metrics import jaccard_score
-from sklearn.linear_model import Lasso
+from sklearn.linear_model import Lasso, LassoLars
 
 
 N_JOBS = 1  # -1
@@ -87,6 +87,17 @@ class SparseRegressor(BaseEstimator, ClassifierMixin, TransformerMixin):
         norms = np.linalg.norm(L, axis=0)
         L = L / norms[None, :]
 
+        """
+        est_coefs = np.empty((X.shape[0], L.shape[1]))
+        for idx in tqdm(range(len(X)), total=len(X)):
+            x = X.iloc[idx].values
+            model.fit(L, x)
+            est_coef = np.abs(_get_coef(model))
+            # est_coef /= norms
+            est_coefs[idx] = est_coef
+
+        """
+
         est_coefs = np.memmap(
             OUTPUT_FILENAME_MEMMAP,
             dtype=np.float32,
@@ -111,8 +122,8 @@ class SparseRegressor(BaseEstimator, ClassifierMixin, TransformerMixin):
         return est_coefs.T
 
     def _fit_model_for_sample(self, L, X, idx, model, est_coefs):
-        if idx % 10 == 0:
-            print(f"Fitting idx #{idx}")
+        # if idx % 10 == 0:
+        #    print(f"Fitting idx #{idx}")
         x = X.iloc[idx].values
         model.fit(L, x)
         est_coef = np.abs(_get_coef(model))
@@ -167,15 +178,15 @@ class CustomSparseEstimator(BaseEstimator, RegressorMixin):
     def fit(self, L, x):
         L = StandardScaler().fit_transform(L)
 
-        alpha_max = compute_alpha_max(L, x)
-        alphas = np.geomspace(alpha_max, alpha_max / 20, 15)
+        # alpha_max = compute_alpha_max(L, x)
+        # alphas = np.geomspace(alpha_max, alpha_max / 500, 100)
 
         # Sigma: TBD
-        criterion = SUREForAdaptiveLasso(0.5, alphas, random_state=0)
-        best_sure, best_alpha = criterion.get_val(L, x)
+        # criterion = SUREForAdaptiveLasso(1, alphas, random_state=0)
+        # best_sure, best_alpha = criterion.get_val(L, x)
 
         # Refitting
-        estimator = SingleTaskReweightedLASSO(best_alpha)
+        estimator = SingleTaskReweightedLASSO(0.2)
         estimator.fit(L, x)
 
         self.coef_ = estimator.coef_
@@ -321,7 +332,7 @@ class SingleTaskReweightedLASSO(BaseEstimator, RegressorMixin):
 
         self.coef_ = None
 
-        self.regressor = Lasso(
+        self.regressor = LassoLars(
             alpha=alpha, fit_intercept=False, normalize=False
         )
 

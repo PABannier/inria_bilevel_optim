@@ -54,8 +54,8 @@ class SUREForReweightedMultiTaskLasso:
                 coef1, coef2, X, Y
             )
             self.sure_path_[i] = sure_val
-            self.dof[i] = dof_term
-            self.data_fitting_history[i] = data_fitting_term
+            self.dof_history_[i] = dof_term
+            self.data_fitting_history_[i] = data_fitting_term
 
         best_sure_ = np.min(self.sure_path_)
         best_alpha_ = self.alpha_grid[np.argmin(self.sure_path_)]

@@ -34,7 +34,7 @@ if __name__ == "__main__":
         criterion.data_fitting_history_,
         label="Data fitting",
     )
-    plt.title("Alpha grid")
+    plt.title("Alpha grid - Full noise")
     plt.xlabel("$\lambda / \lambda_{max}$")
     plt.ylabel("SURE")
     plt.legend()

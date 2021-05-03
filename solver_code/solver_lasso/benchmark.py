@@ -5,19 +5,22 @@ from mne.inverse_sparse.mxne_optim import _mixed_norm_solver_bcd
 from mtl.simulated_data import simulate_data
 from mtl.utils_datasets import compute_alpha_max
 
-from solver_free_orient import MultiTaskLasso, compute_lipschitz_constants
+from solver_free_orient import (
+    MultiTaskLassoOrientation,
+    compute_lipschitz_constants,
+)
 
 
 def time_solver(X, Y, n_orient):
     alpha_max = compute_alpha_max(X, Y)
     alpha = alpha_max * 0.2
 
-    estimator1 = MultiTaskLasso(
-        n_orient=n_orient, max_iter=10000, verbose=True
+    estimator1 = MultiTaskLassoOrientation(
+        alpha, n_orient=n_orient, max_iter=10000, verbose=True
     )
 
     start = time.time()
-    estimator1.fit(X, Y, alpha)
+    estimator1.fit(X, Y)
     duration1 = time.time() - start
 
     lc = compute_lipschitz_constants(X, X.shape[1] // n_orient, n_orient)

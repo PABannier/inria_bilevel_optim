@@ -82,7 +82,7 @@ def compute_lipschitz_constants(X, n_positions, n_orient):
     return lc
 
 
-class MultiTaskLasso(BaseEstimator, RegressorMixin):
+class MultiTaskLassoOrientation(BaseEstimator, RegressorMixin):
     """Solver Multi-Task Lasso for neuroscience inverse
     problem. It supports fixed (n_orient=1) and free (n_orient > 1)
     orientiations.
@@ -119,12 +119,14 @@ class MultiTaskLasso(BaseEstimator, RegressorMixin):
 
     def __init__(
         self,
+        alpha,
         n_orient=1,
-        max_iter=1000,
+        max_iter=7000,
         tol=1e-5,
         warm_start=True,
         verbose=False,
     ):
+        self.alpha = alpha
         self.n_orient = n_orient
         self.max_iter = max_iter
         self.tol = tol
@@ -134,7 +136,7 @@ class MultiTaskLasso(BaseEstimator, RegressorMixin):
         self.coef_ = None
         self.gap_history_ = []
 
-    def fit(self, X, Y, alpha):
+    def fit(self, X, Y):
         X, Y = check_X_y(X, Y, multi_output=True)
 
         self.gap_history_ = []
@@ -143,8 +145,8 @@ class MultiTaskLasso(BaseEstimator, RegressorMixin):
         n_samples, n_times = Y.shape
         n_positions = n_features // self.n_orient
 
-        if self.warm_start and self.coef_:
-            coef = self.coef_
+        if self.warm_start and self.coef_ is not None:
+            coef = self.coef_.T
             R = Y - np.dot(X, coef)
         else:
             coef = np.zeros((n_features, n_times))
@@ -167,7 +169,7 @@ class MultiTaskLasso(BaseEstimator, RegressorMixin):
             list_X_j_c.append(np.ascontiguousarray(X[:, idx]))
             lipschitz_constants[j] = norm(X[:, idx], ord=2) ** 2
 
-        alpha_lc = alpha / lipschitz_constants
+        alpha_lc = self.alpha / lipschitz_constants
         one_over_lc = 1.0 / lipschitz_constants
 
         for i in range(self.max_iter):
@@ -185,7 +187,12 @@ class MultiTaskLasso(BaseEstimator, RegressorMixin):
 
             if (i + 1) % 5 == 0:
                 gap, p_obj, d_obj, _ = dgap_l21(
-                    Y, X, coef[active_set], active_set, alpha, self.n_orient
+                    Y,
+                    X,
+                    coef[active_set],
+                    active_set,
+                    self.alpha,
+                    self.n_orient,
                 )
 
                 self.gap_history_.append(gap)
@@ -213,7 +220,7 @@ class MultiTaskLasso(BaseEstimator, RegressorMixin):
         if gap > self.tol:
             print("Threshold not reached (gap: %s > %s" % (gap, self.tol))
 
-        self.coef_ = coef
+        self.coef_ = coef.T  # To be consistent with Celer's solver
 
     def predict(self, X):
         check_is_fitted(self)

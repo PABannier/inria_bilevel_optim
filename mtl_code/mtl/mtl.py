@@ -6,6 +6,7 @@ from sklearn.utils.validation import check_X_y, check_is_fitted, check_array
 from sklearn.utils import check_random_state
 
 from celer import MultiTaskLasso
+from solver_lasso.solver_free_orient import MultiTaskLassoOrientation
 
 
 class ReweightedMultiTaskLasso(BaseEstimator, RegressorMixin):
@@ -34,6 +35,10 @@ class ReweightedMultiTaskLasso(BaseEstimator, RegressorMixin):
         It might cause some issue if the right version of Celer is not installed
         in the system. If you have any issues, set it to False to solve the issue.
 
+    n_orient : int, default=1
+        Number of orientations for a dipole on the scalp surface. Choose 1 for fixed
+        orientation and 3 for free orientation.
+
     Attributes
     ----------
     coef_ : np.ndarray of shape (n_features, n_tasks)
@@ -56,12 +61,15 @@ class ReweightedMultiTaskLasso(BaseEstimator, RegressorMixin):
         penalty: callable = None,
         tol: float = 1e-4,
         warm_start: bool = True,
+        n_orient: int = 1,
     ):
         self.alpha = alpha
         self.verbose = verbose
         self.n_iterations = n_iterations
         self.warm_start = warm_start
         self.tol = tol
+
+        self.n_orient = n_orient
 
         if penalty:
             self.penalty = penalty
@@ -73,12 +81,25 @@ class ReweightedMultiTaskLasso(BaseEstimator, RegressorMixin):
         self.coef_ = None
         self.loss_history_ = []
 
-        self.regressor = MultiTaskLasso(
-            alpha=alpha,
-            fit_intercept=False,
-            warm_start=self.warm_start,
-            tol=self.tol,
-        )
+        if self.n_orient == 1:
+            self.regressor = MultiTaskLasso(
+                alpha=alpha,
+                fit_intercept=False,
+                warm_start=self.warm_start,
+                tol=self.tol,
+            )
+        elif self.n_orient > 1:
+            self.regressor = MultiTaskLassoOrientation(
+                alpha=alpha,
+                n_orient=self.n_orient,
+                tol=self.tol,
+                warm_start=self.warm_start,
+            )
+        else:
+            raise ValueError(
+                "Number of orientations must be strictly positive. "
+                + "Hint: 1 for fixed orientation, 3 for free orientation."
+            )
 
     def fit(self, X: np.ndarray, Y: np.ndarray):
         """Fits estimator to the data.

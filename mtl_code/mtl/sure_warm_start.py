@@ -8,6 +8,8 @@ from sklearn.utils import check_random_state, check_X_y
 
 from celer import MultiTaskLasso
 
+from solver_lasso.solver_free_orient import MultiTaskLassoOrientation
+
 
 class SUREForReweightedMultiTaskLasso:
     def __init__(
@@ -16,11 +18,13 @@ class SUREForReweightedMultiTaskLasso:
         alpha_grid,
         n_iterations=5,
         penalty=None,
+        n_orient=1,
         random_state=None,
     ):
         self.sigma = sigma
         self.alpha_grid = alpha_grid
         self.n_iterations = n_iterations
+        self.n_orient = n_orient
         self.random_state = random_state
 
         self.n_alphas = len(self.alpha_grid)
@@ -31,6 +35,9 @@ class SUREForReweightedMultiTaskLasso:
 
         self.eps = None
         self.delta = None
+
+        if self.n_orient <= 0:
+            raise ValueError("Number of orientations can't be negative.")
 
         if penalty:
             self.penalty = penalty
@@ -102,12 +109,20 @@ class SUREForReweightedMultiTaskLasso:
         Y_eps = Y + self.eps * self.delta
 
         # Warm start first iteration
-        regressor1 = MultiTaskLasso(
-            np.nan, fit_intercept=False, warm_start=True
-        )
-        regressor2 = MultiTaskLasso(
-            np.nan, fit_intercept=False, warm_start=True
-        )
+        if self.n_orient == 1:
+            regressor1 = MultiTaskLasso(
+                np.nan, fit_intercept=False, warm_start=True
+            )
+            regressor2 = MultiTaskLasso(
+                np.nan, fit_intercept=False, warm_start=True
+            )
+        else:
+            regressor1 = MultiTaskLassoOrientation(
+                np.nan, warm_start=True, n_orient=self.n_orient
+            )
+            regressor2 = MultiTaskLassoOrientation(
+                np.nan, warm_start=True, n_orient=self.n_orient
+            )
 
         # Copy grid of first iteration (leverages convexity)
         print("First iteration")

@@ -20,7 +20,7 @@ from sklearn.base import BaseEstimator, TransformerMixin
 from sklearn.base import ClassifierMixin, RegressorMixin
 
 
-N_JOBS = 1  # -1
+N_JOBS = 20  # -1
 INNER_MAX_NUM_THREADS = 1
 
 MEMMAP_FOLDER = "."
@@ -156,7 +156,7 @@ class CustomSparseEstimator(BaseEstimator, RegressorMixin):
 
         # Choosing alpha with SURE
         alpha_max = abs(L.T.dot(x)).max() / len(L)
-        alpha_grid = np.geomspace(alpha_max, alpha_max * 0.1, 20)
+        alpha_grid = np.geomspace(alpha_max * 0.5, alpha_max * 0.1, 20)
         criterion = SUREForAdaptiveLasso(1, alpha_grid)
         _, best_alpha = criterion.get_val(L, x)
 

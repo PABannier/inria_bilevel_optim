@@ -25,6 +25,8 @@ class SUREForReweightedMultiTaskLasso:
 
         self.n_alphas = len(self.alpha_grid)
 
+        self.sure_path_ = np.array([np.inf for _ in range(self.n_alphas)])
+
         self.eps = None
         self.delta = None
 
@@ -42,16 +44,15 @@ class SUREForReweightedMultiTaskLasso:
             self._init_eps_and_delta(n_samples, n_tasks)
 
         X, Y = check_X_y(X, Y, multi_output=True)
-        score_grid_ = np.array([np.inf for _ in range(self.n_alphas)])
 
         coefs_grid_1, coefs_grid_2 = self._fit_reweighted_with_grid(X, Y)
 
         for i, (coef1, coef2) in enumerate(zip(coefs_grid_1, coefs_grid_2)):
             sure_val = self._compute_sure_val(coef1, coef2, X, Y)
-            score_grid_[i] = sure_val
+            self.sure_path_[i] = sure_val
 
-        best_sure_ = np.min(score_grid_)
-        best_alpha_ = self.alpha_grid[np.argmin(score_grid_)]
+        best_sure_ = np.min(self.sure_path_)
+        best_alpha_ = self.alpha_grid[np.argmin(self.sure_path_)]
 
         return best_sure_, best_alpha_
 

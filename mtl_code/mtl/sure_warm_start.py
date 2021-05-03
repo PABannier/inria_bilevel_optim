@@ -25,7 +25,9 @@ class SUREForReweightedMultiTaskLasso:
 
         self.n_alphas = len(self.alpha_grid)
 
-        self.sure_path_ = np.array([np.inf for _ in range(self.n_alphas)])
+        self.sure_path_ = np.empty(self.n_alphas)
+        self.dof_history_ = np.empty(self.n_alphas)
+        self.data_fitting_history_ = np.empty(self.n_alphas)
 
         self.eps = None
         self.delta = None
@@ -48,8 +50,12 @@ class SUREForReweightedMultiTaskLasso:
         coefs_grid_1, coefs_grid_2 = self._fit_reweighted_with_grid(X, Y)
 
         for i, (coef1, coef2) in enumerate(zip(coefs_grid_1, coefs_grid_2)):
-            sure_val = self._compute_sure_val(coef1, coef2, X, Y)
+            sure_val, dof_term, data_fitting_term = self._compute_sure_val(
+                coef1, coef2, X, Y
+            )
             self.sure_path_[i] = sure_val
+            self.dof[i] = dof_term
+            self.data_fitting_history[i] = data_fitting_term
 
         best_sure_ = np.min(self.sure_path_)
         best_alpha_ = self.alpha_grid[np.argmin(self.sure_path_)]
@@ -79,11 +85,11 @@ class SUREForReweightedMultiTaskLasso:
         # Compute the dof
         dof = ((X @ (coef2 - coef1)) * self.delta).sum() / self.eps
         # compute the SURE
-        sure = norm(Y - X @ coef1) ** 2
-        sure -= n_samples * n_tasks * self.sigma ** 2
+        df_term = norm(Y - X @ coef1) ** 2
+        sure = df_term - n_samples * n_tasks * self.sigma ** 2
         sure += 2 * dof * self.sigma ** 2
 
-        return sure
+        return sure, dof, df_term
 
     def _fit_reweighted_with_grid(self, X, Y):
         _, n_features = X.shape

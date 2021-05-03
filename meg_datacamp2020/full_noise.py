@@ -27,9 +27,15 @@ if __name__ == "__main__":
 
     plt.figure()
 
-    plt.plot(alpha_grid / alpha_grid[0], criterion.sure_path_)
+    plt.plot(alpha_grid / alpha_grid[0], criterion.sure_path_, label="SURE")
+    plt.plot(alpha_grid / alpha_grid[0], criterion.dof_history_, label="DOF")
+    plt.plot(
+        alpha_grid / alpha_grid[0],
+        criterion.data_fitting_history_,
+        label="Data fitting",
+    )
     plt.title("Alpha grid")
     plt.xlabel("$\lambda / \lambda_{max}$")
     plt.ylabel("SURE")
-
+    plt.legend()
     plt.show()

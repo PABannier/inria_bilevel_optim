@@ -1,6 +1,8 @@
 import numpy as np
 from numpy.linalg import norm
 
+import functools
+
 from numba import njit
 
 from sklearn.utils import check_random_state
@@ -9,6 +11,13 @@ from mtl.utils_datasets import compute_alpha_max
 from sklearn.base import BaseEstimator, RegressorMixin
 from sklearn.utils.validation import check_X_y, check_is_fitted, check_array
 from sklearn.utils import check_random_state
+
+
+@functools.lru_cache(None)
+def _get_dgemm():
+    from scipy import linalg
+
+    return linalg.get_blas_funcs("gemm", (np.empty(0, np.float64),))
 
 
 def sum_squared(X):
@@ -143,12 +152,6 @@ class MultiTaskLasso(BaseEstimator, RegressorMixin):
 
         active_set = np.zeros(n_features, dtype=bool)
 
-        lipschitz_constants = compute_lipschitz_constants(
-            X, n_positions, self.n_orient
-        )
-        alpha_lc = alpha / lipschitz_constants
-        one_over_lc = 1.0 / lipschitz_constants
-
         X = np.asfortranarray(X)
 
         # Checking arrays are Fortran-contiguous
@@ -157,9 +160,15 @@ class MultiTaskLasso(BaseEstimator, RegressorMixin):
         assert X.flags.f_contiguous
 
         list_X_j_c = []
+        lipschitz_constants = np.empty(n_positions)
+
         for j in range(n_positions):
             idx = slice(j * self.n_orient, (j + 1) * self.n_orient)
             list_X_j_c.append(np.ascontiguousarray(X[:, idx]))
+            lipschitz_constants[j] = norm(X[:, idx], ord=2) ** 2
+
+        alpha_lc = alpha / lipschitz_constants
+        one_over_lc = 1.0 / lipschitz_constants
 
         for i in range(self.max_iter):
             self._bcd(
@@ -223,15 +232,35 @@ class MultiTaskLasso(BaseEstimator, RegressorMixin):
         alpha_lc,
         list_X_j_c,
     ):
+
+        coef_j_new = np.zeros_like(coef[0:n_orient, :], order="C")
+        dgemm = _get_dgemm()
+
         for j, X_j_c in enumerate(list_X_j_c):
             idx = slice(j * n_orient, (j + 1) * n_orient)
             coef_j = coef[idx]
 
-            coef_j_new = X_j_c.T @ R * one_over_lc[j]
+            dgemm(
+                alpha=one_over_lc[j],
+                beta=0.0,
+                a=R.T,
+                b=X_j_c,
+                c=coef_j_new.T,
+                overwrite_c=True,
+            )
+            # coef_j_new = X_j_c.T @ R * one_over_lc[j]
             was_non_zero = coef_j[0, 0] != 0
 
             if was_non_zero:
-                R += np.dot(X_j_c, coef_j)
+                # R += np.dot(X_j_c, coef_j)
+                dgemm(
+                    alpha=1.0,
+                    beta=1.0,
+                    a=coef_j.T,
+                    b=X_j_c.T,
+                    c=R.T,
+                    overwrite_c=True,
+                )
                 coef_j_new += coef_j
 
             block_norm = np.sqrt(sum_squared(coef_j_new))
@@ -242,6 +271,15 @@ class MultiTaskLasso(BaseEstimator, RegressorMixin):
             else:
                 shrink = max(1.0 - alpha_lc[j] / block_norm, 0.0)
                 coef_j_new *= shrink
-                R -= np.dot(X_j_c, coef_j_new)
+
+                dgemm(
+                    alpha=-1.0,
+                    beta=1.0,
+                    a=coef_j_new.T,
+                    b=X_j_c.T,
+                    c=R.T,
+                    overwrite_c=True,
+                )
+                # R -= np.dot(X_j_c, coef_j_new)
                 coef_j[:] = coef_j_new
                 active_set[idx] = True

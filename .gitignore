@@ -13,6 +13,7 @@ __pycache__
 *.out
 *.npz
 *.gz
+*.json
 
 tex/__latexindent_temp.tex
 tex/bibli/__latexindent_temp.tex
@@ -42,3 +43,10 @@ meg_datacamp2020/meg_starting_kit.ipynb
 .gitignore
 meg_datacamp2020/README.md
 meg_datacamp2020/plot_topomap.py
+meg_datacamp2020/output_memmap
+mtl_code/examples/mne_examples/joblib/__main__--Users-pierre-antoine-Documents-inria_bilevel_optim-mtl_code-examples-mne_solver-generate_data/load_data/func_code.py
+.gitignore
+mtl_code/examples/mne_examples/joblib/__main__--Users-pierre-antoine-Documents-inria_bilevel_optim-mtl_code-examples-mne_solver-plot_residuals/load_data/func_code.py
+mtl_code/examples/mne_examples/joblib/__main__--Users-pierre-antoine-Documents-inria_bilevel_optim-mtl_code-examples-mne_solver-plot_residuals/solver/func_code.py
+mtl_code/examples/mne_examples/joblib/__main__--Users-pierre-antoine-Documents-inria_bilevel_optim-mtl_code-examples-mne_solver-noise_estimate_sensitivity/load_data/func_code.py
+mtl_code/examples/mne_examples/joblib/__main__--Users-pierre-antoine-Documents-inria_bilevel_optim-mtl_code-examples-mne_solver-plot_somato/load_data/func_code.py

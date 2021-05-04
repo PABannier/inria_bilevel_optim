@@ -50,7 +50,7 @@ def norm_l2inf(A, n_orient, copy=True):
 
 
 def primal_l21(M, G, X, active_set, alpha, n_orient):
-    GX = np.dot(G[:, active_set], X)
+    GX = G[:, active_set] @ X
     R = M - GX
     penalty = norm_l21(X, n_orient, copy=True)
     nR2 = sum_squared(R)
@@ -137,9 +137,12 @@ def aa_free_orient(
 
     U = np.zeros((K, n_features * n_times))
     for k in range(K):
+        # TODO to optimize by storing all the active sets
         U[k] = (
-            last_K_coef[k + 1][active_set].ravel()
-            - last_K_coef[k][active_set].ravel()
+            last_K_coef[k + 1].ravel()
+            - last_K_coef[k].ravel()
+            # last_K_coef[k + 1][active_set].ravel()
+            # - last_K_coef[k][active_set].ravel()
         )
 
     # routine dgem?
@@ -149,19 +152,29 @@ def aa_free_orient(
         z = np.linalg.solve(C, np.ones(K))
         c = z / z.sum()
 
-        coef_acc = last_K_coef[:-1, active_set, :] * c[:, None, None]
+        coef_acc = last_K_coef[:-1, :, :] * c[:, None, None]
         coef_acc = np.mean(coef_acc, axis=0)
+        # active set computation of the accelerated point
+        active_set_acc = norm(coef_acc, axis=1).reshape(-1, n_orient)
+        active_set_acc = norm(active_set_acc, axis=1) != 0
 
-        p_obj_acc = primal_l21(Y, X, coef_acc, active_set, alpha, n_orient)
+        p_obj_acc = primal_l21(Y, X, coef_acc[active_set_acc], active_set_acc, alpha, n_orient)
 
+        # p_obj = primal_l21(Y, X, coef[active_set], active_set, alpha, n_orient)
+
+        # import ipdb; ipdb.set_trace()
         if p_obj_acc < p_obj:
             coef = coef_acc
+            active_set = active_set_acc
             print("It works!!!!")
+        else:
+            print("Anderson dis not work")
+
 
     except np.linalg.LinAlgError:
         print("LinAlg Error")
 
-    return coef
+    return coef, active_set
 
 
 class MultiTaskLassoOrientation(BaseEstimator, RegressorMixin):
@@ -314,10 +327,10 @@ class MultiTaskLassoOrientation(BaseEstimator, RegressorMixin):
                     last_K_coef[i % (self.K + 1)] = self.coef_
 
                     if i % (self.K + 1) == self.K:
-                        self.coef_[active_set] = aa_free_orient(
+                        self.coef_, active_set  = aa_free_orient(
                             X,
                             Y,
-                            self.coef_[active_set],
+                            self.coef_,
                             active_set,
                             last_K_coef,
                             p_obj,

@@ -92,7 +92,6 @@ class CDLasso(BaseEstimator, RegressorMixin):
 
         if self.accelerated:
             last_K_coef = np.zeros((self.K + 1, n_features))
-            U = np.zeros((self.K, n_features))
 
         if not np.isfortran(X) or not np.isfortran(y):
             X = np.asfortranarray(X)
@@ -131,7 +130,6 @@ class CDLasso(BaseEstimator, RegressorMixin):
                         X,
                         y,
                         self.coef_,
-                        U,
                         last_K_coef,
                         p_obj,
                         self.alpha,

@@ -140,7 +140,7 @@ def cd_iteration(n_features, X, coef, y, alpha, L):
 
 
 @njit
-def anderson_extrapolation(X, y, coef, U, last_K_coef, p_obj, alpha, K):
+def anderson_extrapolation(X, y, coef, last_K_coef, p_obj, alpha, K):
     """Anderson extrapolation
 
     Parameters
@@ -153,8 +153,6 @@ def anderson_extrapolation(X, y, coef, U, last_K_coef, p_obj, alpha, K):
 
     coef : np.ndarray of shape (n_features)
         Coefficient vector
-
-    U : np.ndarray of shape (K, n_features)
 
     last_K_coef : np.ndarray of shape (K+1, n_features)
         Stores the last K coefficient vectors
@@ -173,27 +171,28 @@ def anderson_extrapolation(X, y, coef, U, last_K_coef, p_obj, alpha, K):
     coef : np.ndarray
         Coefficient matrix.
     """
+    U = np.zeros((K, n_features))
     for k in range(K):
         U[k] = last_K_coef[k + 1] - last_K_coef[k]
 
-        C = U @ U.T
+    C = U @ U.T
 
-        try:
-            z = np.linalg.solve(C, np.ones(K))
-            c = z / z.sum()
+    try:
+        z = np.linalg.solve(C, np.ones(K))
+        c = z / z.sum()
 
-            # coef_acc = np.sum(last_K_coef[:-1] * c[:, None], axis=0)
-            coef_acc = np.sum(
-                last_K_coef[:-1] * np.expand_dims(c, axis=-1), axis=0
-            )
+        # coef_acc = np.sum(last_K_coef[:-1] * c[:, None], axis=0)
+        coef_acc = np.sum(
+            last_K_coef[:-1] * np.expand_dims(c, axis=-1), axis=0
+        )
 
-            p_obj_acc = primal(X, y, coef_acc, alpha)
+        p_obj_acc = primal(X, y, coef_acc, alpha)
 
-            if p_obj_acc < p_obj:
-                coef = coef_acc
+        if p_obj_acc < p_obj:
+            coef = coef_acc
 
-        except:  # Numba does not support custom Numpy LinAlg exception
-            print("LinAlg Error")
+    except:  # Numba does not support custom Numpy LinAlg exception
+        print("LinAlg Error")
 
     return coef
 

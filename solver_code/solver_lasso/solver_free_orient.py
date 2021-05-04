@@ -58,6 +58,16 @@ def primal_l21(M, G, X, active_set, alpha, n_orient):
     return p_obj
 
 
+# TODO make this function more efficeint with active sets
+def naive_primal_l21(M, G, X, alpha, n_orient):
+    GX = G @ X
+    R = M - GX
+    penalty = norm_l21(X, n_orient, copy=True)
+    nR2 = sum_squared(R)
+    p_obj = 0.5 * nR2 + alpha * penalty
+    return p_obj
+
+
 def dgap_l21(M, G, X, active_set, alpha, n_orient):
     GX = np.dot(G[:, active_set], X)
     R = M - GX
@@ -80,6 +90,69 @@ def compute_lipschitz_constants(X, n_positions, n_orient):
         idx = slice(j * n_orient, (j + 1) * n_orient)
         lc[j] = norm(X[:, idx], ord=2) ** 2
     return lc
+
+# @njit
+def aa_free_orient(X, Y, coef, last_K_coef, p_obj, alpha, K, n_orient):
+    """Anderson extrapolation
+
+    Parameters
+    ----------
+    X : np.ndarray of shape (n_samples, n_features)
+        Design matrix
+
+    y : np.ndarray of shape (n_samples)
+        Target vector
+
+    coef : np.ndarray of shape (n_features, n_times)
+        Coefficient matrix
+
+    last_K_coef : np.ndarray of shape (K+1, n_features, n_times)
+        Stores the last K coefficient vectors
+
+    p_obj : float
+        Value of the primal problem without acceleration
+
+    alpha : float
+        Regularizing hyperparameter
+
+    K : int
+        Number of previous iterates used to extrapolate
+
+    Returns
+    -------
+    coef : np.ndarray
+        Coefficient matrix
+    """
+    n_features, n_times = coef.shape
+
+    U = np.zeros((K, n_features * n_times))
+    for k in range(K):
+        U[k] = last_K_coef[k + 1].ravel() - last_K_coef[k].ravel()
+
+    # routine dgem?
+    C = U @ U.T
+    # import ipdb; ipdb.set_trace()
+
+    # try:
+    z = np.linalg.solve(C, np.ones(K))
+    c = z / z.sum()
+
+    # coef_acc = np.sum(last_K_coef[:-1] * c[:, None], axis=0)
+    coef_acc = last_K_coef[:-1] * c[:, None, None]
+    # coef_acc = np.sum(
+    #     last_K_coef[:-1] * np.expand_dims(c, axis=-1), axis=0
+    # )
+
+    # TODO change for primal_l21
+    p_obj_acc = naive_primal_l21(Y, X, coef_acc, alpha, n_orient)
+
+    if p_obj_acc < p_obj:
+        coef = coef_acc
+
+    # except:  # Numba does not support custom Numpy LinAlg exception
+    #     print("LinAlg Error")
+
+    return coef
 
 
 class MultiTaskLassoOrientation(BaseEstimator, RegressorMixin):
@@ -124,6 +197,8 @@ class MultiTaskLassoOrientation(BaseEstimator, RegressorMixin):
         max_iter=7000,
         tol=1e-5,
         warm_start=True,
+        accelerated=False,
+        K=5,
         verbose=False,
     ):
         self.alpha = alpha
@@ -131,6 +206,8 @@ class MultiTaskLassoOrientation(BaseEstimator, RegressorMixin):
         self.max_iter = max_iter
         self.tol = tol
         self.warm_start = warm_start
+        self.accelerated = accelerated
+        self.K = K
         self.verbose = verbose
 
         self.coef_ = None
@@ -150,7 +227,12 @@ class MultiTaskLassoOrientation(BaseEstimator, RegressorMixin):
             R = Y - np.dot(X, coef)
         else:
             coef = np.zeros((n_features, n_times))
+            self.coef_ = coef
             R = Y.copy()
+
+        if self.accelerated:
+            last_K_coef = np.zeros((
+                self.K + 1, n_features, n_times))
 
         active_set = np.zeros(n_features, dtype=bool)
 
@@ -216,6 +298,21 @@ class MultiTaskLassoOrientation(BaseEstimator, RegressorMixin):
                             np.sum(active_set) / self.n_orient,
                         )
                     )
+                if self.accelerated:
+                    last_K_coef[i % (self.K + 1)] = self.coef_
+
+                    # import ipdb; ipdb.set_trace()
+                    if i % (self.K + 1) == self.K:
+                        self.coef_ = aa_free_orient(
+                            X,
+                            Y,
+                            self.coef_,
+                            last_K_coef,
+                            p_obj,
+                            self.alpha,
+                            self.K,
+                            self.n_orient
+                        )
 
         if gap > self.tol:
             print("Threshold not reached (gap: %s > %s" % (gap, self.tol))

@@ -139,6 +139,7 @@ def cd_iteration(n_features, X, coef, y, alpha, L):
     return coef
 
 
+# TODO maybe we can remove coeff from this function
 @njit
 def anderson_extrapolation(X, y, coef, last_K_coef, p_obj, alpha, K):
     """Anderson extrapolation
@@ -169,7 +170,7 @@ def anderson_extrapolation(X, y, coef, last_K_coef, p_obj, alpha, K):
     Returns
     -------
     coef : np.ndarray
-        Coefficient matrix.
+        Coefficient vector.
     """
     U = np.zeros((K, n_features))
     for k in range(K):

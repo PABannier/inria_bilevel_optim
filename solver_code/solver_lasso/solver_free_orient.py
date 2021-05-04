@@ -91,8 +91,10 @@ def compute_lipschitz_constants(X, n_positions, n_orient):
         lc[j] = norm(X[:, idx], ord=2) ** 2
     return lc
 
-# @njit
-def aa_free_orient(X, Y, coef, last_K_coef, p_obj, alpha, K, n_orient):
+
+def aa_free_orient(
+    X, Y, coef, active_set, last_K_coef, p_obj, alpha, K, n_orient
+):
     """Anderson extrapolation
 
     Parameters
@@ -105,6 +107,9 @@ def aa_free_orient(X, Y, coef, last_K_coef, p_obj, alpha, K, n_orient):
 
     coef : np.ndarray of shape (n_features, n_times)
         Coefficient matrix
+
+    active_set : np.ndarray of shape (n_features)
+        Active sets
 
     last_K_coef : np.ndarray of shape (K+1, n_features, n_times)
         Stores the last K coefficient vectors
@@ -127,30 +132,29 @@ def aa_free_orient(X, Y, coef, last_K_coef, p_obj, alpha, K, n_orient):
 
     U = np.zeros((K, n_features * n_times))
     for k in range(K):
-        U[k] = last_K_coef[k + 1].ravel() - last_K_coef[k].ravel()
+        U[k] = (
+            last_K_coef[k + 1][active_set].ravel()
+            - last_K_coef[k][active_set].ravel()
+        )
 
     # routine dgem?
     C = U @ U.T
-    # import ipdb; ipdb.set_trace()
 
-    # try:
-    z = np.linalg.solve(C, np.ones(K))
-    c = z / z.sum()
+    try:
+        z = np.linalg.solve(C, np.ones(K))
+        c = z / z.sum()
 
-    # coef_acc = np.sum(last_K_coef[:-1] * c[:, None], axis=0)
-    coef_acc = last_K_coef[:-1] * c[:, None, None]
-    # coef_acc = np.sum(
-    #     last_K_coef[:-1] * np.expand_dims(c, axis=-1), axis=0
-    # )
+        coef_acc = last_K_coef[:-1, active_set, :] * c[:, None, None]
+        coef_acc = np.mean(coef_acc, axis=0)
 
-    # TODO change for primal_l21
-    p_obj_acc = naive_primal_l21(Y, X, coef_acc, alpha, n_orient)
+        p_obj_acc = primal_l21(Y, X, coef_acc, active_set, alpha, n_orient)
 
-    if p_obj_acc < p_obj:
-        coef = coef_acc
+        if p_obj_acc < p_obj:
+            coef = coef_acc
+            print("It works!!!!")
 
-    # except:  # Numba does not support custom Numpy LinAlg exception
-    #     print("LinAlg Error")
+    except np.linalg.LinAlgError:
+        print("LinAlg Error")
 
     return coef
 
@@ -197,7 +201,7 @@ class MultiTaskLassoOrientation(BaseEstimator, RegressorMixin):
         max_iter=7000,
         tol=1e-5,
         warm_start=True,
-        accelerated=False,
+        accelerated=True,
         K=5,
         verbose=False,
     ):
@@ -212,34 +216,35 @@ class MultiTaskLassoOrientation(BaseEstimator, RegressorMixin):
 
         self.coef_ = None
         self.gap_history_ = []
+        self.primal_history_ = []
+        self.dual_history_ = []
 
     def fit(self, X, Y):
         X, Y = check_X_y(X, Y, multi_output=True)
 
         self.gap_history_ = []
+        self.primal_history_ = []
+        self.dual_history_ = []
 
         n_samples, n_features = X.shape
         n_samples, n_times = Y.shape
         n_positions = n_features // self.n_orient
 
         if self.warm_start and self.coef_ is not None:
-            coef = self.coef_.T
-            R = Y - np.dot(X, coef)
+            R = Y - np.dot(X, self.coef_)
         else:
-            coef = np.zeros((n_features, n_times))
-            self.coef_ = coef
+            self.coef_ = np.zeros((n_features, n_times))
             R = Y.copy()
 
         if self.accelerated:
-            last_K_coef = np.zeros((
-                self.K + 1, n_features, n_times))
+            last_K_coef = np.zeros((self.K + 1, n_features, n_times))
 
         active_set = np.zeros(n_features, dtype=bool)
 
         X = np.asfortranarray(X)
 
         # Checking arrays are Fortran-contiguous
-        assert coef.T.flags.f_contiguous
+        assert self.coef_.T.flags.f_contiguous
         assert R.T.flags.f_contiguous
         assert X.flags.f_contiguous
 
@@ -257,7 +262,7 @@ class MultiTaskLassoOrientation(BaseEstimator, RegressorMixin):
         for i in range(self.max_iter):
             self._bcd(
                 X,
-                coef,
+                self.coef_,
                 R,
                 active_set,
                 one_over_lc,
@@ -271,13 +276,15 @@ class MultiTaskLassoOrientation(BaseEstimator, RegressorMixin):
                 gap, p_obj, d_obj, _ = dgap_l21(
                     Y,
                     X,
-                    coef[active_set],
+                    self.coef_[active_set],
                     active_set,
                     self.alpha,
                     self.n_orient,
                 )
 
                 self.gap_history_.append(gap)
+                self.primal_history_.append(p_obj)
+                self.dual_history_.append(d_obj)
 
                 if gap < self.tol:
                     if self.verbose:
@@ -301,23 +308,21 @@ class MultiTaskLassoOrientation(BaseEstimator, RegressorMixin):
                 if self.accelerated:
                     last_K_coef[i % (self.K + 1)] = self.coef_
 
-                    # import ipdb; ipdb.set_trace()
                     if i % (self.K + 1) == self.K:
-                        self.coef_ = aa_free_orient(
+                        self.coef_[active_set] = aa_free_orient(
                             X,
                             Y,
-                            self.coef_,
+                            self.coef_[active_set],
+                            active_set,
                             last_K_coef,
                             p_obj,
                             self.alpha,
                             self.K,
-                            self.n_orient
+                            self.n_orient,
                         )
 
         if gap > self.tol:
             print("Threshold not reached (gap: %s > %s" % (gap, self.tol))
-
-        self.coef_ = coef.T  # To be consistent with Celer's solver
 
     def predict(self, X):
         check_is_fitted(self)

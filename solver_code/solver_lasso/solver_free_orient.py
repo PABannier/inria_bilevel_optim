@@ -58,16 +58,6 @@ def primal_l21(M, G, X, active_set, alpha, n_orient):
     return p_obj
 
 
-# TODO make this function more efficeint with active sets
-def naive_primal_l21(M, G, X, alpha, n_orient):
-    GX = G @ X
-    R = M - GX
-    penalty = norm_l21(X, n_orient, copy=True)
-    nR2 = sum_squared(R)
-    p_obj = 0.5 * nR2 + alpha * penalty
-    return p_obj
-
-
 def dgap_l21(M, G, X, active_set, alpha, n_orient):
     GX = np.dot(G[:, active_set], X)
     R = M - GX

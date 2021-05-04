@@ -106,7 +106,7 @@ def aa_free_orient(
         Target vector
 
     coef : np.ndarray of shape (n_features, n_times)
-        Coefficient matrix
+        Regression coefficients
 
     active_set : np.ndarray of shape (n_features)
         Active sets
@@ -130,7 +130,7 @@ def aa_free_orient(
 
     Returns
     -------
-    coef : np.ndarray
+    coef : np.ndarray of shape (n_features, n_times)
         Regression coefficients.
     """
     n_features, n_times = coef.shape

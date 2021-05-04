@@ -153,7 +153,7 @@ def anderson_extrapolation(X, y, coef, last_K_coef, p_obj, alpha, K):
         Target vector
 
     coef : np.ndarray of shape (n_features)
-        Coefficient vector
+        Regression coefficients
 
     last_K_coef : np.ndarray of shape (K+1, n_features)
         Stores the last K coefficient vectors
@@ -169,7 +169,7 @@ def anderson_extrapolation(X, y, coef, last_K_coef, p_obj, alpha, K):
 
     Returns
     -------
-    coef : np.ndarray
+    coef : np.ndarray (n_features)
         Regression coefficients.
     """
     U = np.zeros((K, n_features))

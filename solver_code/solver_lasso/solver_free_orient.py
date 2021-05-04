@@ -123,10 +123,15 @@ def aa_free_orient(
     K : int
         Number of previous iterates used to extrapolate
 
+    n_orient : int
+        Number of orientation for a dipole. Fixed orientation
+        corresponds to n_orient = 1. Free orientation corresponds
+        to n_orient > 1.
+
     Returns
     -------
     coef : np.ndarray
-        Coefficient matrix
+        Regression coefficients.
     """
     n_features, n_times = coef.shape
 
@@ -162,12 +167,12 @@ def aa_free_orient(
 class MultiTaskLassoOrientation(BaseEstimator, RegressorMixin):
     """Solver Multi-Task Lasso for neuroscience inverse
     problem. It supports fixed (n_orient=1) and free (n_orient > 1)
-    orientiations.
+    orientations.
 
     Parameters
     ----------
     n_orient: int, default=1
-        Number of orientiation for a dipole. Fixed orientation
+        Number of orientation for a dipole. Fixed orientation
         corresponds to n_orient = 1. Free orientation corresponds
         to n_orient > 1.
 

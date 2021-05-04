@@ -170,7 +170,7 @@ def anderson_extrapolation(X, y, coef, last_K_coef, p_obj, alpha, K):
     Returns
     -------
     coef : np.ndarray
-        Coefficient vector.
+        Regression coefficients.
     """
     U = np.zeros((K, n_features))
     for k in range(K):

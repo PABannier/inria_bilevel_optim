@@ -81,7 +81,7 @@ def get_duality_gap(X, y, coef, alpha):
     return p_obj - d_obj, p_obj, d_obj
 
 
-def primal_mtl(X, coef, Y, alpha):
+def primal_mtl(X, Y, coef, alpha):
     """Primal objective function for multi-task
     LASSO
     """

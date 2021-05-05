@@ -14,9 +14,11 @@ from solver_lasso.utils import (
     anderson_extrapolation,
     cd_iteration,
     sum_squared,
+    primal_mtl,
 )
 
 from solver_free_orient import dgap_l21
+import ipdb
 
 
 if __name__ == "__main__":
@@ -96,21 +98,16 @@ if __name__ == "__main__":
                     z = np.linalg.solve(C, np.ones(K))
                     c = z / z.sum()
 
-                    # coef_acc = np.sum(
-                    #    last_K_coef[:-1] * np.expand_dims(c, axis=-1), axis=0
-                    # )
-
                     coef_acc = np.sum(
                         last_K_coef[:-1] * c[:, None, None], axis=0
                     )
 
-                    p_obj_acc = primal(X, Y, coef_acc, alpha)
+                    p_obj_acc = primal_mtl(X, Y, coef_acc, alpha)
 
-                    import ipdb
-
-                    ipdb.set_trace()
+                    # ipdb.set_trace()
 
                     if p_obj_acc < p_obj:
+                        print("Extrapolation worked!")
                         coef = coef_acc
 
                 except np.linalg.LinAlgError:

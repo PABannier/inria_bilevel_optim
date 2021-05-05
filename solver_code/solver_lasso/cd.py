@@ -6,7 +6,7 @@ from sklearn.utils.validation import check_X_y, check_is_fitted, check_array
 from sklearn.utils import check_random_state
 
 from solver_lasso.utils import (
-    ST,
+    soft_thresh,
     get_duality_gap,
     anderson_extrapolation,
     cd_iteration,
@@ -92,7 +92,6 @@ class CDLasso(BaseEstimator, RegressorMixin):
 
         if self.accelerated:
             last_K_coef = np.zeros((self.K + 1, n_features))
-            U = np.zeros((self.K, n_features))
 
         if not np.isfortran(X) or not np.isfortran(y):
             X = np.asfortranarray(X)
@@ -131,7 +130,6 @@ class CDLasso(BaseEstimator, RegressorMixin):
                         X,
                         y,
                         self.coef_,
-                        U,
                         last_K_coef,
                         p_obj,
                         self.alpha,

@@ -1,4 +1,5 @@
 from collections import defaultdict
+from tqdm import tqdm
 import time
 
 import numpy as np
@@ -6,6 +7,8 @@ from numpy.linalg import norm
 from sklearn.utils import check_random_state, check_X_y
 
 from celer import MultiTaskLasso
+
+from solver_lasso.solver_free_orient import MultiTaskLassoOrientation
 
 
 class SUREForReweightedMultiTaskLasso:
@@ -15,15 +18,26 @@ class SUREForReweightedMultiTaskLasso:
         alpha_grid,
         n_iterations=5,
         penalty=None,
+        n_orient=1,
         random_state=None,
     ):
         self.sigma = sigma
         self.alpha_grid = alpha_grid
         self.n_iterations = n_iterations
+        self.n_orient = n_orient
         self.random_state = random_state
+
+        self.n_alphas = len(self.alpha_grid)
+
+        self.sure_path_ = np.empty(self.n_alphas)
+        self.dof_history_ = np.empty(self.n_alphas)
+        self.data_fitting_history_ = np.empty(self.n_alphas)
 
         self.eps = None
         self.delta = None
+
+        if self.n_orient <= 0:
+            raise ValueError("Number of orientations can't be negative.")
 
         if penalty:
             self.penalty = penalty
@@ -39,16 +53,19 @@ class SUREForReweightedMultiTaskLasso:
             self._init_eps_and_delta(n_samples, n_tasks)
 
         X, Y = check_X_y(X, Y, multi_output=True)
-        score_grid_ = np.array([np.inf for _ in range(len(self.alpha_grid))])
 
         coefs_grid_1, coefs_grid_2 = self._fit_reweighted_with_grid(X, Y)
 
         for i, (coef1, coef2) in enumerate(zip(coefs_grid_1, coefs_grid_2)):
-            sure_val = self._compute_sure_val(coef1, coef2, X, Y)
-            score_grid_[i] = sure_val
+            sure_val, dof_term, data_fitting_term = self._compute_sure_val(
+                coef1, coef2, X, Y
+            )
+            self.sure_path_[i] = sure_val
+            self.dof_history_[i] = dof_term
+            self.data_fitting_history_[i] = data_fitting_term
 
-        best_sure_ = np.min(score_grid_)
-        best_alpha_ = self.alpha_grid[np.argmin(score_grid_)]
+        best_sure_ = np.min(self.sure_path_)
+        best_alpha_ = self.alpha_grid[np.argmin(self.sure_path_)]
 
         return best_sure_, best_alpha_
 
@@ -75,11 +92,11 @@ class SUREForReweightedMultiTaskLasso:
         # Compute the dof
         dof = ((X @ (coef2 - coef1)) * self.delta).sum() / self.eps
         # compute the SURE
-        sure = norm(Y - X @ coef1) ** 2
-        sure -= n_samples * n_tasks * self.sigma ** 2
+        df_term = norm(Y - X @ coef1) ** 2
+        sure = df_term - n_samples * n_tasks * self.sigma ** 2
         sure += 2 * dof * self.sigma ** 2
 
-        return sure
+        return sure, dof, df_term
 
     def _fit_reweighted_with_grid(self, X, Y):
         _, n_features = X.shape
@@ -92,15 +109,24 @@ class SUREForReweightedMultiTaskLasso:
         Y_eps = Y + self.eps * self.delta
 
         # Warm start first iteration
-        regressor1 = MultiTaskLasso(
-            np.nan, fit_intercept=False, warm_start=True
-        )
-        regressor2 = MultiTaskLasso(
-            np.nan, fit_intercept=False, warm_start=True
-        )
+        if self.n_orient == 1:
+            regressor1 = MultiTaskLasso(
+                np.nan, fit_intercept=False, warm_start=True
+            )
+            regressor2 = MultiTaskLasso(
+                np.nan, fit_intercept=False, warm_start=True
+            )
+        else:
+            regressor1 = MultiTaskLassoOrientation(
+                np.nan, warm_start=True, n_orient=self.n_orient
+            )
+            regressor2 = MultiTaskLassoOrientation(
+                np.nan, warm_start=True, n_orient=self.n_orient
+            )
 
         # Copy grid of first iteration (leverages convexity)
-        for j, alpha in enumerate(self.alpha_grid):
+        print("First iteration")
+        for j, alpha in tqdm(enumerate(self.alpha_grid), total=self.n_alphas):
             regressor1.alpha = alpha
             regressor2.alpha = alpha
             coef1_0[j] = regressor1.fit(X, Y).coef_.T
@@ -112,7 +138,8 @@ class SUREForReweightedMultiTaskLasso:
         coefs_1_ = coef1_0.copy()
         coefs_2_ = coef2_0.copy()
 
-        for j, alpha in enumerate(self.alpha_grid):
+        print("Next iterations...")
+        for j, alpha in tqdm(enumerate(self.alpha_grid), total=self.n_alphas):
             regressor1.alpha = alpha
             regressor2.alpha = alpha
 

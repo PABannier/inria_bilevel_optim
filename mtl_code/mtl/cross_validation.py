@@ -45,6 +45,10 @@ class ReweightedMultiTaskLassoCV(BaseEstimator, RegressorMixin):
 
     penalty : callable, default=None
         See docs of ReweightedMultiTaskLasso for more details.
+
+    n_orient : int, default=1
+        Number of orientations for a dipole on the scalp surface. Choose 1 for fixed
+        orientation and 3 for free orientation.
     """
 
     def __init__(
@@ -55,6 +59,7 @@ class ReweightedMultiTaskLassoCV(BaseEstimator, RegressorMixin):
         n_iterations: int = 5,
         random_state: int = None,
         penalty: callable = None,
+        n_orient: int = 1,
     ):
         if not isinstance(alpha_grid, (list, np.ndarray)):
             raise TypeError(
@@ -66,6 +71,7 @@ class ReweightedMultiTaskLassoCV(BaseEstimator, RegressorMixin):
         self.n_folds = n_folds
         self.n_iterations = n_iterations
         self.random_state = random_state
+        self.n_orient = n_orient
 
         self.best_estimator_ = None
         self.best_cv_, self.best_alpha_ = np.inf, None
@@ -142,7 +148,10 @@ class ReweightedMultiTaskLassoCV(BaseEstimator, RegressorMixin):
 
         print("Refitting with best alpha...")
         self.best_estimator_ = ReweightedMultiTaskLasso(
-            self.best_alpha_, penalty=self.penalty, verbose=False
+            self.best_alpha_,
+            penalty=self.penalty,
+            verbose=False,
+            n_orient=self.n_orient,
         )
 
         self.best_estimator_.fit(X, Y)

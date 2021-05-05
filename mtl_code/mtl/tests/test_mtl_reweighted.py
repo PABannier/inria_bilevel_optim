@@ -53,6 +53,27 @@ def test_decreasing_loss_every_step(corr):
     assert np.all(diffs <= 5e-5)
 
 
+@pytest.mark.parametrize("corr", corr_coeffs)
+def test_decreasing_loss_every_step_free_orientation(corr):
+    X, Y, W, _ = simulate_data(
+        n_samples=10,
+        n_features=21,
+        n_tasks=15,
+        nnz=5,
+        corr=corr,
+        random_state=42,
+    )
+
+    regressor = ReweightedMultiTaskLasso(n_orient=3)
+    regressor.fit(X, Y)
+
+    diffs = np.diff(regressor.loss_history_)
+
+    print(diffs)
+
+    assert np.all(diffs <= 5e-5)
+
+
 ####################
 # Statistical tests
 ####################
@@ -79,4 +100,4 @@ def test_reconstruction():
 
     nnz_reconstructed = np.count_nonzero(np.count_nonzero(coef_hat, axis=1))
 
-    assert nnz_reconstructed == 3
+    assert np.abs(nnz_reconstructed - 3) <= 1

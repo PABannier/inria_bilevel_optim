@@ -82,10 +82,6 @@ if __name__ == "__main__":
 
                     p_obj_acc = primal(X, y, coef_acc, alpha)
 
-                    import ipdb
-
-                    ipdb.set_trace()
-
                     if p_obj_acc < p_obj:
                         coef = coef_acc
 

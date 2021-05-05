@@ -15,6 +15,7 @@ from solver_lasso.utils import (
     cd_iteration,
     sum_squared,
     primal_mtl,
+    norm_l2_inf,
 )
 
 from solver_free_orient import dgap_l21
@@ -22,8 +23,8 @@ import ipdb
 
 
 if __name__ == "__main__":
-    MAX_ITER = 1000
-    TOL = 1e-5
+    MAX_ITER = 2000
+    TOL = 1e-8
     K = 5
     N_ORIENT = 3
 
@@ -32,12 +33,12 @@ if __name__ == "__main__":
     gap_history_ = []
 
     X, Y, W, _ = simulate_data(
-        n_samples=10, n_features=15, n_tasks=7, nnz=3, random_state=0
+        n_samples=100, n_features=150, n_tasks=50, nnz=10, random_state=0
     )
 
     R = Y.copy()
 
-    alpha_max = compute_alpha_max(X, Y)
+    alpha_max = norm_l2_inf(np.dot(X.T, Y), N_ORIENT, copy=False)
     alpha = alpha_max * 0.1
 
     n_samples, n_features = X.shape

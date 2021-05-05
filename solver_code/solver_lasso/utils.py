@@ -124,6 +124,51 @@ def get_duality_gap_mtl(X, Y, coef, alpha, n_orient=1):
     return gap, p_obj, d_obj
 
 
+def primal_mtl_as(X, Y, coef, active_set, alpha, n_orient=1):
+    """Primal objective function for multi-task
+    LASSO
+    """
+    Y_hat = np.dot(X[:, active_set], coef)
+    R = Y - Y_hat
+    penalty = norm_l2_1(coef, n_orient, copy=True)
+    nR2 = sum_squared(R)
+    p_obj = 0.5 * nR2 + alpha * penalty
+    return p_obj
+
+
+def dual_mtl_as(X, Y, coef, active_set, alpha, n_orient=1):
+    """Dual objective function for multi-task
+    LASSO
+    """
+    Y_hat = np.dot(X[:, active_set], coef)
+    R = Y - Y_hat
+    dual_norm = norm_l2_inf(np.dot(X.T, R), n_orient, copy=False)
+    scaling = alpha / dual_norm
+    scaling = min(scaling, 1.0)
+    d_obj = (scaling - 0.5 * (scaling ** 2)) * nR2 + scaling * np.sum(
+        R * Y_hat
+    )
+    return d_obj
+
+
+def get_duality_gap_mtl_as(X, Y, coef, active_set, alpha, n_orient=1):
+    Y_hat = np.dot(X[:, active_set], coef)
+    R = Y - Y_hat
+    penalty = norm_l2_1(coef, n_orient, copy=True)
+    nR2 = sum_squared(R)
+    p_obj = 0.5 * nR2 + alpha * penalty
+
+    dual_norm = norm_l2_inf(np.dot(X.T, R), n_orient, copy=False)
+    scaling = alpha / dual_norm
+    scaling = min(scaling, 1.0)
+    d_obj = (scaling - 0.5 * (scaling ** 2)) * nR2 + scaling * np.sum(
+        R * Y_hat
+    )
+
+    gap = p_obj - d_obj
+    return gap, p_obj, d_obj
+
+
 def fista_iteration(coef, X, y, t, z, L, alpha):
     coef_old = coef.copy()
     z = z + X.T @ (y - X @ z) / L

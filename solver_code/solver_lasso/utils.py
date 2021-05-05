@@ -87,7 +87,7 @@ def primal_mtl(X, Y, coef, alpha):
     """
     Y_hat = np.dot(X, coef)
     R = Y - Y_hat
-    penalty = norm_l2_1(X)
+    penalty = norm_l2_1(coef)
     nR2 = sum_squared(R)
     p_obj = 0.5 * nR2 + alpha * penalty
     return p_obj

@@ -109,6 +109,9 @@ if __name__ == "__main__":
                     if p_obj_acc < p_obj:
                         print("Extrapolation worked!")
                         coef = coef_acc
+                        R = Y - X @ coef
+                    else:
+                        print(f"p_obj {p_obj} :: p_obj_acc {p_obj_acc}")
 
                 except np.linalg.LinAlgError:
                     print("LinAlg Error")

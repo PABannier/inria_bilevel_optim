@@ -26,6 +26,15 @@ from solver_free_orient import dgap_l21
 import ipdb
 
 import time
+import functools
+
+
+@functools.lru_cache(None)
+def _get_dgemm():
+    from scipy import linalg
+
+    return linalg.get_blas_funcs("gemm", (np.empty(0, np.float64),))
+
 
 if __name__ == "__main__":
     MAX_ITER = 2000
@@ -102,15 +111,35 @@ if __name__ == "__main__":
             active_set = np.zeros(n_features, dtype=bool)
 
             for iter_idx in range(MAX_ITER):
+
+                coef_j_new = np.zeros_like(coef[0:N_ORIENT, :], order="C")
+                dgemm = _get_dgemm()
+
                 for j in range(n_positions):
                     idx = slice(j * N_ORIENT, (j + 1) * N_ORIENT)
                     coef_j = coef[idx]
                     X_j = X[:, idx]
 
-                    coef_j_new = X_j.T @ R / L[j]
+                    # coef_j_new = X_j.T @ R / L[j]
+                    dgemm(
+                        alpha=1 / L[j],
+                        beta=0.0,
+                        a=R.T,
+                        b=X_j,
+                        c=coef_j_new.T,
+                        overwrite_c=True,
+                    )
 
                     if coef_j[0, 0] != 0:
-                        R += X_j @ coef_j
+                        # R += X_j @ coef_j
+                        dgemm(
+                            alpha=1.0,
+                            beta=1.0,
+                            a=coef_j.T,
+                            b=X_j.T,
+                            c=R.T,
+                            overwrite_c=True,
+                        )
                         coef_j_new += coef_j
 
                     block_norm = np.sqrt(sum_squared(coef_j_new))
@@ -123,7 +152,15 @@ if __name__ == "__main__":
                         shrink = max(1.0 - alpha_lc / block_norm, 0.0)
                         coef_j_new *= shrink
 
-                        R -= np.dot(X_j, coef_j_new)
+                        # R -= np.dot(X_j, coef_j_new)
+                        dgemm(
+                            alpha=-1.0,
+                            beta=1.0,
+                            a=coef_j_new.T,
+                            b=X_j.T,
+                            c=R.T,
+                            overwrite_c=True,
+                        )
                         coef_j[:] = coef_j_new
                         active_set[idx] = True
 

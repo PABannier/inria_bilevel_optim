@@ -1,6 +1,15 @@
+import functools
+
 import numpy as np
 from numpy.linalg import norm
 from numba import njit
+
+
+@functools.lru_cache(None)
+def get_dgemm():
+    from scipy import linalg
+
+    return linalg.get_blas_funcs("gemm", (np.empty(0, np.float64),))
 
 
 @njit

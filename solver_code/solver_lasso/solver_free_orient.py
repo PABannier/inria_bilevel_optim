@@ -148,7 +148,9 @@ def aa_free_orient(
         active_set_acc = norm(coef_acc, axis=1).reshape(-1, n_orient)
         active_set_acc = norm(active_set_acc, axis=1) != 0
 
-        p_obj_acc = primal_l21(Y, X, coef_acc[active_set_acc], active_set_acc, alpha, n_orient)
+        p_obj_acc = primal_l21(
+            Y, X, coef_acc[active_set_acc], active_set_acc, alpha, n_orient
+        )
 
         # p_obj = primal_l21(Y, X, coef[active_set], active_set, alpha, n_orient)
 
@@ -159,7 +161,6 @@ def aa_free_orient(
             print("It works!!!!")
         else:
             print("Anderson dis not work")
-
 
     except np.linalg.LinAlgError:
         print("LinAlg Error")
@@ -317,7 +318,7 @@ class MultiTaskLassoOrientation(BaseEstimator, RegressorMixin):
                     last_K_coef[i % (self.K + 1)] = self.coef_
 
                     if i % (self.K + 1) == self.K:
-                        self.coef_, active_set  = aa_free_orient(
+                        self.coef_, active_set = aa_free_orient(
                             X,
                             Y,
                             self.coef_,

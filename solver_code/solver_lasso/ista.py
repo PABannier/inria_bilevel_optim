@@ -7,7 +7,7 @@ from sklearn.utils import check_random_state
 
 from solver_lasso.utils import (
     get_duality_gap,
-    ST,
+    soft_thresh,
     fista_iteration,
     ista_iteration,
 )

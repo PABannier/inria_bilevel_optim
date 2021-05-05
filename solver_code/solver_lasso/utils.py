@@ -4,32 +4,46 @@ from numba import njit
 
 
 @njit
-def soft_thresh(x, lambda_):
+def soft_thresh(x, alpha):
     """Soft-thresholding operator"""
-    return np.sign(x) * np.maximum(0.0, np.abs(x) - lambda_)
+    return np.sign(x) * np.maximum(0.0, np.abs(x) - alpha)
 
 
 @njit
-def block_soft_thresh(x, lambda_):
+def block_soft_thresh(x, alpha):
     """Block soft-thresholding operator"""
-    a = 1 - lambda_ / norm(x)
-    return np.maximum(0, a) * x
+    norm_x = norm(x)
+    if norm_x < alpha:
+        return np.zeros_like(x)
+    else:
+        return (1 - alpha / norm_x) * x
 
 
-@njit
-def norm_l2_1(X):
-    res = 0
-    for j in range(X.shape[0]):
-        res += norm(X[j, :])
-    return res
+def sum_squared(X):
+    X_flat = X.ravel(order="F" if np.isfortran(X) else "C")
+    return np.dot(X_flat, X_flat)
 
 
-@njit
-def norm_l2_inf(X):
-    res = 0
-    for j in range(X.shape[0]):
-        res = max(res, norm(X[j, :]))
-    return res
+def groups_norm2(A):
+    """Compute squared L2 norms of groups inplace."""
+    n_positions = A.shape[0]
+    return np.sum(np.power(A, 2, A).reshape(n_positions, -1), axis=1)
+
+
+def norm_l2_1(X, copy=True):
+    if X.size == 0:
+        return 0.0
+    if copy:
+        X = X.copy()
+    return np.sum(np.sqrt(groups_norm2(X)))
+
+
+def norm_l2_inf(X, copy=True):
+    if X.size == 0:
+        return 0.0
+    if copy:
+        X = X.copy()
+    return np.sqrt(np.max(groups_norm2(X)))
 
 
 @njit
@@ -67,47 +81,47 @@ def get_duality_gap(X, y, coef, alpha):
     return p_obj - d_obj, p_obj, d_obj
 
 
-def primal_mtl(R, coef, alpha):
+def primal_mtl(X, coef, Y, alpha):
     """Primal objective function for multi-task
     LASSO
     """
-    p_obj = norm(R) ** 2
-    p_obj += alpha * norm_l2_1(coef)
+    Y_hat = np.dot(X, coef)
+    R = Y - Y_hat
+    penalty = norm_l2_1(X)
+    nR2 = sum_squared(R)
+    p_obj = 0.5 * nR2 + alpha * penalty
     return p_obj
 
 
-def dual_mtl(R, X, Y, alpha):
+def dual_mtl(X, coef, Y, alpha):
     """Dual objective function for multi-task
     LASSO
     """
-    Theta = R / alpha
-    d_norm_theta = np.max(norm(X.T @ Theta, axis=1))
-    Theta /= d_norm_theta
-
-    d_obj = norm(Y) ** 2 / 2
-    d_obj -= ((alpha ** 2) / 2) * norm(Theta - Y / alpha) ** 2
+    dual_norm = norm_l2_inf(np.dot(X.T, R))
+    scaling = alpha / dual_norm
+    scaling = min(scaling, 1.0)
+    d_obj = (scaling - 0.5 * (scaling ** 2)) * nR2 + scaling * np.sum(
+        R * Y_hat
+    )
     return d_obj
-
-    # n_samples, n_tasks = Y.shape
-    # d_obj = norm(Theta) ** 2 + np.trace(Theta.T @ Y)
-    # return d_obj
-    """
-    R = y - X @ coef
-    theta = R / alpha
-    d_norm_theta = np.max(np.abs(X.T @ theta))
-    theta /= d_norm_theta
-
-    d_obj = (norm(y) ** 2) / 2
-    d_obj -= ((alpha ** 2) / 2) * norm(theta - y / alpha) ** 2
-    return d_obj
-    """
 
 
 def get_duality_gap_mtl(X, Y, coef, alpha):
-    R = Y - X @ coef
-    p_obj = primal_mtl(R, coef, alpha)
-    d_obj = dual_mtl(R, X, Y, alpha)
-    return p_obj - d_obj, p_obj, d_obj
+    Y_hat = np.dot(X, coef)
+    R = Y - Y_hat
+    penalty = norm_l2_1(coef)
+    nR2 = sum_squared(R)
+    p_obj = 0.5 * nR2 + alpha * penalty
+
+    dual_norm = norm_l2_inf(np.dot(X.T, R))
+    scaling = alpha / dual_norm
+    scaling = min(scaling, 1.0)
+    d_obj = (scaling - 0.5 * (scaling ** 2)) * nR2 + scaling * np.sum(
+        R * Y_hat
+    )
+
+    gap = p_obj - d_obj
+    return gap, p_obj, d_obj
 
 
 def fista_iteration(coef, X, y, t, z, L, alpha):
@@ -172,6 +186,7 @@ def anderson_extrapolation(X, y, coef, last_K_coef, p_obj, alpha, K):
     coef : np.ndarray (n_features)
         Regression coefficients.
     """
+    n_features = X.shape[1]
     U = np.zeros((K, n_features))
     for k in range(K):
         U[k] = last_K_coef[k + 1] - last_K_coef[k]

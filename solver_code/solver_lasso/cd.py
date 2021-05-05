@@ -6,7 +6,7 @@ from sklearn.utils.validation import check_X_y, check_is_fitted, check_array
 from sklearn.utils import check_random_state
 
 from solver_lasso.utils import (
-    ST,
+    soft_thresh,
     get_duality_gap,
     anderson_extrapolation,
     cd_iteration,

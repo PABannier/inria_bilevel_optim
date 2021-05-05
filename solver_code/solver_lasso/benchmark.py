@@ -16,7 +16,10 @@ def time_solver(X, Y, n_orient):
     alpha = alpha_max * 0.2
 
     estimator1 = MultiTaskLassoOrientation(
-        alpha, n_orient=n_orient, max_iter=10000, accelerated=True,
+        alpha,
+        n_orient=n_orient,
+        max_iter=10000,
+        accelerated=True,
         verbose=True,
     )
 

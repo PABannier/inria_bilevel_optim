@@ -21,6 +21,8 @@ from solver_lasso.utils import (
 from solver_free_orient import dgap_l21
 import ipdb
 
+import time
+
 
 if __name__ == "__main__":
     MAX_ITER = 2000
@@ -28,18 +30,20 @@ if __name__ == "__main__":
     K = 5
     N_ORIENT = 3
 
-    use_acc = True
+    use_acc = False
 
     gap_history_ = []
 
     X, Y, W, _ = simulate_data(
-        n_samples=100, n_features=150, n_tasks=50, nnz=10, random_state=0
+        n_samples=100, n_features=999, n_tasks=200, nnz=10, random_state=0
     )
 
     R = Y.copy()
 
     alpha_max = norm_l2_inf(np.dot(X.T, Y), N_ORIENT, copy=False)
     alpha = alpha_max * 0.1
+
+    start = time.time()
 
     n_samples, n_features = X.shape
     n_times = Y.shape[1]
@@ -127,6 +131,8 @@ if __name__ == "__main__":
         if gap < TOL:
             print(f"Fitting ended after iteration {iter_idx + 1}.")
             break
+
+    print(f"Duration: {time.time() - start}")
 
     fig = plt.figure()
 

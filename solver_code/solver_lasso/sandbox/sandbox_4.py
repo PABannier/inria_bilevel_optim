@@ -22,7 +22,6 @@ from solver_lasso.utils import (
     norm_l2_inf,
 )
 
-from solver_free_orient import dgap_l21
 import ipdb
 
 import time

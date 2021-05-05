@@ -17,7 +17,6 @@ from solver_lasso.utils import (
     primal_mtl,
 )
 
-from solver_free_orient import dgap_l21
 import ipdb
 
 

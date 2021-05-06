@@ -133,8 +133,13 @@ class SUREForReweightedMultiTaskLasso:
         for j, alpha in tqdm(enumerate(self.alpha_grid), total=self.n_alphas):
             regressor1.alpha = alpha
             regressor2.alpha = alpha
-            coef1_0[j] = regressor1.fit(X, Y).coef_.T
-            coef2_0[j] = regressor2.fit(X, Y_eps).coef_.T
+
+            if self.n_orient == 1:
+                coef1_0[j] = regressor1.fit(X, Y).coef_.T
+                coef2_0[j] = regressor2.fit(X, Y_eps).coef_.T
+            else:
+                coef1_0[j] = regressor1.fit(X, Y).coef_
+                coef2_0[j] = regressor2.fit(X, Y_eps).coef_
 
         regressor1.warm_start = False
         regressor2.warm_start = False

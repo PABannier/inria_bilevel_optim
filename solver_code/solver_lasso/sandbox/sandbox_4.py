@@ -102,13 +102,13 @@ if __name__ == "__main__":
                 R = Y - X @ coef
 
             X = np.asfortranarray(X)
-            Y = np.asfortranarray(Y)
 
             if use_acc:
                 last_K_coef = np.empty((K + 1, n_features, n_times))
                 U = np.zeros((K, n_features * n_times))
 
             active_set = np.zeros(n_features, dtype=bool)
+            highest_d_obj = -np.inf
 
             for iter_idx in range(MAX_ITER):
 
@@ -164,9 +164,12 @@ if __name__ == "__main__":
                         coef_j[:] = coef_j_new
                         active_set[idx] = True
 
-                gap, p_obj, d_obj = get_duality_gap_mtl_as(
+                _, p_obj, d_obj = get_duality_gap_mtl_as(
                     X, Y, coef[active_set], active_set, alpha, N_ORIENT
                 )
+                highest_d_obj = max(d_obj, highest_d_obj)
+                gap = p_obj - highest_d_obj
+
                 gap_history_.append(gap)
 
                 print(

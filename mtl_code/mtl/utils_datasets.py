@@ -29,6 +29,18 @@ def norm_l2_inf(X, n_orient, copy=True):
     return np.sqrt(np.max(groups_norm2(X, n_orient)))
 
 
+def compute_alpha_max(X, Y, n_orient=1):
+    if len(Y.shape) == 1:
+        return np.max(np.abs(X.T @ Y)) / len(X)
+    else:
+        if n_orient == 1:
+            B = X.T @ Y
+            b = norm(B, axis=1)
+            return np.max(b) / X.shape[0]
+        else:
+            return norm_l2_inf(np.dot(X.T, Y), n_orient, copy=False)
+
+
 def sum_squared(X):
     X_flat = X.ravel(order="F" if np.isfortran(X) else "C")
     return np.dot(X_flat, X_flat)
@@ -83,15 +95,6 @@ def get_duality_gap_mtl(X, Y, coef, active_set, alpha, n_orient=1):
 
     gap = p_obj - d_obj
     return gap, p_obj, d_obj
-
-
-def compute_alpha_max(X, Y):
-    if len(Y.shape) > 1:
-        B = X.T @ Y
-        b = norm(B, axis=1)
-        return np.max(b) / X.shape[0]
-    else:
-        return np.max(np.abs(X.T @ Y)) / len(X)
 
 
 def plot_sure_mse_path(alphas, alpha_max, mse_metrics, sure_metrics, mse_path):

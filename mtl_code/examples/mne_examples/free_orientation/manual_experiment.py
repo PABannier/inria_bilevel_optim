@@ -126,7 +126,7 @@ def solver(M, G, n_orient=1):
         )
         estimator.fit(G, M)
     else:
-        alpha_max = compute_alpha_max(G, M)
+        alpha_max = compute_alpha_max(G, M, n_orient=n_orient)
         print("Alpha max:", alpha_max)
 
         alphas = np.geomspace(alpha_max, alpha_max / 10, num=15)

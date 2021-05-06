@@ -123,9 +123,15 @@ class ReweightedMultiTaskLasso(BaseEstimator, RegressorMixin):
 
         w = np.ones(n_positions)
 
+        """
         objective = lambda W: np.sum((Y - X @ W) ** 2) / (
             2 * n_samples
         ) + self.alpha * norm_l2_1(W, self.n_orient, copy=False)
+        """
+
+        objective = lambda W: np.sum((Y - X @ W) ** 2) / (
+            2 * n_samples
+        ) + self.alpha * np.sum(np.sqrt(norm(W, axis=1)))
 
         for l in range(self.n_iterations):
             # Trick: rescaling the weights

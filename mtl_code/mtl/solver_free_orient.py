@@ -5,12 +5,12 @@ from sklearn.base import BaseEstimator, RegressorMixin
 from sklearn.utils import check_X_y, check_array
 from sklearn.utils.validation import check_is_fitted
 
-from solver_lasso.utils import (
-    get_duality_gap_mtl_as,
-    primal_mtl_as,
+from mtl.utils_datasets import (
+    get_duality_gap_mtl,
+    primal_mtl,
     groups_norm2,
-    get_dgemm,
     sum_squared,
+    get_dgemm,
 )
 
 
@@ -41,6 +41,10 @@ class MultiTaskLassoOrientation(BaseEstimator, RegressorMixin):
     tol: float, default=1e-8
         Gap threshold to stop the solver.
 
+    warm_start: bool, default=True
+        Starts fitting with previously fitted regression
+        coefficients.
+
     accelerated: bool, default=True
         Use Anderson acceleration to speed up convergence.
 
@@ -69,16 +73,18 @@ class MultiTaskLassoOrientation(BaseEstimator, RegressorMixin):
         alpha,
         n_orient=3,
         max_iter=2000,
-        tol=1e-8,
+        tol=1e-4,
+        warm_start=True,
         accelerated=True,
         K=5,
-        active_set_size=50,
-        verbose=False,
+        active_set_size=10,
+        verbose=True,
     ):
         self.alpha = alpha
         self.n_orient = n_orient
         self.max_iter = max_iter
         self.tol = tol
+        self.warm_start = warm_start
         self.accelerated = accelerated
         self.K = K
         self.active_set_size = active_set_size
@@ -129,7 +135,17 @@ class MultiTaskLassoOrientation(BaseEstimator, RegressorMixin):
         active_set[new_active_idx] = True
         as_size = np.sum(active_set)
 
-        coef_init = None
+        highest_d_obj = -np.inf
+
+        if self.warm_start and self.coef_ is not None:
+            if self.coef_.shape != (n_features, n_times):
+                raise ValueError(
+                    f"Wrong dimension for initialized coefficients. "
+                    + f"Got {self.coef_shape}. Expected {(n_features, n_times)}"
+                )
+            coef_init = self.coef_
+        else:
+            coef_init = None
 
         for k in range(self.max_iter):
             lipschitz_consts_tmp = lipschitz_consts[
@@ -143,9 +159,12 @@ class MultiTaskLassoOrientation(BaseEstimator, RegressorMixin):
             active_set[active_set] = as_.copy()
             idx_old_active_set = np.where(active_set)[0]
 
-            gap, p_obj, d_obj = get_duality_gap_mtl_as(
+            gap, p_obj, d_obj = get_duality_gap_mtl(
                 X, Y, coef, active_set, self.alpha, self.n_orient
             )
+
+            highest_d_obj = max(highest_d_obj, d_obj)
+            gap = p_obj - highest_d_obj
 
             self.gap_history_.append(gap)
 
@@ -157,7 +176,8 @@ class MultiTaskLassoOrientation(BaseEstimator, RegressorMixin):
                 )
 
             if gap < self.tol:
-                print("Convergence reached!")
+                if self.verbose:
+                    print("Convergence reached!")
                 break
 
             if k < (self.max_iter - 1):
@@ -176,7 +196,7 @@ class MultiTaskLassoOrientation(BaseEstimator, RegressorMixin):
 
                 active_set[new_active_idx] = True
                 idx_active_set = np.where(active_set)[0]
-                as_size = np.where(active_set)[0]
+                as_size = np.sum(active_set)
                 coef_init = np.zeros((as_size, n_times), dtype=coef.dtype)
                 idx = np.searchsorted(idx_active_set, idx_old_active_set)
                 coef_init[idx] = coef
@@ -306,7 +326,7 @@ class MultiTaskLassoOrientation(BaseEstimator, RegressorMixin):
                     coef_j[:] = coef_j_new
                     active_set[idx] = True
 
-            gap, p_obj, d_obj = get_duality_gap_mtl_as(
+            gap, p_obj, d_obj = get_duality_gap_mtl(
                 X, Y, coef[active_set], active_set, self.alpha, self.n_orient
             )
             self.gap_history_.append(gap)
@@ -338,7 +358,7 @@ class MultiTaskLassoOrientation(BaseEstimator, RegressorMixin):
 
                         active_set_acc = norm(coef_acc, axis=1) != 0
 
-                        p_obj_acc = primal_mtl_as(
+                        p_obj_acc = primal_mtl(
                             X,
                             Y,
                             coef_acc[active_set_acc],

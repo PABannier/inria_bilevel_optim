@@ -1,7 +1,88 @@
+import functools
+
 import numpy as np
 from numpy.linalg import norm
 
 import matplotlib.pyplot as plt
+
+
+@functools.lru_cache(None)
+def get_dgemm():
+    from scipy import linalg
+
+    return linalg.get_blas_funcs("gemm", (np.empty(0, np.float64),))
+
+
+def norm_l2_1(X, n_orient, copy=True):
+    if X.size == 0:
+        return 0.0
+    if copy:
+        X = X.copy()
+    return np.sum(np.sqrt(groups_norm2(X, n_orient)))
+
+
+def norm_l2_inf(X, n_orient, copy=True):
+    if X.size == 0:
+        return 0.0
+    if copy:
+        X = X.copy()
+    return np.sqrt(np.max(groups_norm2(X, n_orient)))
+
+
+def sum_squared(X):
+    X_flat = X.ravel(order="F" if np.isfortran(X) else "C")
+    return np.dot(X_flat, X_flat)
+
+
+def groups_norm2(A, n_orient=1):
+    """Compute squared L2 norms of groups inplace."""
+    n_positions = A.shape[0] // n_orient
+    return np.sum(np.power(A, 2, A).reshape(n_positions, -1), axis=1)
+
+
+def primal_mtl(X, Y, coef, active_set, alpha, n_orient=1):
+    """Primal objective function for multi-task
+    LASSO
+    """
+    Y_hat = np.dot(X[:, active_set], coef)
+    R = Y - Y_hat
+    penalty = norm_l2_1(coef, n_orient, copy=True)
+    nR2 = sum_squared(R)
+    p_obj = 0.5 * nR2 + alpha * penalty
+    return p_obj
+
+
+def dual_mtl(X, Y, coef, active_set, alpha, n_orient=1):
+    """Dual objective function for multi-task
+    LASSO
+    """
+    Y_hat = np.dot(X[:, active_set], coef)
+    R = Y - Y_hat
+    dual_norm = norm_l2_inf(np.dot(X.T, R), n_orient, copy=False)
+    scaling = alpha / dual_norm
+    scaling = min(scaling, 1.0)
+    d_obj = (scaling - 0.5 * (scaling ** 2)) * nR2 + scaling * np.sum(
+        R * Y_hat
+    )
+    return d_obj
+
+
+def get_duality_gap_mtl(X, Y, coef, active_set, alpha, n_orient=1):
+    Y_hat = np.dot(X[:, active_set], coef)
+    R = Y - Y_hat
+    penalty = norm_l2_1(coef, n_orient, copy=True)
+    nR2 = sum_squared(R)
+    p_obj = 0.5 * nR2 + alpha * penalty
+
+    dual_norm = norm_l2_inf(np.dot(X.T, R), n_orient, copy=False)
+    scaling = alpha / dual_norm
+    scaling = min(scaling, 1.0)
+    d_obj = (scaling - 0.5 * (scaling ** 2)) * nR2 + scaling * np.sum(
+        R * Y_hat
+    )
+
+    gap = p_obj - d_obj
+    return gap, p_obj, d_obj
 
 
 def compute_alpha_max(X, Y):

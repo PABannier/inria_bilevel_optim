@@ -71,4 +71,4 @@ def test_sparsity(n_orient, accelerated):
 
     estimator.fit(X, Y)
 
-    assert n_features - estimator.coef_.shape[0] > 10
+    assert np.sum(norm(estimator.coef_, axis=1) == 0) > 10

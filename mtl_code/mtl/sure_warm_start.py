@@ -8,7 +8,7 @@ from sklearn.utils import check_random_state, check_X_y
 
 from celer import MultiTaskLasso
 
-from solver_lasso.solver_free_orient import MultiTaskLassoOrientation
+from mtl.solver_free_orient import MultiTaskLassoOrientation
 
 
 class SUREForReweightedMultiTaskLasso:
@@ -73,7 +73,11 @@ class SUREForReweightedMultiTaskLasso:
         X_w = X / w[np.newaxis, :]
         regressor.fit(X_w, Y)
 
-        coef = (regressor.coef_ / w).T
+        if self.n_orient == 1:
+            coef = (regressor.coef_ / w).T
+        else:
+            coef = (regressor.coef_.T / w).T
+
         w = self.penalty(coef)
 
         return coef, w

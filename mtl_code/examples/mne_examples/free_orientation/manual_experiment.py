@@ -100,6 +100,9 @@ def apply_solver(solver, evoked, forward, noise_cov, loose=0.2, depth=0.8):
     M = np.dot(whitener, M)
 
     n_orient = 1 if is_fixed_orient(forward) else 3
+    print("=" * 20)
+    print("Number of orientations:", n_orient)
+    print("=" * 20)
     X, active_set = solver(M, gain, n_orient)
     X = _reapply_source_weighting(X, source_weighting, active_set)
 
@@ -153,7 +156,7 @@ def solver(M, G, n_orient=1):
 
 
 if __name__ == "__main__":
-    loose, depth = 0, 0.9
+    loose, depth = 0.9, 0.9
     (
         evoked,
         forward,
@@ -168,9 +171,9 @@ if __name__ == "__main__":
         solver, evoked, forward, noise_cov, loose, depth
     )
 
-    print("=" * 10)
+    print("=" * 20)
     print("Explained variance:", norm(residual.data) / norm(evoked.data))
-    print("=" * 10)
+    print("=" * 20)
 
     plot_sparse_source_estimates(
         forward["src"], stc, bgcolor=(1, 1, 1), opacity=0.1

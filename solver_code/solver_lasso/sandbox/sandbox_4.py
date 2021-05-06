@@ -37,7 +37,7 @@ def _get_dgemm():
 
 if __name__ == "__main__":
     MAX_ITER = 2000
-    TOL = 1e-8
+    TOL = 1e-4
     K = 5
     N_ORIENT = 3
 
@@ -52,7 +52,7 @@ if __name__ == "__main__":
     )
 
     alpha_max = norm_l2_inf(np.dot(X.T, Y), N_ORIENT, copy=False)
-    alpha = alpha_max * 0.5
+    alpha = alpha_max * 0.01
 
     start = time.time()
 
@@ -79,6 +79,7 @@ if __name__ == "__main__":
     active_set[new_active_idx] = True
     as_size = np.sum(active_set)
 
+    highest_d_obj = -np.inf
     coef_init = None
 
     # ============== MIXED NORM SOLVER BCD ==============
@@ -233,6 +234,9 @@ if __name__ == "__main__":
         gap, p_obj, d_obj = get_duality_gap_mtl_as(
             X, Y, coef, active_set, alpha, N_ORIENT
         )
+
+        highest_d_obj = max(d_obj, highest_d_obj)
+        gap = p_obj - highest_d_obj
 
         gap_history_.append(gap)
 

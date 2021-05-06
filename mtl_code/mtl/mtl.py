@@ -6,7 +6,7 @@ from sklearn.utils.validation import check_X_y, check_is_fitted, check_array
 from sklearn.utils import check_random_state
 
 from celer import MultiTaskLasso
-from solver_lasso.solver_free_orient import MultiTaskLassoOrientation
+from mtl.solver_free_orient import MultiTaskLassoOrientation
 
 
 class ReweightedMultiTaskLasso(BaseEstimator, RegressorMixin):
@@ -88,6 +88,7 @@ class ReweightedMultiTaskLasso(BaseEstimator, RegressorMixin):
                 warm_start=self.warm_start,
                 tol=self.tol,
             )
+            self.transpose = True  # Celer output weights (n_times, n_features)
         elif self.n_orient > 1:
             self.regressor = MultiTaskLassoOrientation(
                 alpha=alpha,
@@ -95,6 +96,7 @@ class ReweightedMultiTaskLasso(BaseEstimator, RegressorMixin):
                 tol=self.tol,
                 warm_start=self.warm_start,
             )
+            self.transpose = False
         else:
             raise ValueError(
                 "Number of orientations must be strictly positive. "
@@ -132,7 +134,10 @@ class ReweightedMultiTaskLasso(BaseEstimator, RegressorMixin):
             self.regressor.fit(X_w, Y)
 
             # Trick: "de-scaling" the weights
-            coef_hat = (self.regressor.coef_ / w).T  # (n_features, n_tasks)
+            if self.transpose:
+                coef_hat = (self.regressor.coef_ / w).T
+            else:
+                coef_hat = (self.regressor.coef_.T / w).T
 
             # Updating the weights
             w = self.penalty(coef_hat)

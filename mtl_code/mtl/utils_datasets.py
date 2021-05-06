@@ -30,15 +30,10 @@ def norm_l2_inf(X, n_orient, copy=True):
 
 
 def compute_alpha_max(X, Y, n_orient=1):
-    if len(Y.shape) == 1:
+    if Y.ndim == 1:
         return np.max(np.abs(X.T @ Y)) / len(X)
     else:
-        if n_orient == 1:
-            B = X.T @ Y
-            b = norm(B, axis=1)
-            return np.max(b) / X.shape[0]
-        else:
-            return norm_l2_inf(np.dot(X.T, Y), n_orient, copy=False)
+        return norm_l2_inf(np.dot(X.T, Y), n_orient, copy=False) / len(X)
 
 
 def sum_squared(X):

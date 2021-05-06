@@ -123,15 +123,11 @@ class ReweightedMultiTaskLasso(BaseEstimator, RegressorMixin):
 
         w = np.ones(n_positions)
 
-        """
         objective = lambda W: np.sum((Y - X @ W) ** 2) / (
             2 * n_samples
-        ) + self.alpha * norm_l2_1(W, self.n_orient, copy=False)
-        """
-
-        objective = lambda W: np.sum((Y - X @ W) ** 2) / (
-            2 * n_samples
-        ) + self.alpha * np.sum(np.sqrt(norm(W, axis=1)))
+        ) + self.alpha * np.sum(
+            np.sqrt(norm(W.reshape(n_positions, -1), axis=1))
+        )
 
         for l in range(self.n_iterations):
             # Trick: rescaling the weights
@@ -145,7 +141,7 @@ class ReweightedMultiTaskLasso(BaseEstimator, RegressorMixin):
                 coef_hat = (self.regressor.coef_ / w).T
             else:
                 coef_hat = (
-                    self.regressor.coef_.T / np.repeat(w, self.n_orient)
+                    self.regressor.coef_.T / np.tile(w, (1, self.n_orient)).ravel()
                 ).T
 
             # Updating the weights
@@ -189,8 +185,7 @@ class ReweightedMultiTaskLasso(BaseEstimator, RegressorMixin):
         penalty : array of shape (n_positions,)
             Penalty vector.
         """
-        coef = coef.copy()
         n_positions = coef.shape[0] // self.n_orient
-        coef = coef.reshape(n_positions, self.n_orient, -1)
-        m_norm = np.sqrt(norm(norm(coef, axis=1), axis=-1))
+        coef = coef.reshape(n_positions, -1)
+        m_norm = np.sqrt(norm(coef, axis=1))
         return 1 / (2 * m_norm + np.finfo(float).eps)

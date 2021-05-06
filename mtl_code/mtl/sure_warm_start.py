@@ -141,6 +141,10 @@ class SUREForReweightedMultiTaskLasso:
                 coef1_0[j] = regressor1.fit(X, Y).coef_
                 coef2_0[j] = regressor2.fit(X, Y_eps).coef_
 
+            import ipdb
+
+            # ipdb.set_trace()
+
         regressor1.warm_start = False
         regressor2.warm_start = False
 
@@ -169,6 +173,8 @@ class SUREForReweightedMultiTaskLasso:
                     coefs_2_[j][mask2], w2[mask2] = self._reweight_op(
                         regressor2, X[:, mask2], Y_eps, w2[mask2]
                     )
+
+            # ipdb.set_trace()
 
         return coefs_1_, coefs_2_
 

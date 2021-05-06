@@ -8,6 +8,8 @@ from sklearn.utils import check_random_state
 from celer import MultiTaskLasso
 from mtl.solver_free_orient import MultiTaskLassoOrientation
 
+from mtl.utils_datasets import primal_mtl, norm_l2_1, groups_norm2
+
 
 class ReweightedMultiTaskLasso(BaseEstimator, RegressorMixin):
     """Reweighted Multi-Task LASSO.
@@ -41,7 +43,7 @@ class ReweightedMultiTaskLasso(BaseEstimator, RegressorMixin):
 
     Attributes
     ----------
-    coef_ : np.ndarray of shape (n_features, n_tasks)
+    coef_ : array of shape (n_features, n_tasks)
         Parameter matrix of coefficients for the Multi-Task LASSO.
 
     loss_history_ : list
@@ -74,9 +76,7 @@ class ReweightedMultiTaskLasso(BaseEstimator, RegressorMixin):
         if penalty:
             self.penalty = penalty
         else:
-            self.penalty = lambda u: 1 / (
-                2 * np.sqrt(np.linalg.norm(u, axis=1)) + np.finfo(float).eps
-            )
+            self.penalty = self._penalty
 
         self.coef_ = None
         self.loss_history_ = []
@@ -88,7 +88,7 @@ class ReweightedMultiTaskLasso(BaseEstimator, RegressorMixin):
                 warm_start=self.warm_start,
                 tol=self.tol,
             )
-            self.transpose = True  # Celer output weights (n_times, n_features)
+
         elif self.n_orient > 1:
             self.regressor = MultiTaskLassoOrientation(
                 alpha=alpha,
@@ -96,7 +96,7 @@ class ReweightedMultiTaskLasso(BaseEstimator, RegressorMixin):
                 tol=self.tol,
                 warm_start=self.warm_start,
             )
-            self.transpose = False
+
         else:
             raise ValueError(
                 "Number of orientations must be strictly positive. "
@@ -111,33 +111,36 @@ class ReweightedMultiTaskLasso(BaseEstimator, RegressorMixin):
 
         Parameters
         ----------
-        X : np.ndarray of shape (n_samples, n_features)
+        X : array of shape (n_samples, n_features)
             Design matrix.
 
-        Y : np.ndarray of shape (n_samples, n_tasks)
+        Y : array of shape (n_samples, n_tasks)
             Target matrix.
         """
         X, Y = check_X_y(X, Y, multi_output=True)
         n_samples, n_features = X.shape
+        n_positions = n_features // self.n_orient
 
-        w = np.ones(n_features)
+        w = np.ones(n_positions)
 
         objective = lambda W: np.sum((Y - X @ W) ** 2) / (
             2 * n_samples
-        ) + self.alpha * np.sum(np.sqrt(norm(W, axis=1)))
+        ) + self.alpha * norm_l2_1(W, self.n_orient, copy=False)
 
         for l in range(self.n_iterations):
             # Trick: rescaling the weights
-            X_w = X / w[np.newaxis, :]
+            X_w = X / np.repeat(w[np.newaxis, :], self.n_orient)
 
             # Solving weighted l1 minimization problem
             self.regressor.fit(X_w, Y)
 
             # Trick: "de-scaling" the weights
-            if self.transpose:
+            if self.n_orient == 1:
                 coef_hat = (self.regressor.coef_ / w).T
             else:
-                coef_hat = (self.regressor.coef_.T / w).T
+                coef_hat = (
+                    self.regressor.coef_.T / np.repeat(w, self.n_orient)
+                ).T
 
             # Updating the weights
             w = self.penalty(coef_hat)
@@ -155,10 +158,33 @@ class ReweightedMultiTaskLasso(BaseEstimator, RegressorMixin):
 
         Parameters
         ----------
-        X : np.ndarray of shape (n_samples, n_features)
+        X : array of shape (n_samples, n_features)
             Design matrix for inference.
         """
         check_is_fitted(self)
         X = check_array(X)
 
         return X @ self.coef_
+
+    def _penalty(self, coef):
+        """Defines a non-convex penalty for reweighting
+        the design matrix from the regression coefficients.
+
+        Takes into account the number of orientations of the
+        problem.
+
+        Parameters
+        ----------
+        coef : array of shape (n_features, n_times)
+            Coefficient matrix.
+
+        Returns
+        -------
+        penalty : array of shape (n_positions,)
+            Penalty vector.
+        """
+        coef = coef.copy()
+        n_positions = coef.shape[0] // self.n_orient
+        coef = coef.reshape(n_positions, self.n_orient, -1)
+        m_norm = np.sqrt(norm(norm(coef, axis=1), axis=-1))
+        return 1 / (2 * m_norm + np.finfo(float).eps)

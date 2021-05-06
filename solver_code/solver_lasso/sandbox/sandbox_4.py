@@ -170,8 +170,6 @@ if __name__ == "__main__":
                 highest_d_obj = max(d_obj, highest_d_obj)
                 gap = p_obj - highest_d_obj
 
-                gap_history_.append(gap)
-
                 print(
                     f"[{iter_idx+1}/{MAX_ITER}] p_obj {p_obj:.5f} :: d_obj {d_obj:.5f} :: d_gap {gap:.5f}"
                 )
@@ -244,7 +242,9 @@ if __name__ == "__main__":
         gap_history_.append(gap)
 
         print(
-            f"[{k+1}/{MAX_ITER}] p_obj {p_obj:.5f} :: d_obj {d_obj:.5f} :: d_gap {gap:.5f} :: n_active_start {as_size // N_ORIENT} :: n_active_end {np.sum(active_set) // N_ORIENT}"
+            f"[{k+1}/{MAX_ITER}] p_obj {p_obj:.5f} :: d_obj {d_obj:.5f} "
+            + f":: d_gap {gap:.5f} :: n_active_start {as_size // N_ORIENT} "
+            + f":: n_active_end {np.sum(active_set) // N_ORIENT}"
         )
 
         if gap < TOL:

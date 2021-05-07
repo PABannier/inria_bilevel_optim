@@ -130,7 +130,9 @@ def solver(M, G, n_orient=1):
         print("Alpha max:", alpha_max)
 
         alphas = np.geomspace(alpha_max, alpha_max / 10, num=15)
-        alphas = alphas * len(G)
+
+        if n_orient == 3:
+            alphas = G.shape[0] * alphas
 
         import time
 

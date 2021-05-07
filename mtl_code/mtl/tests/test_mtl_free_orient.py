@@ -51,64 +51,14 @@ def test_gap_decreasing(
 
     estimator.fit(X, Y)
 
-    assert estimator.gap_history_[0] > estimator.gap_history_[-1]
-
-
-@pytest.mark.parametrize("n_samples, n_features", DATA_SIZE)
-@pytest.mark.parametrize("n_orient", N_ORIENTS)
-@pytest.mark.parametrize("accelerated", ACCELERATED)
-@pytest.mark.parametrize("alpha_frac", ALPHA_FRAC)
-def test_primal_decreasing_every_iteration(
-    n_samples, n_features, n_orient, accelerated, alpha_frac
-):
-    X, Y, _, _ = simulate_data(
-        n_samples=n_samples,
-        n_features=n_features,
-        n_tasks=7,
-        nnz=3,
-        random_state=2000,
-    )
-
-    alpha_max = norm_l2_inf(X.T @ Y, n_orient, copy=False)
-    alpha = alpha_max * alpha_frac
-
-    estimator = MultiTaskLassoOrientation(
-        alpha, n_orient, accelerated=accelerated
-    )
-
-    estimator.fit(X, Y)
-
-    diffs = np.diff(estimator.primal_history_)
-    assert np.all(diffs < 1e-8)
-
-
-@pytest.mark.parametrize("n_samples, n_features", DATA_SIZE)
-@pytest.mark.parametrize("n_orient", N_ORIENTS)
-@pytest.mark.parametrize("accelerated", ACCELERATED)
-@pytest.mark.parametrize("alpha_frac", ALPHA_FRAC)
-def test_kkt_conditions(
-    n_samples, n_features, n_orient, accelerated, alpha_frac
-):
-    X, Y, _, _ = simulate_data(
-        n_samples=n_samples,
-        n_features=n_features,
-        n_tasks=7,
-        nnz=3,
-        random_state=20,
-    )
-
-    alpha_max = norm_l2_inf(X.T @ Y, n_orient, copy=False)
-    alpha = alpha_max * alpha_frac
-
-    estimator = MultiTaskLassoOrientation(
-        alpha, n_orient, accelerated=accelerated
-    )
-    estimator.fit(X, Y)
-
     XR = X.T @ (Y - X @ estimator.coef_)
     active_set = norm(estimator.coef_, axis=1) != 0
 
-    assert np.all(np.abs(XR) <= alpha + 1e-12)
+    assert np.all(np.abs(XR) <= alpha + 1e-12), "KKT check"
+    assert estimator.gap_history_[0] >= estimator.gap_history_[-1]
+    assert estimator.gap_history_[-1] <= estimator.tol
+    assert np.all(np.diff(estimator.gap_history_) <= 0)
+    assert np.all(np.diff(estimator.primal_history_) <= 0)
 
 
 @pytest.mark.parametrize("n_orient", N_ORIENTS)
@@ -158,7 +108,8 @@ def test_single_task_fixed_orient(
     alpha = alpha_max * alpha_frac
 
     estimator1 = MultiTaskLassoOrientation(
-        alpha, 1, accelerated=accelerated, tol=1e-12)
+        alpha, 1, accelerated=accelerated, tol=1e-12
+    )
     estimator2 = Lasso(alpha / len(X), fit_intercept=False, tol=1e-12)
 
     estimator1.fit(X, y)
@@ -212,6 +163,8 @@ def test_multi_task_fixed_orient(
 if __name__ == "__main__":
 
     for (n_samples, n_features), n_orient, accelerated, alpha_frac in product(
-            DATA_SIZE, N_ORIENTS, ACCELERATED, ALPHA_FRAC):
+        DATA_SIZE, N_ORIENTS, ACCELERATED, ALPHA_FRAC
+    ):
         test_multi_task_fixed_orient(
-            n_samples, n_features, n_orient, accelerated, alpha_frac)
+            n_samples, n_features, n_orient, accelerated, alpha_frac
+        )

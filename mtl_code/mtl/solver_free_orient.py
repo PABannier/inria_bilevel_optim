@@ -344,7 +344,7 @@ class MultiTaskLassoOrientation(BaseEstimator, RegressorMixin):
             highest_d_obj = max(d_obj, highest_d_obj)
             gap = p_obj - highest_d_obj
 
-            self.gap_history_.append(gap)
+            # self.gap_history_.append(gap)
 
             if self.verbose:
                 print(

@@ -10,6 +10,8 @@ from mtl.solver_free_orient import MultiTaskLassoOrientation
 
 from mtl.utils_datasets import primal_mtl, norm_l2_1, groups_norm2
 
+import ipdb
+
 
 class ReweightedMultiTaskLasso(BaseEstimator, RegressorMixin):
     """Reweighted Multi-Task LASSO.
@@ -123,14 +125,22 @@ class ReweightedMultiTaskLasso(BaseEstimator, RegressorMixin):
 
         w = np.ones(n_positions)
 
-        objective = lambda W: np.sum((Y - X @ W) ** 2) / (
-            2 * n_samples
-        ) + self.alpha * np.sum(
-            np.sqrt(norm(W.reshape(n_positions, -1), axis=1))
-        )
+        if self.n_orient == 1:
+            objective = lambda W: np.sum((Y - X @ W) ** 2) / (
+                2 * n_samples
+            ) + self.alpha * np.sum(
+                np.sqrt(norm(W.reshape(n_positions, -1), axis=1))
+            )
+        else:
+            objective = lambda W: np.sum((Y - X @ W) ** 2) / (
+                2
+            ) + self.alpha * np.sum(
+                np.sqrt(norm(W.reshape(n_positions, -1), axis=1))
+            )
 
         for l in range(self.n_iterations):
             # Trick: rescaling the weights
+            # ipdb.set_trace()
             X_w = X / np.repeat(w[np.newaxis, :], self.n_orient)
 
             # Solving weighted l1 minimization problem

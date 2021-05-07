@@ -1,4 +1,5 @@
 import pytest
+from itertools import product
 
 import numpy as np
 from numpy.linalg import norm
@@ -70,3 +71,10 @@ def test_decreasing_loss_every_step(
     diffs = np.diff(regressor.loss_history_)
     print(diffs[diffs > 1e-8])
     np.testing.assert_array_less(diffs, 1e-5)
+
+if __name__ == "__main__":
+
+    for n_orient, (n_samples, n_features), alpha_frac in product(
+            [3], DATA_SIZE, ALPHA_FRAC):
+        test_decreasing_loss_every_step(
+            n_orient, n_samples, n_features, alpha_frac)

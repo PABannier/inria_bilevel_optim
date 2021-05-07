@@ -101,3 +101,8 @@ def test_reconstruction():
     nnz_reconstructed = np.count_nonzero(np.count_nonzero(coef_hat, axis=1))
 
     assert np.abs(nnz_reconstructed - 3) <= 1
+
+
+if __name__ == "__main__":
+    for cor in corr_coeffs:
+        test_decreasing_loss_every_step_free_orientation(cor)

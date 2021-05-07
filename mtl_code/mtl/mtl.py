@@ -132,7 +132,6 @@ class ReweightedMultiTaskLasso(BaseEstimator, RegressorMixin):
         for l in range(self.n_iterations):
             # Trick: rescaling the weights
             X_w = X / np.repeat(w[np.newaxis, :], self.n_orient)
-            # X_w = X / np.tile(w, (1, self.n_orient)).ravel()
 
             # Solving weighted l1 minimization problem
             self.regressor.fit(X_w, Y)
@@ -144,7 +143,6 @@ class ReweightedMultiTaskLasso(BaseEstimator, RegressorMixin):
                 coef_hat = (
                     self.regressor.coef_.T
                     / np.repeat(w[np.newaxis, :], self.n_orient)
-                    # / np.tile(w, (1, self.n_orient)).ravel()
                 ).T
 
             # Updating the weights

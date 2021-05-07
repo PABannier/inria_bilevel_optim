@@ -91,6 +91,7 @@ class MultiTaskLassoOrientation(BaseEstimator, RegressorMixin):
         self.verbose = verbose
 
         self.gap_history_ = []
+        self.primal_history_ = []
         self.coef_ = None
         self.active_set_ = None
 
@@ -173,6 +174,7 @@ class MultiTaskLassoOrientation(BaseEstimator, RegressorMixin):
             gap = p_obj - highest_d_obj
 
             self.gap_history_.append(gap)
+            self.primal_history_.append(p_obj)
 
             if self.verbose:
                 print(

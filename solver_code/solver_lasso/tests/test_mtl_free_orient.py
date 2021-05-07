@@ -20,6 +20,29 @@ from solver_lasso.utils import norm_l2_inf
 # Mathematical tests
 ####################
 
+if __name__ == "__main__":
+    X, Y, _, _ = simulate_data(
+        n_samples=10, n_features=15, n_tasks=7, nnz=3, random_state=0
+    )
+
+    n_orient = 3
+    accelerated = False
+
+    alpha_max = norm_l2_inf(np.dot(X.T, Y), n_orient, copy=False)
+    alpha = alpha_max * 0.1
+
+    estimator = MultiTaskLassoOrientation(
+        alpha, n_orient, accelerated=accelerated
+    )
+
+    estimator.fit(X, Y)
+
+    plt.plot(np.log10(estimator.gap_history_))
+    plt.show()
+
+
+"""
+
 N_ORIENTS = [1, 3]
 ACCELERATED = [False, True]
 
@@ -138,3 +161,4 @@ def test_multi_task_fixed_orient(n_orient, accelerated):
         final_coef_[active_set] = coef
 
     np.testing.assert_allclose(estimator.coef_, final_coef_)
+"""

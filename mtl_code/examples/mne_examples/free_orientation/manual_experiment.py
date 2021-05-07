@@ -130,6 +130,7 @@ def solver(M, G, n_orient=1):
         print("Alpha max:", alpha_max)
 
         alphas = np.geomspace(alpha_max, alpha_max / 10, num=15)
+        alphas = alphas * len(G)
 
         import time
 
@@ -146,7 +147,7 @@ def solver(M, G, n_orient=1):
         print("Best alpha:", best_alpha)
 
         # Refitting
-        estimator = ReweightedMultiTaskLasso(best_alpha, n_orient)
+        estimator = ReweightedMultiTaskLasso(best_alpha, n_orient=n_orient)
         estimator.fit(G, M)
 
     X = estimator.coef_

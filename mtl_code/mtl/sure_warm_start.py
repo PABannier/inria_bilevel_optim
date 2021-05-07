@@ -75,7 +75,7 @@ class SUREForReweightedMultiTaskLasso:
             coef = (regressor.coef_ / w).T
         else:
             coef = (
-                regressor.coef_.T / np.tile(w, (1, self.n_orient)).ravel()
+                regressor.coef_.T / np.repeat(w[np.newaxis, :], self.n_orient)
             ).T
 
         w = self.penalty(coef)
@@ -161,22 +161,20 @@ class SUREForReweightedMultiTaskLasso:
                 mask1 = w1 != 1.0 / np.finfo(float).eps
                 mask2 = w2 != 1.0 / np.finfo(float).eps
 
-                mask1_tiled = np.tile(mask1, (1, self.n_orient)).ravel()
-                mask2_tiled = np.tile(mask2, (1, self.n_orient)).ravel()
+                mask1_full = np.repeat(mask1, self.n_orient)
+                mask2_full = np.repeat(mask2, self.n_orient)
 
-                coefs_1_[j][~mask1_tiled] = 0.0
-                coefs_2_[j][~mask2_tiled] = 0.0
+                coefs_1_[j][~mask1_full] = 0.0
+                coefs_2_[j][~mask2_full] = 0.0
 
                 if mask1.sum():
-                    coefs_1_[j][mask1_tiled], w1[mask1] = self._reweight_op(
-                        regressor1, X[:, mask1_tiled], Y, w1[mask1]
+                    coefs_1_[j][mask1_full], w1[mask1] = self._reweight_op(
+                        regressor1, X[:, mask1_full], Y, w1[mask1]
                     )
                 if mask2.sum():
-                    coefs_2_[j][mask2_tiled], w2[mask2] = self._reweight_op(
-                        regressor2, X[:, mask2_tiled], Y_eps, w2[mask2]
+                    coefs_2_[j][mask2_full], w2[mask2] = self._reweight_op(
+                        regressor2, X[:, mask2_full], Y_eps, w2[mask2]
                     )
-
-            # ipdb.set_trace()
 
         return coefs_1_, coefs_2_
 

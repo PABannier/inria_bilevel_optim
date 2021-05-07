@@ -57,35 +57,6 @@ def test_gap_decreasing(
 @pytest.mark.parametrize("n_orient", N_ORIENTS)
 @pytest.mark.parametrize("accelerated", ACCELERATED)
 @pytest.mark.parametrize("alpha_frac", ALPHA_FRAC)
-def test_gap_decreasing_every_iteration(
-    n_samples, n_features, n_orient, accelerated, alpha_frac
-):
-    X, Y, _, _ = simulate_data(
-        n_samples=n_samples,
-        n_features=n_features,
-        n_tasks=7,
-        nnz=3,
-        random_state=42,
-    )
-
-    alpha_max = norm_l2_inf(np.dot(X.T, Y), n_orient, copy=False)
-    alpha = alpha_max * alpha_frac
-
-    estimator = MultiTaskLassoOrientation(
-        alpha, n_orient, accelerated=accelerated
-    )
-
-    estimator.fit(X, Y)
-
-    diffs = np.diff(estimator.gap_history_)
-    print(diffs[diffs > 1e-12])
-    np.testing.assert_array_less(diffs, 1e-12)
-
-
-@pytest.mark.parametrize("n_samples, n_features", DATA_SIZE)
-@pytest.mark.parametrize("n_orient", N_ORIENTS)
-@pytest.mark.parametrize("accelerated", ACCELERATED)
-@pytest.mark.parametrize("alpha_frac", ALPHA_FRAC)
 def test_primal_decreasing_every_iteration(
     n_samples, n_features, n_orient, accelerated, alpha_frac
 ):

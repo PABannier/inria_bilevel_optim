@@ -34,7 +34,9 @@ def test_training_loss_decrease(n_orient, n_samples, n_features, alpha_frac):
     alpha_max = compute_alpha_max(X, Y)
     alpha = alpha_max * alpha_frac
 
-    regressor = ReweightedMultiTaskLasso(alpha, n_orient=n_orient)
+    regressor = ReweightedMultiTaskLasso(
+        alpha, n_orient=n_orient, tol=1e-6, n_iterations=5
+    )
     regressor.fit(X, Y)
 
     start_loss = regressor.loss_history_[0]
@@ -60,7 +62,9 @@ def test_decreasing_loss_every_step(
     alpha_max = compute_alpha_max(X, Y)
     alpha = alpha_max * alpha_frac
 
-    regressor = ReweightedMultiTaskLasso(alpha, n_orient=n_orient)
+    regressor = ReweightedMultiTaskLasso(
+        alpha, n_orient=n_orient, tol=1e-6, n_iterations=5
+    )
     regressor.fit(X, Y)
 
     diffs = np.diff(regressor.loss_history_)

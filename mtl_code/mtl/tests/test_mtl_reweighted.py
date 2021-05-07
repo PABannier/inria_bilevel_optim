@@ -75,7 +75,7 @@ def test_decreasing_loss_every_step_free_orientation(corr):
 
 
 ####################
-# Statistical tests
+# Statistics tests
 ####################
 
 

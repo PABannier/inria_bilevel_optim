@@ -42,9 +42,7 @@ class SUREForReweightedMultiTaskLasso:
         if penalty:
             self.penalty = penalty
         else:
-            self.penalty = lambda u: 1.0 / (
-                2 * np.sqrt(np.linalg.norm(u, axis=1)) + np.finfo(float).eps
-            )
+            self.penalty = self._penalty
 
     def get_val(self, X, Y):
         n_samples, n_tasks = Y.shape
@@ -70,13 +68,15 @@ class SUREForReweightedMultiTaskLasso:
         return best_sure_, best_alpha_
 
     def _reweight_op(self, regressor, X, Y, w):
-        X_w = X / w[np.newaxis, :]
+        X_w = X / np.repeat(w[np.newaxis, :], self.n_orient)
         regressor.fit(X_w, Y)
 
         if self.n_orient == 1:
             coef = (regressor.coef_ / w).T
         else:
-            coef = (regressor.coef_.T / w).T
+            coef = (
+                regressor.coef_.T / np.tile(w, (1, self.n_orient)).ravel()
+            ).T
 
         w = self.penalty(coef)
 
@@ -143,8 +143,6 @@ class SUREForReweightedMultiTaskLasso:
 
             import ipdb
 
-            # ipdb.set_trace()
-
         regressor1.warm_start = False
         regressor2.warm_start = False
 
@@ -162,16 +160,20 @@ class SUREForReweightedMultiTaskLasso:
             for _ in range(self.n_iterations - 1):
                 mask1 = w1 != 1.0 / np.finfo(float).eps
                 mask2 = w2 != 1.0 / np.finfo(float).eps
-                coefs_1_[j][~mask1] = 0.0
-                coefs_2_[j][~mask2] = 0.0
+
+                mask1_tiled = np.tile(mask1, (1, self.n_orient)).ravel()
+                mask2_tiled = np.tile(mask2, (1, self.n_orient)).ravel()
+
+                coefs_1_[j][~mask1_tiled] = 0.0
+                coefs_2_[j][~mask2_tiled] = 0.0
 
                 if mask1.sum():
-                    coefs_1_[j][mask1], w1[mask1] = self._reweight_op(
-                        regressor1, X[:, mask1], Y, w1[mask1]
+                    coefs_1_[j][mask1_tiled], w1[mask1] = self._reweight_op(
+                        regressor1, X[:, mask1_tiled], Y, w1[mask1]
                     )
                 if mask2.sum():
-                    coefs_2_[j][mask2], w2[mask2] = self._reweight_op(
-                        regressor2, X[:, mask2], Y_eps, w2[mask2]
+                    coefs_2_[j][mask2_tiled], w2[mask2] = self._reweight_op(
+                        regressor2, X[:, mask2_tiled], Y_eps, w2[mask2]
                     )
 
             # ipdb.set_trace()
@@ -182,3 +184,25 @@ class SUREForReweightedMultiTaskLasso:
         rng = check_random_state(self.random_state)
         self.eps = 2 * self.sigma / (n_samples ** 0.3)
         self.delta = rng.randn(n_samples, n_tasks)
+
+    def _penalty(self, coef):
+        """Defines a non-convex penalty for reweighting
+        the design matrix from the regression coefficients.
+
+        Takes into account the number of orientations
+        of the problem.
+
+        Parameters
+        ----------
+        coef : array of shape (n_features, n_times)
+            Coefficient matrix.
+
+        Returns
+        -------
+        penalty : array of shape (n_positions,)
+            Penalty vector.
+        """
+        n_positions = coef.shape[0] // self.n_orient
+        coef = coef.reshape(n_positions, -1)
+        m_norm = np.sqrt(norm(coef, axis=1))
+        return 1 / (2 * m_norm + np.finfo(float).eps)

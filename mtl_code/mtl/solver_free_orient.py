@@ -56,6 +56,13 @@ class MultiTaskLassoOrientation(BaseEstimator, RegressorMixin):
     active_set_size: int, default=50
         Size of active set increase at each iteration.
 
+    normalized_alpha: bool, default=True
+        This solver expects an unscaled alpha (no normalization
+        by the number of samples or tasks). If True, this solver
+        expects a scaled alpha and will unscale it on its own. If
+        False, this solver expects an unscaled alpha and won't
+        change it.
+
     verbose: bool, default=False
         Verbosity.
 
@@ -78,6 +85,7 @@ class MultiTaskLassoOrientation(BaseEstimator, RegressorMixin):
         accelerated=True,
         K=5,
         active_set_size=100,
+        normalized_alpha=True,
         verbose=False,
     ):
         self.alpha = alpha
@@ -88,6 +96,7 @@ class MultiTaskLassoOrientation(BaseEstimator, RegressorMixin):
         self.accelerated = accelerated
         self.K = K
         self.active_set_size = active_set_size
+        self.normalized_alpha = normalized_alpha
         self.verbose = verbose
 
         self.gap_history_ = []
@@ -111,6 +120,10 @@ class MultiTaskLassoOrientation(BaseEstimator, RegressorMixin):
             Target matrix.
         """
         X, Y = check_X_y(X, Y, multi_output=True)
+
+        # # If needed, unscale alpha by the number of samples
+        # if self.normalized_alpha:
+        #     self.alpha *= len(X)
 
         n_samples, n_features = X.shape
         n_times = Y.shape[1]

@@ -1,4 +1,5 @@
 from collections import defaultdict
+from itertools import product
 from tqdm import tqdm
 import time
 
@@ -140,8 +141,6 @@ class SUREForReweightedMultiTaskLasso:
             else:
                 coef1_0[j] = regressor1.fit(X, Y).coef_
                 coef2_0[j] = regressor2.fit(X, Y_eps).coef_
-
-            import ipdb
 
         regressor1.warm_start = False
         regressor2.warm_start = False

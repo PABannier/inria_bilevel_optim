@@ -79,8 +79,12 @@ class SURE:
             self.init_eps_and_delta(n_samples, n_tasks)
 
         # fit 2 models in Y and Y + epsilon * delta
-        model1 = self.estimator_factory(alpha, n_iterations, **estimator_kwargs)
-        model2 = self.estimator_factory(alpha, n_iterations, **estimator_kwargs)
+        model1 = self.estimator_factory(
+            alpha, n_iterations, **estimator_kwargs
+        )
+        model2 = self.estimator_factory(
+            alpha, n_iterations, **estimator_kwargs
+        )
         model1.fit(X, Y)
         coef1 = model1.coef_
         Y_eps = Y + self.eps * self.delta
@@ -96,8 +100,8 @@ class SURE:
         # compute the dof
         dof = (X @ (coef2 - coef1) * self.delta).sum() / self.eps
         # compute the SURE
-        sure = norm(Y - X @ coef1) ** 2
-        sure -= n_samples * n_tasks * self.sigma ** 2
+        df_term = norm(Y - X @ coef1) ** 2
+        sure = df_term - n_samples * n_tasks * self.sigma ** 2
         sure += 2 * dof * self.sigma ** 2
 
         return sure

@@ -50,3 +50,5 @@ mtl_code/examples/mne_examples/joblib/__main__--Users-pierre-antoine-Documents-i
 mtl_code/examples/mne_examples/joblib/__main__--Users-pierre-antoine-Documents-inria_bilevel_optim-mtl_code-examples-mne_solver-plot_residuals/solver/func_code.py
 mtl_code/examples/mne_examples/joblib/__main__--Users-pierre-antoine-Documents-inria_bilevel_optim-mtl_code-examples-mne_solver-noise_estimate_sensitivity/load_data/func_code.py
 mtl_code/examples/mne_examples/joblib/__main__--Users-pierre-antoine-Documents-inria_bilevel_optim-mtl_code-examples-mne_solver-plot_somato/load_data/func_code.py
+mtl_code/examples/mne_examples/free_orientation/joblib/__main__--Users-pierre-antoine-Documents-inria_bilevel_optim-mtl_code-examples-mne_examples-free_orientation-generate_reports/load_data/func_code.py
+mtl_code/examples/mne_examples/free_orientation/joblib/__main__--Users-pierre-antoine-Documents-inria_bilevel_optim-mtl_code-examples-mne_examples-free_orientation-generate_reports/solver/func_code.py

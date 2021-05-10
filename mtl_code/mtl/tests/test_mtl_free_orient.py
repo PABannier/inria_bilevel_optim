@@ -14,8 +14,11 @@ from celer import Lasso
 
 from mtl.simulated_data import simulate_data
 
-from mtl.solver_free_orient import MultiTaskLassoOrientation
-from mtl.utils_datasets import norm_l2_inf
+from mtl.solver_free_orient import (
+    MultiTaskLassoUnscaled,
+    MultiTaskLassoOrientation,
+)
+from mtl.utils_datasets import norm_l2_inf, compute_alpha_max
 
 ####################
 # Mathematical tests
@@ -45,11 +48,11 @@ def test_gap_decreasing(
     alpha_max = norm_l2_inf(np.dot(X.T, Y), n_orient, copy=False)
     alpha = alpha_max * alpha_frac
 
-    estimator = MultiTaskLassoOrientation(
+    estimator = MultiTaskLassoUnscaled(
         alpha, n_orient, accelerated=accelerated
     )
 
-    estimator.fit(X, Y)
+    estimator._fit(X, Y)
 
     XR = X.T @ (Y - X @ estimator.coef_)
     active_set = norm(estimator.coef_, axis=1) != 0
@@ -76,11 +79,11 @@ def test_sparsity(n_orient, accelerated):
     alpha_max = norm_l2_inf(np.dot(X.T, Y), n_orient, copy=False)
     alpha = alpha_max * 0.1
 
-    estimator = MultiTaskLassoOrientation(
+    estimator = MultiTaskLassoUnscaled(
         alpha, n_orient, accelerated=accelerated
     )
 
-    estimator.fit(X, Y)
+    estimator._fit(X, Y)
 
     assert np.sum(norm(estimator.coef_, axis=1) == 0) > 5
 
@@ -107,12 +110,12 @@ def test_single_task_fixed_orient(
     alpha_max = np.max(np.abs(X.T @ y))
     alpha = alpha_max * alpha_frac
 
-    estimator1 = MultiTaskLassoOrientation(
+    estimator1 = MultiTaskLassoUnscaled(
         alpha, 1, accelerated=accelerated, tol=1e-12
     )
     estimator2 = Lasso(alpha / len(X), fit_intercept=False, tol=1e-12)
 
-    estimator1.fit(X, y)
+    estimator1._fit(X, y)
     estimator2.fit(X, y)
 
     np.testing.assert_allclose(
@@ -138,7 +141,7 @@ def test_multi_task_fixed_orient(
     alpha_max = norm_l2_inf(X.T @ Y, n_orient, copy=False)
     alpha = alpha_max * alpha_frac
 
-    estimator = MultiTaskLassoOrientation(
+    estimator = MultiTaskLassoUnscaled(
         alpha,
         n_orient,
         accelerated=accelerated,
@@ -147,7 +150,7 @@ def test_multi_task_fixed_orient(
         max_iter=10000,
     )
 
-    estimator.fit(X, Y)
+    estimator._fit(X, Y)
 
     coef, active_set, gap_history = mixed_norm_solver(
         Y, X, alpha, n_orient=n_orient, debias=False, tol=1e-12, maxit=10000
@@ -158,13 +161,3 @@ def test_multi_task_fixed_orient(
         final_coef_[active_set] = coef
 
     np.testing.assert_allclose(estimator.coef_, final_coef_)
-
-
-if __name__ == "__main__":
-
-    for (n_samples, n_features), n_orient, accelerated, alpha_frac in product(
-        DATA_SIZE, N_ORIENTS, ACCELERATED, ALPHA_FRAC
-    ):
-        test_multi_task_fixed_orient(
-            n_samples, n_features, n_orient, accelerated, alpha_frac
-        )

@@ -132,6 +132,7 @@ class SUREForReweightedMultiTaskLasso:
         # Copy grid of first iteration (leverages convexity)
         print("First iteration")
         for j, alpha in tqdm(enumerate(self.alpha_grid), total=self.n_alphas):
+
             regressor1.alpha = alpha
             regressor2.alpha = alpha
 

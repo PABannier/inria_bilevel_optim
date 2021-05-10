@@ -1,5 +1,6 @@
 import argparse
 import joblib
+import time
 from tqdm import tqdm
 import os.path as op
 
@@ -126,22 +127,17 @@ def solver(M, G, n_orient=1):
         )
         estimator.fit(G, M)
     else:
-        alpha_max = compute_alpha_max(G, M, n_orient=n_orient)  # Scaled
+        alpha_max = compute_alpha_max(G, M, n_orient=n_orient)
         print("Alpha max:", alpha_max)
 
         alphas = np.geomspace(alpha_max, alpha_max / 10, num=15)
-
-        if n_orient == 3:
-            alphas = len(G) * alphas  # Unscaled
-
-        import time
 
         start = time.time()
 
         criterion = SUREForReweightedMultiTaskLasso(
             1, alphas, n_orient=n_orient
         )
-        best_sure, best_alpha = criterion.get_val(G, M)  # Unscaled
+        best_sure, best_alpha = criterion.get_val(G, M)
 
         print("Duration:", time.time() - start)
 
@@ -149,9 +145,7 @@ def solver(M, G, n_orient=1):
         print("Best alpha:", best_alpha)
 
         # Refitting
-        estimator = ReweightedMultiTaskLasso(
-            best_alpha, n_orient=n_orient
-        )  # Unscaled
+        estimator = ReweightedMultiTaskLasso(best_alpha, n_orient=n_orient)
         estimator.fit(G, M)
 
     X = estimator.coef_

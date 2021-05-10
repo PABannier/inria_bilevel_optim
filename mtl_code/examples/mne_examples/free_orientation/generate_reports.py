@@ -1,5 +1,6 @@
 import argparse
 import joblib
+import time
 from pathlib import Path
 from tqdm import tqdm
 import os.path as op
@@ -249,10 +250,6 @@ def solver(M, G, n_orient=1):
     print("Alpha max:", alpha_max)
 
     alphas = np.geomspace(alpha_max, alpha_max / 10, num=15)
-    if n_orient == 3:
-        alphas = len(G) * alphas  # Unscaled
-
-    import time
 
     start = time.time()
 

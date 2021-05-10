@@ -229,9 +229,6 @@ def solver(M, G, n_orient=1):
     print("Alpha max:", alpha_max)
 
     alphas = np.geomspace(alpha_max, alpha_max / 10, num=15)
-    alphas = (
-        len(G) * alphas
-    )  # Only useful for free orientation (hack), causes issus in fixed
 
     criterion = SUREForReweightedMultiTaskLasso(
         1, alphas, n_orient=n_orient, random_state=0

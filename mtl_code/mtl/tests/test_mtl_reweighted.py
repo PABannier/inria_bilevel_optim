@@ -15,7 +15,7 @@ from mtl.utils_datasets import compute_alpha_max
 ####################
 
 
-N_ORIENTS = [3]  # 1
+N_ORIENTS = [1, 3]
 DATA_SIZE = [(10, 15), (50, 75)]
 ALPHA_FRAC = [0.5, 0.1, 0.05, 0.01]
 
@@ -32,7 +32,7 @@ def test_training_loss_decrease(n_orient, n_samples, n_features, alpha_frac):
         random_state=0,
     )
 
-    alpha_max = compute_alpha_max(X, Y)
+    alpha_max = compute_alpha_max(X, Y, n_orient)
     alpha = alpha_max * alpha_frac
 
     regressor = ReweightedMultiTaskLasso(
@@ -46,15 +46,3 @@ def test_training_loss_decrease(n_orient, n_samples, n_features, alpha_frac):
     diffs = np.diff(regressor.loss_history_)
     np.testing.assert_array_less(diffs, 1e-5)
     assert start_loss > final_loss
-
-
-if __name__ == "__main__":
-
-    for n_orient, (n_samples, n_features), alpha_frac in product(
-        [3], DATA_SIZE, ALPHA_FRAC
-    ):
-        print(n_samples, n_features)
-        print(alpha_frac)
-        test_training_loss_decrease(
-            n_orient, n_samples, n_features, alpha_frac
-        )

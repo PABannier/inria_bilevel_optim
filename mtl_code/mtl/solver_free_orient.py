@@ -14,7 +14,7 @@ from mtl.utils_datasets import (
 )
 
 
-class MultiTaskLassoOrientation(BaseEstimator, RegressorMixin):
+class MultiTaskLassoUnscaled(BaseEstimator, RegressorMixin):
     """MultiTask Lasso solver specificially designed for
     neuroscience inverse problem. It supports fixed and free
     dipole orientations.
@@ -56,13 +56,6 @@ class MultiTaskLassoOrientation(BaseEstimator, RegressorMixin):
     active_set_size: int, default=50
         Size of active set increase at each iteration.
 
-    normalized_alpha: bool, default=True
-        This solver expects an unscaled alpha (no normalization
-        by the number of samples or tasks). If True, this solver
-        expects a scaled alpha and will unscale it on its own. If
-        False, this solver expects an unscaled alpha and won't
-        change it.
-
     verbose: bool, default=False
         Verbosity.
 
@@ -85,7 +78,6 @@ class MultiTaskLassoOrientation(BaseEstimator, RegressorMixin):
         accelerated=True,
         K=5,
         active_set_size=100,
-        normalized_alpha=True,
         verbose=False,
     ):
         self.alpha = alpha
@@ -96,7 +88,6 @@ class MultiTaskLassoOrientation(BaseEstimator, RegressorMixin):
         self.accelerated = accelerated
         self.K = K
         self.active_set_size = active_set_size
-        self.normalized_alpha = normalized_alpha
         self.verbose = verbose
 
         self.gap_history_ = []
@@ -104,7 +95,7 @@ class MultiTaskLassoOrientation(BaseEstimator, RegressorMixin):
         self.coef_ = None
         self.active_set_ = None
 
-    def fit(self, X, Y):
+    def _fit(self, X, Y, alpha=None):
         """Fits the MultiTaskLasso estimator to the X and Y
         matrices.
 
@@ -118,12 +109,16 @@ class MultiTaskLassoOrientation(BaseEstimator, RegressorMixin):
 
         Y: array of shape (n_samples, n_times)
             Target matrix.
-        """
-        X, Y = check_X_y(X, Y, multi_output=True)
 
-        # # If needed, unscale alpha by the number of samples
-        # if self.normalized_alpha:
-        #     self.alpha *= len(X)
+        alpha: float, default=None
+            Regularization parameter. If None, the solver uses self.alpha.
+            This parameter is useful when calling the fit method in
+            MultiTaskLassoOrientation.
+        """
+
+        _alpha = alpha if alpha is not None else self.alpha
+
+        X, Y = check_X_y(X, Y, multi_output=True)
 
         n_samples, n_features = X.shape
         n_times = Y.shape[1]
@@ -173,14 +168,14 @@ class MultiTaskLassoOrientation(BaseEstimator, RegressorMixin):
             ]
 
             coef, as_ = self._block_coordinate_descent(
-                X[:, active_set], Y, lipschitz_consts_tmp, coef_init
+                X[:, active_set], Y, lipschitz_consts_tmp, coef_init, _alpha
             )
 
             active_set[active_set] = as_.copy()
             idx_old_active_set = np.where(active_set)[0]
 
             _, p_obj, d_obj = get_duality_gap_mtl(
-                X, Y, coef, active_set, self.alpha, self.n_orient
+                X, Y, coef, active_set, _alpha, self.n_orient
             )
 
             highest_d_obj = max(highest_d_obj, d_obj)
@@ -250,7 +245,7 @@ class MultiTaskLassoOrientation(BaseEstimator, RegressorMixin):
         X = check_array(X)
         return X @ self.coef_
 
-    def _block_coordinate_descent(self, X, Y, lipschitz, init):
+    def _block_coordinate_descent(self, X, Y, lipschitz, init, _alpha):
         """Implements a block coordinate descent algorithm using
         Anderson acceleration.
 
@@ -268,6 +263,11 @@ class MultiTaskLassoOrientation(BaseEstimator, RegressorMixin):
         init: array (shape varies with active set)
             Coefficient initialized from previous iteration.
             If None, coefficients are initialized with zeros.
+
+        _alpha: float, default=None
+            Regularization parameter. If None, the solver uses self.alpha.
+            This parameter is useful when calling the fit method in
+            MultiTaskLassoOrientation.
 
         Returns
         -------
@@ -330,7 +330,7 @@ class MultiTaskLassoOrientation(BaseEstimator, RegressorMixin):
                     coef_j_new += coef_j
 
                 block_norm = np.sqrt(sum_squared(coef_j_new))
-                alpha_lc = self.alpha / lipschitz[j]
+                alpha_lc = _alpha / lipschitz[j]
 
                 if block_norm <= alpha_lc:
                     coef_j.fill(0.0)
@@ -352,7 +352,7 @@ class MultiTaskLassoOrientation(BaseEstimator, RegressorMixin):
                     active_set[idx] = True
 
             _, p_obj, d_obj = get_duality_gap_mtl(
-                X, Y, coef[active_set], active_set, self.alpha, self.n_orient
+                X, Y, coef[active_set], active_set, _alpha, self.n_orient
             )
             highest_d_obj = max(d_obj, highest_d_obj)
             gap = p_obj - highest_d_obj
@@ -391,7 +391,7 @@ class MultiTaskLassoOrientation(BaseEstimator, RegressorMixin):
                             Y,
                             coef_acc[active_set_acc],
                             active_set_acc,
-                            self.alpha,
+                            _alpha,
                             self.n_orient,
                         )
 
@@ -411,3 +411,13 @@ class MultiTaskLassoOrientation(BaseEstimator, RegressorMixin):
 
         coef = coef[active_set]
         return coef, active_set
+
+
+class MultiTaskLassoOrientation(MultiTaskLassoUnscaled):
+    def __init__(self, alpha, **kwargs):
+        super().__init__(alpha, **kwargs)
+
+    def fit(self, X, Y):
+        alpha_scaled = self.alpha * len(X)
+        self._fit(X, Y, alpha_scaled)
+        return self

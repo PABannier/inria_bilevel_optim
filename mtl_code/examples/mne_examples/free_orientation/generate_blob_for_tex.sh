@@ -1,3 +1,4 @@
+# SAMPLE DATASET
 conditions=("Left Auditory" "Right Auditory" "Left visual" "Right visual")
 
 for i in "${conditions[@]}"
@@ -6,7 +7,7 @@ do
     echo "GENERATING DATA FOR $i"
     echo "================================="
 
-    python generate_data.py --condition $i --dataset sample
+    python plot_for_tex.py --condition $i --dataset sample
 done
 
 
@@ -16,5 +17,5 @@ echo "=========================="
 echo "GENERATING DATA FOR SOMATO"
 echo "==========================" 
 
-python generate_data.py --dataset somato
+python plot_for_tex.py --dataset somato
 

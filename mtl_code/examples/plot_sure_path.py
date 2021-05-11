@@ -7,6 +7,7 @@ import matplotlib.pylab as pl
 from sklearn.linear_model import MultiTaskLassoCV
 
 from mtl.sure import SURE
+from mtl.sure_warm_start import SUREForReweightedMultiTaskLasso
 from mtl.simulated_data import simulate_data
 from mtl.mtl import ReweightedMultiTaskLasso
 from mtl.cross_validation import ReweightedMultiTaskLassoCV
@@ -14,15 +15,16 @@ from mtl.cross_validation import ReweightedMultiTaskLassoCV
 from mtl.utils_datasets import compute_alpha_max, plot_sure_mse_path
 
 
-def sure_mse_path(snr=2, corr=0.5, random_state=2020):
+def sure_mse_path(snr=2, corr=0.5, random_state=2020, autocorrelated=False):
     X, Y, _, sigma = simulate_data(
         n_samples=50,
-        n_features=250,
+        n_features=255,
         n_tasks=25,
         nnz=10,
         corr=corr,
         random_state=random_state,
         snr=snr,
+        autocorrelated=autocorrelated,
     )
 
     n_folds = 5
@@ -34,19 +36,19 @@ def sure_mse_path(snr=2, corr=0.5, random_state=2020):
     print("alpha max for large experiment", alpha_max)
     print("\n")
 
-    alphas = np.geomspace(alpha_max / 100, alpha_max, num=50)
+    alphas = np.geomspace(alpha_max, alpha_max / 100, num=50)
     sure_metrics = []
     mse_metrics = None
 
-    reweighted_mtl = ReweightedMultiTaskLassoCV(alphas, n_folds=n_folds)
+    reweighted_mtl = ReweightedMultiTaskLassoCV(
+        alphas, n_folds=n_folds, n_orient=1
+    )
     reweighted_mtl.fit(X, Y)
 
-    regressor = SURE(sigma, random_state=random_state)
+    criterion = SUREForReweightedMultiTaskLasso(sigma, alphas, n_orient=3)
+    best_sure, best_alpha = criterion.get_val(X, Y)
 
-    for alpha in alphas:
-        print("Computing SURE for alpha =", alpha)
-        val = regressor.get_val(X, Y, alpha)
-        sure_metrics.append(val)
+    sure_metrics = criterion.sure_path_
 
     sure_metrics = np.array(sure_metrics)
     sure_metrics /= sure_metrics.mean()
@@ -235,6 +237,7 @@ def plot_support_recovery(random_state=0):
 
 
 if __name__ == "__main__":
-    # sure_mse_path()
+    sure_mse_path(autocorrelated=False)
+    sure_mse_path(autocorrelated=True)
     # impact_correlation_coefficient_on_sure()
-    plot_support_recovery()
+    # plot_support_recovery()

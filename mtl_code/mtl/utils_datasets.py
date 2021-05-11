@@ -121,7 +121,7 @@ def plot_sure_mse_path(alphas, alpha_max, mse_metrics, sure_metrics, mse_path):
 
     min_idx_2 = mse_path.mean(axis=1).argmin()
     plt.axvline(
-        x=alphas[min_idx] / alpha_max,
+        x=alphas[min_idx_2] / alpha_max,
         color="midnightblue",
         linestyle="dashed",
         linewidth=3,
@@ -132,7 +132,7 @@ def plot_sure_mse_path(alphas, alpha_max, mse_metrics, sure_metrics, mse_path):
     plt.ylabel("MSE / SURE (normalized)", fontsize=12)
     plt.title("MSE vs SURE paths", fontsize=15, fontweight="bold")
     plt.legend()
-    plt.show(block=True)
+    plt.show()
 
 
 def plot_original_reconstructed_signal(original, reconstructed, title):

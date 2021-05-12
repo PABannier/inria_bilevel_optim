@@ -18,6 +18,7 @@ from mne.inverse_sparse.mxne_inverse import _compute_residual
 from mtl.mtl import ReweightedMultiTaskLasso
 from mtl.cross_validation import ReweightedMultiTaskLassoCV
 from mtl.sure import SURE
+from mtl.sure_warm_start import SUREForReweightedMultiTaskLasso
 from mtl.utils_datasets import compute_alpha_max
 
 parser = argparse.ArgumentParser()
@@ -39,10 +40,12 @@ elif args.dataset == "sample":
         )
 
 
-mem = Memory(".")
+# mem = Memory(".")
+
+ALPHA_MAX, ALPHA_MIN = 0, 0
 
 
-@mem.cache
+# @mem.cache
 def load_data():
 
     if args.dataset == "sample":
@@ -220,7 +223,7 @@ def apply_solver(solver, evoked, forward, noise_cov, loose=0.2, depth=0.8):
     return stc, residual
 
 
-@mem.cache
+# @mem.cache
 def solver(M, G, n_orient=1):
     """Run L2 penalized regression and keep 10 strongest locations.
 
@@ -250,17 +253,23 @@ def solver(M, G, n_orient=1):
     print("Alpha max:", alpha_max)
 
     alphas = np.geomspace(alpha_max, alpha_max / 10, num=15)
-    best_alpha_ = None
-    best_sure_ = np.inf
 
-    for alpha in tqdm(alphas, total=len(alphas)):
-        criterion = SURE(ReweightedMultiTaskLasso, 1, random_state=0)
-        sure_val_ = criterion.get_val(G, M, alpha)
-        if sure_val_ < best_sure_:
-            best_sure_ = sure_val_
-            best_alpha_ = alpha
+    global ALPHA_MAX
+    global ALPHA_MIN
 
-    print("best sure", best_sure_)
+    ALPHA_MAX = alpha_max
+    ALPHA_MIN = alpha_max / 10
+
+    criterion = SUREForReweightedMultiTaskLasso(1, alphas)
+    best_sure_, best_alpha_ = criterion.get_val(G, M)
+
+    if args.dataset == "sample":
+        file_name = args.condition.lower().replace(" ", "_")
+        out_path = f"{file_name}/sure_path.pkl"
+    elif args.dataset == "somato":
+        out_path = f"somato/sure_path.pkl"
+
+    joblib.dump(criterion.sure_path_, out_path)
 
     # Refitting
     estimator = ReweightedMultiTaskLasso(best_alpha_)
@@ -291,8 +300,43 @@ def add_foci_to_brain_surface(brain, stc):
     return fig
 
 
+def plot_sure_path():
+    if args.dataset == "sample":
+        file_name = args.condition.lower().replace(" ", "_")
+        out_path = f"{file_name}/sure_path.pkl"
+    elif args.dataset == "somato":
+        out_path = "somato/sure_path.pkl"
+
+    sure_path = joblib.load(out_path)
+
+    fig = plt.figure()
+
+    alphas = np.geomspace(ALPHA_MAX, ALPHA_MIN, num=15)
+    plt.semilogx(alphas / np.max(alphas), sure_path, label="Path")
+    plt.title("Sure path", fontweight="bold", fontsize=16)
+
+    plt.axvline(
+        alphas[np.argmin(sure_path)] / np.max(alphas),
+        linestyle="--",
+        linewidth=2,
+        label="best $\lambda$ - SURE",
+    )
+
+    plt.legend()
+
+    plt.xlabel("$\lambda / \lambda_{max}$")
+    plt.ylabel("SURE")
+
+    return fig
+
+
 def generate_report(
-    evoked_fig, evoked_fig_white, residual_fig, residual_fig_white, stc
+    evoked_fig,
+    evoked_fig_white,
+    residual_fig,
+    sure_path_fig,
+    residual_fig_white,
+    stc,
 ):
     title = args.condition if args.dataset == "sample" else "somato"
     report = mne.report.Report(title=title)
@@ -339,6 +383,8 @@ def generate_report(
         fig_traces, "Source Time Courses", section="Source"
     )
 
+    report.add_figs_to_section(sure_path_fig, "SURE Path", section="Source")
+
     filename = (
         args.condition.lower().replace(" ", "_")
         if args.dataset == "sample"
@@ -369,16 +415,16 @@ if __name__ == "__main__":
         stc_filepath = data_folder / "stc_adaptive-sure.pkl"
         residual_filepath = data_folder / "residual_adaptive-sure.pkl"
 
-    if op.exists(stc_filepath) and op.exists(residual_filepath):
-        stc = joblib.load(stc_filepath)
-        residual = joblib.load(residual_filepath)
-    else:
-        stc, residual = apply_solver(
-            solver, evoked, forward, noise_cov, loose, depth
-        )
+    # if op.exists(stc_filepath) and op.exists(residual_filepath):
+    #     stc = joblib.load(stc_filepath)
+    #     residual = joblib.load(residual_filepath)
+    # else:
+    stc, residual = apply_solver(
+        solver, evoked, forward, noise_cov, loose, depth
+    )
 
-        joblib.dump(stc, stc_filepath)
-        joblib.dump(residual, residual_filepath)
+    joblib.dump(stc, stc_filepath)
+    joblib.dump(residual, residual_filepath)
 
     if args.condition == "Left visual":
         evoked_fig = evoked.plot(ylim=dict(mag=[-250, 250], grad=[-100, 100]))
@@ -393,7 +439,13 @@ if __name__ == "__main__":
 
     evoked_fig_white = evoked.plot_white(noise_cov=noise_cov)
     residual_fig_white = residual.plot_white(noise_cov=noise_cov)
+    sure_path_fig = plot_sure_path()
 
     generate_report(
-        evoked_fig, evoked_fig_white, residual_fig, residual_fig_white, stc
+        evoked_fig,
+        evoked_fig_white,
+        residual_fig,
+        sure_path_fig,
+        residual_fig_white,
+        stc,
     )

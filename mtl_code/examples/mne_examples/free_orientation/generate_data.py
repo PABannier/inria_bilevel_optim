@@ -231,7 +231,7 @@ def solver(M, G, n_orient=1):
     alphas = np.geomspace(alpha_max, alpha_max / 10, num=15)
 
     criterion = SUREForReweightedMultiTaskLasso(
-        1, alphas, n_orient=n_orient, random_state=0
+        1, alphas, n_orient=n_orient, random_state=1
     )
     best_sure, best_alpha = criterion.get_val(G, M)
 

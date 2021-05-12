@@ -262,7 +262,7 @@ def solver(M, G, n_orient=1):
     start = time.time()
 
     criterion = SUREForReweightedMultiTaskLasso(
-        1, alphas, n_orient=n_orient, random_state=1
+        1, alphas, n_orient=n_orient, random_state=1  # Sigma = 1
     )
     best_sure, best_alpha = criterion.get_val(G, M)
 

@@ -6,22 +6,21 @@ import glob
 
 from utils_solver import solve_inverse_problem, generate_report
 
-DATA_PATH = os.path.abspath(
-    "/storage/store2/work/rhochenb/Data/Cam-CAN/BIDS/derivatives/mne-study-template"
+DATA_PATH = Path(
+    "../../../../../rhochenb/Data/Cam-CAN/BIDS/derivatives/mne-study-template"
 )
 
-OUT_PATH = os.path.abspath(
-    "/storage/store2/work/pbannier/inria_bilevel_optim/mtl_code/examples/camcan/reports"
-)
+OUT_PATH = Path("reports")
 
-N_JOBS = 3  # -1
+N_JOBS = 1  # -1
 INNER_MAX_NUM_THREADS = 1
 
 LOOSE = 0  # 0 for fixed, 0.9 for free
 
 
-def solve_for_patient(folder_name):
-    print(f"Solving {folder_name}...")
+def solve_for_patient(folder_path):
+    folder_name = folder_path.split("/")[-1]
+    print(f"Solving #{folder_name}")
 
     patient_path = DATA_PATH / folder_name
     stc, residual, evoked, noise_cov = solve_inverse_problem(
@@ -36,8 +35,8 @@ def solve_for_patient(folder_name):
 
 
 if __name__ == "__main__":
-    DATA_PATH = Path(DATA_PATH)
-    patient_folders = glob.glob(DATA_PATH / "*")
+    patient_folders = glob.glob(str(DATA_PATH / "*"))
+    patient_folders = [x for x in patient_folders if os.path.isdir(x)]
 
     with parallel_backend("loky", inner_max_num_threads=INNER_MAX_NUM_THREADS):
         Parallel(N_JOBS)(

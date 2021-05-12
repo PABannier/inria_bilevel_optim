@@ -10,6 +10,7 @@ from numpy.linalg import norm
 import matplotlib.pyplot as plt
 
 import mne
+from mne.inverse_sparse.mxne_inverse import _compute_residual
 
 from mtl.mtl import ReweightedMultiTaskLasso
 from mtl.sure_warm_start import SUREForReweightedMultiTaskLasso
@@ -22,16 +23,17 @@ def load_data(folder_name, data_path):
     fwd_fname = data_path / "meg" / f"{folder_name}_task-task-fwd.fif"
     ave_fname = data_path / "meg" / f"{folder_name}_task-task-ave.fif"
     cleaned_epo_fname = (
-        data_path / "meg" / f"{folder_name}_task-task_cleaned_epo.fif"
+        data_path / "meg" / f"{folder_name}_task-task_cleaned-epo.fif"
     )
 
     # Building noise covariance
-    cleaned = mne.io.read_raw_fif(cleaned_epo_fname)
-    events = mne.find_events(cleaned)
-    epochs = mne.Epochs(cleaned, events)
-    noise_cov = mne.compute_covariance(epochs, tmax=0)
+    cleaned_epochs = mne.read_epochs(cleaned_epo_fname)
+    noise_cov = mne.compute_covariance(cleaned_epochs, tmax=0)
 
-    evoked = mne.read_evokeds(ave_fname, condition=None, baseline=(None, 0))
+    evoked = mne.read_evokeds(ave_fname, condition=None, baseline=(None, 0))[
+        0
+    ]  # Use evoked.plot()
+    evoked.crop(tmin=0.05, tmax=0.1)
     evoked = evoked.pick_types(eeg=False, meg=True)
 
     forward = mne.read_forward_solution(fwd_fname)
@@ -130,7 +132,7 @@ def solve_inverse_problem(folder_name, data_path, loose, depth=0.9):
         The exponent that raises the norm used to normalize sources.
     """
 
-    evoked, forward, noise_cov = load_data()
+    evoked, forward, noise_cov = load_data(folder_name, data_path)
 
     stc, residual = apply_solver(
         solver, evoked, forward, noise_cov, loose, depth

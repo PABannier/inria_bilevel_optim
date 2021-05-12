@@ -22,7 +22,6 @@ from solver_lasso.utils import (
     norm_l2_inf,
 )
 
-from solver_free_orient import dgap_l21
 import ipdb
 
 import time
@@ -38,7 +37,7 @@ def _get_dgemm():
 
 if __name__ == "__main__":
     MAX_ITER = 2000
-    TOL = 1e-8
+    TOL = 1e-4
     K = 5
     N_ORIENT = 3
 
@@ -53,7 +52,7 @@ if __name__ == "__main__":
     )
 
     alpha_max = norm_l2_inf(np.dot(X.T, Y), N_ORIENT, copy=False)
-    alpha = alpha_max * 0.5
+    alpha = alpha_max * 0.01
 
     start = time.time()
 
@@ -80,6 +79,7 @@ if __name__ == "__main__":
     active_set[new_active_idx] = True
     as_size = np.sum(active_set)
 
+    highest_d_obj = -np.inf
     coef_init = None
 
     # ============== MIXED NORM SOLVER BCD ==============
@@ -102,13 +102,13 @@ if __name__ == "__main__":
                 R = Y - X @ coef
 
             X = np.asfortranarray(X)
-            Y = np.asfortranarray(Y)
 
             if use_acc:
                 last_K_coef = np.empty((K + 1, n_features, n_times))
                 U = np.zeros((K, n_features * n_times))
 
             active_set = np.zeros(n_features, dtype=bool)
+            highest_d_obj = -np.inf
 
             for iter_idx in range(MAX_ITER):
 
@@ -164,10 +164,11 @@ if __name__ == "__main__":
                         coef_j[:] = coef_j_new
                         active_set[idx] = True
 
-                gap, p_obj, d_obj = get_duality_gap_mtl_as(
+                _, p_obj, d_obj = get_duality_gap_mtl_as(
                     X, Y, coef[active_set], active_set, alpha, N_ORIENT
                 )
-                gap_history_.append(gap)
+                highest_d_obj = max(d_obj, highest_d_obj)
+                gap = p_obj - highest_d_obj
 
                 print(
                     f"[{iter_idx+1}/{MAX_ITER}] p_obj {p_obj:.5f} :: d_obj {d_obj:.5f} :: d_gap {gap:.5f}"
@@ -235,10 +236,15 @@ if __name__ == "__main__":
             X, Y, coef, active_set, alpha, N_ORIENT
         )
 
+        highest_d_obj = max(d_obj, highest_d_obj)
+        gap = p_obj - highest_d_obj
+
         gap_history_.append(gap)
 
         print(
-            f"[{k+1}/{MAX_ITER}] p_obj {p_obj:.5f} :: d_obj {d_obj:.5f} :: d_gap {gap:.5f} :: n_active_start {as_size // N_ORIENT} :: n_active_end {np.sum(active_set) // N_ORIENT}"
+            f"[{k+1}/{MAX_ITER}] p_obj {p_obj:.5f} :: d_obj {d_obj:.5f} "
+            + f":: d_gap {gap:.5f} :: n_active_start {as_size // N_ORIENT} "
+            + f":: n_active_end {np.sum(active_set) // N_ORIENT}"
         )
 
         if gap < TOL:

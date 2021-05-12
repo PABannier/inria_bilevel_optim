@@ -1,5 +1,6 @@
 import argparse
 import joblib
+import time
 from pathlib import Path
 from tqdm import tqdm
 import os.path as op
@@ -27,6 +28,8 @@ parser.add_argument("--dataset", help="dataset")
 
 args = parser.parse_args()
 
+ALPHA_MAX, ALPHA_MIN = 0, 0
+
 if args.dataset is None:
     raise ValueError(
         "Please specify a dataset by using --dataset argument. "
@@ -42,10 +45,7 @@ elif args.dataset == "sample":
 
 # mem = Memory(".")
 
-ALPHA_MAX, ALPHA_MIN = 0, 0
 
-
-# @mem.cache
 def load_data():
 
     if args.dataset == "sample":
@@ -223,7 +223,6 @@ def apply_solver(solver, evoked, forward, noise_cov, loose=0.2, depth=0.8):
     return stc, residual
 
 
-# @mem.cache
 def solver(M, G, n_orient=1):
     """Run L2 penalized regression and keep 10 strongest locations.
 
@@ -249,7 +248,7 @@ def solver(M, G, n_orient=1):
         We have ``X_full[active_set] == X`` where X_full is the full X matrix
         such that ``M = G X_full``.
     """
-    alpha_max = compute_alpha_max(G, M)
+    alpha_max = compute_alpha_max(G, M, n_orient=n_orient)
     print("Alpha max:", alpha_max)
 
     alphas = np.geomspace(alpha_max, alpha_max / 10, num=15)
@@ -260,19 +259,30 @@ def solver(M, G, n_orient=1):
     ALPHA_MAX = alpha_max
     ALPHA_MIN = alpha_max / 10
 
-    criterion = SUREForReweightedMultiTaskLasso(1, alphas)
-    best_sure_, best_alpha_ = criterion.get_val(G, M)
+    start = time.time()
 
+    criterion = SUREForReweightedMultiTaskLasso(
+        1, alphas, n_orient=n_orient, random_state=1  # Sigma = 1
+    )
+    best_sure, best_alpha = criterion.get_val(G, M)
+
+    # Saving SURE path for better visualization in reports
     if args.dataset == "sample":
         file_name = args.condition.lower().replace(" ", "_")
-        out_path = f"{file_name}/sure_path.pkl"
+        out_path = f"data/sure_path_{file_name}.pkl"
     elif args.dataset == "somato":
-        out_path = f"somato/sure_path.pkl"
+        out_path = f"data/sure_path_somato.pkl"
 
     joblib.dump(criterion.sure_path_, out_path)
+    print(criterion.sure_path_)
+
+    print("Duration:", time.time() - start)
+
+    print("Best SURE:", best_sure)
+    print("Best alpha:", best_alpha)
 
     # Refitting
-    estimator = ReweightedMultiTaskLasso(best_alpha_)
+    estimator = ReweightedMultiTaskLasso(best_alpha, n_orient=n_orient)
     estimator.fit(G, M)
 
     X = estimator.coef_
@@ -301,11 +311,12 @@ def add_foci_to_brain_surface(brain, stc):
 
 
 def plot_sure_path():
+    # Saving SURE path for better visualization in reports
     if args.dataset == "sample":
         file_name = args.condition.lower().replace(" ", "_")
-        out_path = f"{file_name}/sure_path.pkl"
+        out_path = f"data/sure_path_{file_name}.pkl"
     elif args.dataset == "somato":
-        out_path = "somato/sure_path.pkl"
+        out_path = f"data/sure_path_somato.pkl"
 
     sure_path = joblib.load(out_path)
 
@@ -334,9 +345,9 @@ def generate_report(
     evoked_fig,
     evoked_fig_white,
     residual_fig,
-    sure_path_fig,
     residual_fig_white,
     stc,
+    sure_path_fig,
 ):
     title = args.condition if args.dataset == "sample" else "somato"
     report = mne.report.Report(title=title)
@@ -395,7 +406,7 @@ def generate_report(
 
 
 if __name__ == "__main__":
-    loose, depth = 0, 0.9  # Fixed orientation
+    loose, depth = 0.9, 0.9  # Free orientation
     (
         evoked,
         forward,
@@ -404,16 +415,16 @@ if __name__ == "__main__":
     ) = load_data()
 
     if args.dataset == "sample":
-        folder = args.condition.lower().replace(" ", "_")
-        data_folder = Path(f"{folder}/data")
+        file_name = args.condition.lower().replace(" ", "_")
+        data_folder = Path("data")
         data_folder.mkdir(exist_ok=True, parents=True)
-        stc_filepath = data_folder / "stc_adaptive-sure.pkl"
-        residual_filepath = data_folder / "residual_adaptive-sure.pkl"
+        stc_filepath = data_folder / f"stc_{file_name}.pkl"
+        residual_filepath = data_folder / f"residual_{file_name}.pkl"
     else:
         folder = "somato"
-        data_folder = Path(folder)
-        stc_filepath = data_folder / "stc_adaptive-sure.pkl"
-        residual_filepath = data_folder / "residual_adaptive-sure.pkl"
+        data_folder = Path("data")
+        stc_filepath = data_folder / "stc_somato.pkl"
+        residual_filepath = data_folder / "residual_somato.pkl"
 
     # if op.exists(stc_filepath) and op.exists(residual_filepath):
     #     stc = joblib.load(stc_filepath)
@@ -439,13 +450,14 @@ if __name__ == "__main__":
 
     evoked_fig_white = evoked.plot_white(noise_cov=noise_cov)
     residual_fig_white = residual.plot_white(noise_cov=noise_cov)
+
     sure_path_fig = plot_sure_path()
 
     generate_report(
         evoked_fig,
         evoked_fig_white,
         residual_fig,
-        sure_path_fig,
         residual_fig_white,
         stc,
+        sure_path_fig,
     )

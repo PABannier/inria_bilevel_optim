@@ -18,7 +18,6 @@ from solver_lasso.utils import (
     norm_l2_inf,
 )
 
-from solver_free_orient import dgap_l21
 import ipdb
 
 import time
@@ -30,7 +29,7 @@ if __name__ == "__main__":
     K = 5
     N_ORIENT = 3
 
-    use_acc = False
+    use_acc = True
 
     gap_history_ = []
 

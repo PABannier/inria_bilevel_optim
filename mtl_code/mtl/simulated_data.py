@@ -1,5 +1,6 @@
 import numpy as np
 from numpy.linalg import norm
+from scipy import signal
 from sklearn.utils import check_random_state
 
 
@@ -11,6 +12,7 @@ def simulate_data(
     snr=4,
     corr=0.3,
     random_state=None,
+    autocorrelated=False,
 ):
     """Generates a simulated dataset and a row-sparse weight
        matrix for multi-task lasso.
@@ -40,6 +42,10 @@ def simulate_data(
 
     random_state : int, default=None
         Seed for random number generators.
+
+    autocorrelated : bool, default=False
+        If False, the noise is white. If True, it is
+        temporally auto-correlated.
 
     Returns
     -------
@@ -81,15 +87,16 @@ def simulate_data(
 
     Y = X @ W
 
-    noise = rng.randn(n_samples, n_tasks)
-    # noise = noise / norm(noise) * norm(Y) / snr
-    # Y += noise
-    # Y /= norm(Y, ord="fro")
-    # sigma = noise / norm(noise) * norm(Y) / snr
-    # Y += noise
-    # Y /= norm(Y, ord="fro")
+    if autocorrelated:
+        noise = rng.randn(n_samples, n_tasks)
+        noise_corr = signal.lfilter([1], [1, -0.9], noise, axis=1)
+        sigma = 1 / norm(noise_corr) * norm(Y) / snr
+        Y += sigma * noise_corr
 
-    sigma = 1 / norm(noise) * norm(Y) / snr
-    Y += sigma * noise
+    else:
+        noise = rng.randn(n_samples, n_tasks)
+        sigma = 1 / norm(noise) * norm(Y) / snr
+
+        Y += sigma * noise
 
     return X, Y, W, sigma

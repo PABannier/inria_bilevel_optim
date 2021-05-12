@@ -14,7 +14,7 @@ OUT_PATH = os.path.abspath(
     "/storage/store2/work/pbannier/inria_bilevel_optim/mtl_code/examples/camcan/reports"
 )
 
-N_JOBS = 1  # -1
+N_JOBS = 3  # -1
 INNER_MAX_NUM_THREADS = 1
 
 LOOSE = 0  # 0 for fixed, 0.9 for free

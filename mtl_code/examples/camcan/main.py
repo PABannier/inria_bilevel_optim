@@ -23,14 +23,20 @@ def solve_for_patient(folder_path):
     print(f"Solving #{folder_name}")
 
     patient_path = DATA_PATH / folder_name
-    stc, residual, evoked, noise_cov = solve_inverse_problem(
+    stc, residual, evoked, noise_cov, subject_dir = solve_inverse_problem(
         folder_name, patient_path, LOOSE
     )
 
     out_report_path = OUT_PATH / f"{folder_name}.html"
 
     generate_report(
-        folder_name, out_report_path, stc, evoked, residual, noise_cov
+        folder_name,
+        out_report_path,
+        stc,
+        evoked,
+        residual,
+        noise_cov,
+        subject_dir,
     )
 
 

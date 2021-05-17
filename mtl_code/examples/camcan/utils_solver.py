@@ -20,6 +20,8 @@ from mtl.utils_datasets import compute_alpha_max
 def load_data(folder_name, data_path):
     data_path = Path(data_path)
 
+    subject_dir = data_path / "subjects"
+
     fwd_fname = data_path / "meg" / f"{folder_name}_task-task-fwd.fif"
     ave_fname = data_path / "meg" / f"{folder_name}_task-task-ave.fif"
     cleaned_epo_fname = (
@@ -38,7 +40,7 @@ def load_data(folder_name, data_path):
 
     forward = mne.read_forward_solution(fwd_fname)
 
-    return evoked, forward, noise_cov
+    return evoked, forward, noise_cov, subject_dir
 
 
 def apply_solver(solver, evoked, forward, noise_cov, loose=0.2, depth=0.8):
@@ -132,7 +134,7 @@ def solve_inverse_problem(folder_name, data_path, loose, depth=0.9):
         The exponent that raises the norm used to normalize sources.
     """
 
-    evoked, forward, noise_cov = load_data(folder_name, data_path)
+    evoked, forward, noise_cov, subject_dir = load_data(folder_name, data_path)
 
     stc, residual = apply_solver(
         solver, evoked, forward, noise_cov, loose, depth
@@ -142,7 +144,7 @@ def solve_inverse_problem(folder_name, data_path, loose, depth=0.9):
     print("Explained variance:", norm(residual.data) / norm(evoked.data))
     print("=" * 20)
 
-    return stc, residual, evoked, noise_cov
+    return stc, residual, evoked, noise_cov, subject_dir
 
 
 ###################################
@@ -169,7 +171,9 @@ def add_foci_to_brain_surface(brain, stc):
     return fig
 
 
-def generate_report(patient_id, out_path, stc, evoked, residual, noise_cov):
+def generate_report(
+    patient_id, out_path, stc, evoked, residual, noise_cov, subject_dir
+):
     title = patient_id
     report = mne.report.Report(title=title)
 
@@ -178,7 +182,7 @@ def generate_report(patient_id, out_path, stc, evoked, residual, noise_cov):
     kwargs = dict(
         views=views,
         hemi="split",
-        subjects_dir=None,
+        subjects_dir=subject_dir,
         initial_time=0.0,
         clim="auto",
         colorbar=False,

@@ -22,21 +22,23 @@ def load_data(folder_name, data_path):
 
     subject_dir = data_path / "subjects"
 
-    fwd_fname = data_path / "meg" / f"{folder_name}_task-task-fwd.fif"
-    ave_fname = data_path / "meg" / f"{folder_name}_task-task-ave.fif"
+    fwd_fname = data_path / "meg" / f"{folder_name}_task-passive-fwd.fif"
+    ave_fname = data_path / "meg" / f"{folder_name}_task-passive-ave.fif"
     cleaned_epo_fname = (
-        data_path / "meg" / f"{folder_name}_task-task_cleaned-epo.fif"
+        data_path / "meg" / f"{folder_name}_task-passive_cleaned-epo.fif"
     )
 
     # Building noise covariance
     cleaned_epochs = mne.read_epochs(cleaned_epo_fname)
     noise_cov = mne.compute_covariance(cleaned_epochs, tmax=0)
 
-    evoked = mne.read_evokeds(ave_fname, condition=None, baseline=(None, 0))[
-        0
-    ]  # Use evoked.plot()
-    evoked.crop(tmin=0.05, tmax=0.1)
+    evokeds = mne.read_evokeds(ave_fname, condition=None, baseline=(None, 0))
+    evoked = evokeds[-2]
+
+    evoked.crop(tmin=0.08, tmax=0.15)  # 0.08 - 0.15
     evoked = evoked.pick_types(eeg=False, meg=True)
+
+    evoked.plot()
 
     forward = mne.read_forward_solution(fwd_fname)
 
@@ -98,16 +100,17 @@ def solver(M, G, n_orient=1):
 
     start = time.time()
 
-    criterion = SUREForReweightedMultiTaskLasso(1, alphas, n_orient=n_orient)
-    best_sure, best_alpha = criterion.get_val(G, M)
+    # criterion = SUREForReweightedMultiTaskLasso(1, alphas, n_orient=n_orient)
+    # best_sure, best_alpha = criterion.get_val(G, M)
 
-    print("Duration:", time.time() - start)
+    # print("Duration:", time.time() - start)
 
-    print("Best SURE:", best_sure)
-    print("Best alpha:", best_alpha)
+    # print("Best SURE:", best_sure)
+    # print("Best alpha:", best_alpha)
 
     # Refitting
-    estimator = ReweightedMultiTaskLasso(best_alpha, n_orient=n_orient)
+    # estimator = ReweightedMultiTaskLasso(best_alpha, n_orient=n_orient)
+    estimator = ReweightedMultiTaskLasso(alpha_max * 0.9, n_orient=n_orient)
     estimator.fit(G, M)
 
     X = estimator.coef_
@@ -144,7 +147,7 @@ def solve_inverse_problem(folder_name, data_path, loose, depth=0.9):
     print("Explained variance:", norm(residual.data) / norm(evoked.data))
     print("=" * 20)
 
-    return stc, residual, evoked, noise_cov, subject_dir
+    return stc, residual, evoked, noise_cov, subject_dir, forward
 
 
 ###################################

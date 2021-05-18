@@ -6,6 +6,8 @@ import glob
 
 from utils_solver import solve_inverse_problem, generate_report
 
+from mne.viz import plot_sparse_source_estimates
+
 DATA_PATH = Path(
     "../../../../../rhochenb/Data/Cam-CAN/BIDS/derivatives/mne-study-template"
 )
@@ -23,21 +25,30 @@ def solve_for_patient(folder_path):
     print(f"Solving #{folder_name}")
 
     patient_path = DATA_PATH / folder_name
-    stc, residual, evoked, noise_cov, subject_dir = solve_inverse_problem(
-        folder_name, patient_path, LOOSE
-    )
-
-    out_report_path = OUT_PATH / f"{folder_name}.html"
-
-    generate_report(
-        folder_name,
-        out_report_path,
+    (
         stc,
-        evoked,
         residual,
+        evoked,
         noise_cov,
         subject_dir,
-    )
+        forward,
+    ) = solve_inverse_problem(folder_name, patient_path, LOOSE)
+
+    # plot_sparse_source_estimates(
+    #    forward["src"], stc, bgcolor=(1, 1, 1), opacity=0.1
+    # )
+
+    # out_report_path = OUT_PATH / f"{folder_name}.html"
+
+    # generate_report(
+    #     folder_name,
+    #     out_report_path,
+    #     stc,
+    #     evoked,
+    #     residual,
+    #     noise_cov,
+    #     subject_dir,
+    # )
 
 
 if __name__ == "__main__":

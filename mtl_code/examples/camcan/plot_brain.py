@@ -9,6 +9,7 @@ import matplotlib.pyplot as plt
 
 import mne
 from mne.viz import plot_sparse_source_estimates
+from mne.inverse_sparse.mxne_inverse import _compute_residual
 
 WORKING_EXAMPLES = [
     "CC720670",
@@ -24,110 +25,50 @@ PATIENT = "CC320687"
 ORIENTATION = "fixed"
 
 
-def add_foci_to_brain_surface(brain, stc):
-    fig, ax = plt.subplots(figsize=(10, 4))
+def merge_brain_plot(subject_ids, fixed=True):
+    orient = "Fixed" if fixed else "Free"
 
-    for i_hemi, hemi in enumerate(["lh", "rh"]):
-        surface_coords = brain.geo[hemi].coords
-        hemi_data = stc.lh_data if hemi == "lh" else stc.rh_data
-        for k in range(len(stc.vertices[i_hemi])):
-            activation_idx = stc.vertices[i_hemi][k]
-            foci_coords = surface_coords[activation_idx]
-
-            (line,) = ax.plot(stc.times, 1e9 * hemi_data[k])
-            brain.add_foci(foci_coords, hemi=hemi, color=line.get_color())
-
-    ax.set_xlabel("Time (s)")
-    ax.set_ylabel("Amplitude (nAm)")
-
-    return fig
-
-
-def generate_brain_plot(stc_fixed, stc_free):
-    views = ["lat", "med"]
-
-    kwargs = dict(
-        views=views,
-        hemi="split",
-        subjects_dir="subjects_dir",
-        initial_time=0.0,
-        clim="auto",
-        colorbar=False,
-        show_traces=False,
-        time_viewer=False,
-        cortex="low_contrast",
+    subjects_dir = "subjects_dir"
+    src_fsaverage_fname = (
+        subjects_dir + "/fsaverage/bem/fsaverage-ico-5-src.fif"
     )
+    src_fsaverage = mne.read_source_spaces(src_fsaverage_fname)
 
-    brain_fixed = stc_fixed.plot(**kwargs)
-    fig_traces_fixed = add_foci_to_brain_surface(brain_fixed, stc_fixed)
-    fig_fixed = brain_fixed.screenshot(time_viewer=True)
-    brain_fixed.close()
+    stcs = []
 
-    brain_free = stc_free.plot(**kwargs)
-    fig_traces_free = add_foci_to_brain_surface(brain_free, stc_free)
-    fig_free = brain_free.screenshot(time_viewer=True)
-    brain_free.close()
+    for subject_id in subject_ids:
+        if fixed:
+            path = f"stcs/sub-{subject_id}/free.pkl"
+        else:
+            path = f"stcs/sub-{subject_id}/fixed.pkl"
 
-    return fig_fixed, fig_free, fig_traces_fixed, fig_traces_free
+        stc = joblib.load(path)
 
-
-def generate_report(figs):
-    report = mne.report.Report(title="CamCan - SURE Reweighted MTL")
-
-    for k, v in figs.items():
-        fig_fixed, fig_free, fig_traces_fixed, fig_traces_free = v
-        report.add_figs_to_section(fig_fixed, k + " - Fixed", section=k)
-        report.add_figs_to_section(
-            fig_traces_fixed, k + " - Fixed - Activation", section=k
+        morph = mne.compute_source_morph(
+            stc,
+            subject_from=subject_id,
+            subject_to="fsaverage",
+            spacing=None,
+            sparse=True,
+            subjects_dir=subjects_dir,
         )
-        report.add_figs_to_section(fig_free, k + " - Free", section=k)
-        report.add_figs_to_section(
-            fig_traces_free, k + " - Free - Activation", section=k
-        )
+        stc_fsaverage = morph.apply(stc)
+        stcs.append(stc_fsaverage)
 
-    report.save(f"reports/report_free_fixed.html", overwrite=True)
+    plot_sparse_source_estimates(
+        src_fsaverage,
+        stcs,
+        bgcolor=(1, 1, 1),
+        fig_name=f"Merged - {orient}",
+        opacity=0.1,
+        plot_merged_sources=True,
+    )
 
 
 if __name__ == "__main__":
-    figs = {}
+    # merge_brain_plot(WORKING_EXAMPLES[:4])
 
-    paths = glob.glob("stcs/*")
-    ids = [x.split("/")[-1][4:] for x in paths]
-
-    for subject_id in WORKING_EXAMPLES:
-        print(subject_id)
-        path_free = f"stcs/sub-{subject_id}/free.pkl"
-        path_fixed = f"stcs/sub-{subject_id}/fixed.pkl"
-
-        if os.path.exists(path_free) and os.path.exists(path_fixed):
-            stc_free = joblib.load(path_free)
-            stc_fixed = joblib.load(path_fixed)
-        else:
-            continue
-
-        subjects_dir = "subjects_dir"
-
-        try:
-            (
-                fig_fixed,
-                fig_free,
-                fig_traces_fixed,
-                fig_traces_free,
-            ) = generate_brain_plot(stc_fixed, stc_free)
-        except IndexError:
-            print(f"No sources found for {subject_id}")
-            continue
-
-        figs[subject_id] = (
-            fig_fixed,
-            fig_free,
-            fig_traces_fixed,
-            fig_traces_free,
-        )
-
-    generate_report(figs)
-
-    # # Loading data
+    # Loading data
     # in_file = f"stcs/sub-{PATIENT}/{ORIENTATION}.pkl"
     # stc = joblib.load(in_file)
 

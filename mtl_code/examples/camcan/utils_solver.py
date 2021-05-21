@@ -1,3 +1,4 @@
+import os
 from pathlib import Path
 import joblib
 import time
@@ -17,7 +18,7 @@ from mtl.sure_warm_start import SUREForReweightedMultiTaskLasso
 from mtl.utils_datasets import compute_alpha_max
 
 
-def load_data(folder_name, data_path):
+def load_data(folder_name, data_path, orient):
     data_path = Path(data_path)
 
     subject_dir = data_path / "subjects"
@@ -30,22 +31,26 @@ def load_data(folder_name, data_path):
 
     # Building noise covariance
     cleaned_epochs = mne.read_epochs(cleaned_epo_fname)
-    noise_cov = mne.compute_covariance(cleaned_epochs, tmax=0)
+    noise_cov = mne.compute_covariance(cleaned_epochs, tmax=0, rank="info")
 
     evokeds = mne.read_evokeds(ave_fname, condition=None, baseline=(None, 0))
     evoked = evokeds[-2]
 
+    if not os.path.exists(f"evokeds/{folder_name}"):
+        os.mkdir(f"evokeds/{folder_name}")
+    joblib.dump(evoked, f"evokeds/{folder_name}/evoked_{orient}_full.pkl")
+
     evoked.crop(tmin=0.08, tmax=0.15)  # 0.08 - 0.15
     evoked = evoked.pick_types(eeg=False, meg=True)
-
-    evoked.plot()
 
     forward = mne.read_forward_solution(fwd_fname)
 
     return evoked, forward, noise_cov, subject_dir
 
 
-def apply_solver(solver, evoked, forward, noise_cov, loose=0.2, depth=0.8):
+def apply_solver(
+    solver, evoked, forward, noise_cov, folder_name, loose=0.2, depth=0.8
+):
     from mne.inverse_sparse.mxne_inverse import (
         _prepare_gain,
         is_fixed_orient,
@@ -64,7 +69,7 @@ def apply_solver(solver, evoked, forward, noise_cov, loose=0.2, depth=0.8):
         loose=loose,
         weights=None,
         weights_min=None,
-        rank=None,
+        rank="info",
     )
 
     sel = [all_ch_names.index(name) for name in gain_info["ch_names"]]
@@ -72,11 +77,16 @@ def apply_solver(solver, evoked, forward, noise_cov, loose=0.2, depth=0.8):
 
     M = np.dot(whitener, M)
 
+    # Save evoked_full_whitened
+    if not os.path.exists(f"evokeds/{folder_name}"):
+        os.mkdir(f"evokeds/{folder_name}")
+    joblib.dump(M, f"evokeds/{folder_name}/evoked_{orient}_full_whitened.pkl")
+
     n_orient = 1 if is_fixed_orient(forward) else 3
     print("=" * 20)
     print("Number of orientations:", n_orient)
     print("=" * 20)
-    X, active_set = solver(M, gain, n_orient)
+    X, active_set = solver(M, gain, folder_name, n_orient)
     X = _reapply_source_weighting(X, source_weighting, active_set)
 
     stc = _make_sparse_stc(
@@ -92,25 +102,35 @@ def apply_solver(solver, evoked, forward, noise_cov, loose=0.2, depth=0.8):
     return stc, residual
 
 
-def solver(M, G, n_orient=1):
+def solver(M, G, folder_name, n_orient=1):
     alpha_max = compute_alpha_max(G, M, n_orient=n_orient)
     print("Alpha max:", alpha_max)
 
-    alphas = np.geomspace(alpha_max, alpha_max / 10, num=15)
+    alphas = np.geomspace(alpha_max, alpha_max * 0.65, num=50)
 
     start = time.time()
 
-    # criterion = SUREForReweightedMultiTaskLasso(1, alphas, n_orient=n_orient)
-    # best_sure, best_alpha = criterion.get_val(G, M)
+    criterion = SUREForReweightedMultiTaskLasso(1, alphas, n_orient=n_orient)
+    best_sure, best_alpha = criterion.get_val(G, M)
 
-    # print("Duration:", time.time() - start)
+    orient = "fixed" if n_orient == 1 else "free"
 
-    # print("Best SURE:", best_sure)
-    # print("Best alpha:", best_alpha)
+    if not os.path.exists(f"sure_paths/{folder_name}"):
+        os.mkdir(f"sure_paths/{folder_name}")
+
+    joblib.dump(alphas, f"sure_paths/{folder_name}/alphas_{orient}.pkl")
+    joblib.dump(
+        criterion.sure_path_,
+        f"sure_paths/{folder_name}/sure_path_{orient}.pkl",
+    )
+
+    print("Duration:", time.time() - start)
+
+    print("Best SURE:", best_sure)
+    print("Best alpha:", best_alpha)
 
     # Refitting
-    # estimator = ReweightedMultiTaskLasso(best_alpha, n_orient=n_orient)
-    estimator = ReweightedMultiTaskLasso(alpha_max * 0.9, n_orient=n_orient)
+    estimator = ReweightedMultiTaskLasso(best_alpha, n_orient=n_orient)
     estimator.fit(G, M)
 
     X = estimator.coef_
@@ -137,96 +157,30 @@ def solve_inverse_problem(folder_name, data_path, loose, depth=0.9):
         The exponent that raises the norm used to normalize sources.
     """
 
-    evoked, forward, noise_cov, subject_dir = load_data(folder_name, data_path)
+    orient = "fixed" if loose == 0 else "free"
+
+    evoked, forward, noise_cov, subject_dir = load_data(
+        folder_name, data_path, orient
+    )
 
     stc, residual = apply_solver(
-        solver, evoked, forward, noise_cov, loose, depth
+        solver, evoked, forward, noise_cov, folder_name, loose, depth
     )
+
+    if not os.path.exists(f"evokeds/{folder_name}"):
+        os.mkdir(f"evokeds/{folder_name}")
+    joblib.dump(evoked, f"evokeds/{folder_name}/evoked_{orient}.pkl")
+
+    if not os.path.exists(f"noise_covs/{folder_name}"):
+        os.mkdir(f"noise_covs/{folder_name}")
+    joblib.dump(noise_cov, f"noise_covs/{folder_name}/noise_cov_{orient}.pkl")
+
+    if not os.path.exists(f"residuals/{folder_name}"):
+        os.mkdir(f"residuals/{folder_name}")
+    joblib.dump(residual, f"residuals/{folder_name}/residual_{orient}.pkl")
 
     print("=" * 20)
     print("Explained variance:", norm(residual.data) / norm(evoked.data))
     print("=" * 20)
 
     return stc, residual, evoked, noise_cov, subject_dir, forward
-
-
-###################################
-######### GENERATE REPORT #########
-###################################
-
-
-def add_foci_to_brain_surface(brain, stc):
-    fig, ax = plt.subplots(figsize=(10, 4))
-
-    for i_hemi, hemi in enumerate(["lh", "rh"]):
-        surface_coords = brain.geo[hemi].coords
-        hemi_data = stc.lh_data if hemi == "lh" else stc.rh_data
-        for k in range(len(stc.vertices[i_hemi])):
-            activation_idx = stc.vertices[i_hemi][k]
-            foci_coords = surface_coords[activation_idx]
-
-            (line,) = ax.plot(stc.times, 1e9 * hemi_data[k])
-            brain.add_foci(foci_coords, hemi=hemi, color=line.get_color())
-
-    ax.set_xlabel("Time (s)")
-    ax.set_ylabel("Amplitude (nAm)")
-
-    return fig
-
-
-def generate_report(
-    patient_id, out_path, stc, evoked, residual, noise_cov, subject_dir
-):
-    title = patient_id
-    report = mne.report.Report(title=title)
-
-    views = ["lat", "med"]
-
-    kwargs = dict(
-        views=views,
-        hemi="split",
-        subjects_dir=subject_dir,
-        initial_time=0.0,
-        clim="auto",
-        colorbar=False,
-        show_traces=False,
-        time_viewer=False,
-        cortex="low_contrast",
-    )
-
-    brain = stc.plot(**kwargs)
-    fig_traces = add_foci_to_brain_surface(brain, stc)
-
-    # brain.toggle_interface(False)
-    fig = brain.screenshot(time_viewer=True)
-    brain.close()
-    exp_var = norm(residual.data) / norm(evoked.data)
-
-    evoked_fig = evoked.plot(ylim=dict(mag=[-250, 250], grad=[-100, 100]))
-    residual_fig = residual.plot(ylim=dict(mag=[-250, 250], grad=[-100, 100]))
-
-    evoked_fig_white = evoked.plot_white(noise_cov=noise_cov)
-    residual_fig_white = residual.plot_white(noise_cov=noise_cov)
-
-    report.add_figs_to_section(evoked_fig, "Evoked", section="Sensor")
-    report.add_figs_to_section(residual_fig, "Residual", section="Sensor")
-
-    report.add_figs_to_section(
-        evoked_fig_white, "Evoked - White noise", section="Sensor"
-    )
-    report.add_figs_to_section(
-        residual_fig_white, "Residual - White noise", section="Sensor"
-    )
-
-    report.add_figs_to_section(
-        fig,
-        f"Source estimate, explained variance: {exp_var:.2f}",
-        section="Source",
-    )
-    report.add_figs_to_section(
-        fig_traces, "Source Time Courses", section="Source"
-    )
-
-    report.add_figs_to_section(sure_path_fig, "SURE Path", section="Source")
-
-    report.save(out_path)

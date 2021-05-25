@@ -77,6 +77,8 @@ def apply_solver(
 
     M = np.dot(whitener, M)
 
+    orient = "fixed" if loose == 0 else "free"
+
     # Save evoked_full_whitened
     if not os.path.exists(f"evokeds/{folder_name}"):
         os.mkdir(f"evokeds/{folder_name}")

@@ -1,9 +1,12 @@
 from pathlib import Path
 import os
+from sys import path_importer_cache
 from joblib import parallel_backend
 from joblib import Parallel, delayed
 import joblib
 import glob
+
+import pandas as pd
 
 from utils_solver import solve_inverse_problem
 
@@ -14,12 +17,16 @@ DATA_PATH = Path(
     "../../../../../rhochenb/Data/Cam-CAN/BIDS/derivatives/mne-study-template"
 )
 
+PARTICIPANTS_INFO = Path(
+    "../../../../../../../store/data/camcan/BIDSsep/passive/participants.tsv"
+)
+
 OUT_PATH = Path("reports")
 
-N_JOBS = 6  # -1
+N_JOBS = 20  # -1
 INNER_MAX_NUM_THREADS = 1
 
-LOOSE = 0.9  # 0 for fixed, 0.9 for free
+LOOSE = 0  # 0 for fixed, 0.9 for free
 
 CRASHING_PATIENTS = [
     "sub-CC210250",
@@ -94,8 +101,8 @@ def solve_for_patient(folder_path):
     folder_name = folder_path.split("/")[-1]
     print(f"Solving #{folder_name}")
 
-    if folder_name not in WORKING_EXAMPLES:
-        return
+    # if folder_name not in WORKING_EXAMPLES:
+    #    return
 
     patient_path = DATA_PATH / folder_name
     (
@@ -117,22 +124,18 @@ def solve_for_patient(folder_path):
 
     joblib.dump(stc, out_path_stc)
 
-    # out_report_path = OUT_PATH / f"{folder_name}.html"
-
-    # generate_report(
-    #     folder_name,
-    #     out_report_path,
-    #     stc,
-    #     evoked,
-    #     residual,
-    #     noise_cov,
-    #     subject_dir,
-    # )
-
 
 if __name__ == "__main__":
-    patient_folders = glob.glob(str(DATA_PATH / "*"))
-    patient_folders = [x for x in patient_folders if os.path.isdir(x)]
+    # patient_folders = glob.glob(str(DATA_PATH / "*"))
+    # patient_folders = [x for x in patient_folders if os.path.isdir(x)]
+
+    # Load 30 youngest patients
+    participant_info_df = pd.read_csv(PARTICIPANTS_INFO, sep="\t")
+    participant_info_df = participant_info_df[participant_info_df["age"] < 30]
+
+    patient_folders = list(participant_info_df["participant_id"])
+    patient_folders = [DATA_PATH / x for x in patient_folders]
+    patient_folders = [str(x) for x in patient_folders if os.path.isdir(x)]
 
     with parallel_backend("loky", inner_max_num_threads=INNER_MAX_NUM_THREADS):
         Parallel(N_JOBS)(

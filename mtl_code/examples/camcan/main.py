@@ -26,7 +26,7 @@ OUT_PATH = Path("reports")
 N_JOBS = 20  # -1
 INNER_MAX_NUM_THREADS = 1
 
-LOOSE = 0.9  # 0 for fixed, 0.9 for free
+LOOSE = 0  # 0 for fixed, 0.9 for free
 
 CRASHING_PATIENTS = [
     "sub-CC210250",

@@ -10,8 +10,6 @@ from mtl.solver_free_orient import MultiTaskLassoOrientation
 
 from mtl.utils_datasets import primal_mtl, norm_l2_1, groups_norm2
 
-import ipdb
-
 
 class ReweightedMultiTaskLasso(BaseEstimator, RegressorMixin):
     """Reweighted Multi-Task LASSO.

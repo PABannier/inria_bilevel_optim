@@ -5,6 +5,8 @@ import glob
 import numpy as np
 from numpy.linalg import norm
 
+import pandas as pd
+
 import matplotlib.pyplot as plt
 
 import mne
@@ -73,10 +75,16 @@ def generate_brain_plot(stc_fixed, stc_free):
 
 
 def generate_residual_plots(evoked, evoked_full, residual, noise_cov):
-    evoked_fig = evoked.plot(ylim=dict(mag=[-250, 250], grad=[-100, 100]))
-    residual_fig = residual.plot(ylim=dict(mag=[-250, 250], grad=[-100, 100]))
+    evoked_fig = evoked.plot(
+        ylim=dict(mag=[-250, 250], grad=[-100, 100]), spatial_colors=True
+    )
+    residual_fig = residual.plot(
+        ylim=dict(mag=[-250, 250], grad=[-100, 100]), spatial_colors=True
+    )
 
-    evoked_full_fig = evoked_full.plot()
+    topo_fig = evoked.plot_topomap(ch_type="grad")
+
+    evoked_full_fig = evoked_full.plot(spatial_colors=True)
     ax_list = evoked_full_fig.axes
     for i in range(2):
         ax_list[i].axvline(0.08, linestyle="--", linewidth=2, c="r")
@@ -97,6 +105,7 @@ def generate_residual_plots(evoked, evoked_full, residual, noise_cov):
 
     return (
         evoked_fig,
+        topo_fig,
         evoked_full_fig,
         residual_fig,
         evoked_fig_white,
@@ -109,7 +118,13 @@ def plot_sure_path(alphas, sure_path):
     # Saving SURE path for better visualization in reports
     fig = plt.figure()
 
-    plt.semilogx(alphas / np.max(alphas), sure_path, label="Path")
+    plt.semilogx(
+        alphas / np.max(alphas),
+        sure_path,
+        label="Path",
+        marker="x",
+        markeredgecolor="red",
+    )
     plt.title("Sure path", fontweight="bold", fontsize=16)
 
     plt.axvline(
@@ -137,6 +152,7 @@ def generate_report(figs):
             fig_free,
             fig_traces_fixed,
             fig_traces_free,
+            fig_topomap,
             fig_evoked_fixed,
             fig_evoked_free,
             fig_evoked_fixed_full,
@@ -150,7 +166,11 @@ def generate_report(figs):
             fig_residual_white_free,
             fig_sure_path_fixed,
             fig_sure_path_free,
+            age,
         ) = v
+
+        k = k + f" ({str(age)})" if age else k
+
         report.add_figs_to_section(fig_fixed, k + " - Fixed", section=k)
         report.add_figs_to_section(
             fig_traces_fixed, k + " - Fixed - Activation", section=k
@@ -164,6 +184,8 @@ def generate_report(figs):
             fig_evoked_fixed_full, k + " - Evoked (full)", section=k
         )
         report.add_figs_to_section(fig_evoked_free, k + " - Evoked", section=k)
+
+        report.add_figs_to_section(fig_topomap, k + " - Topomap", section=k)
 
         report.add_figs_to_section(
             fig_residual_fixed, k + " - Residual - Fixed", section=k
@@ -202,16 +224,22 @@ def generate_report(figs):
             fig_sure_path_free, k + " - SURE Path - Free", section=k
         )
 
-    report.save(f"reports/report.html", overwrite=True)
+    report.save(f"reports/report_youngest_3.html", overwrite=True)
 
 
 if __name__ == "__main__":
     figs = {}
 
-    paths = glob.glob("stcs/*")
-    ids = [x.split("/")[-1][4:] for x in paths]
+    # paths = glob.glob("stcs/*")
+    # ids = [x.split("/")[-1][4:] for x in paths]
 
-    for subject_id in WORKING_EXAMPLES:
+    participant_info_df = pd.read_csv("participants.tsv", sep="\t")
+    participant_info_df = participant_info_df[participant_info_df["age"] < 30]
+
+    participant_list = list(participant_info_df["participant_id"])
+    participant_list = [x[4:] for x in participant_list][:6]
+
+    for subject_id in participant_list:
         print(subject_id)
 
         # Load evoked, noise_cov, residual, sure_path
@@ -273,6 +301,7 @@ if __name__ == "__main__":
 
         (
             fig_evoked_fixed,
+            fig_topomap,
             fig_evoked_fixed_full,
             fig_residual_fixed,
             fig_evoked_white_fixed,
@@ -287,6 +316,7 @@ if __name__ == "__main__":
 
         (
             fig_evoked_free,
+            _,
             fig_evoked_free_full,
             fig_residual_free,
             fig_evoked_white_free,
@@ -299,11 +329,16 @@ if __name__ == "__main__":
         fig_sure_path_fixed = plot_sure_path(alphas_fixed, sure_path_fixed)
         fig_sure_path_free = plot_sure_path(alphas_free, sure_path_free)
 
+        age = participant_info_df[
+            participant_info_df["participant_id"] == f"sub-{subject_id}"
+        ]["age"]
+
         figs[subject_id] = (
             fig_fixed,
             fig_free,
             fig_traces_fixed,
             fig_traces_free,
+            fig_topomap,
             fig_evoked_fixed,
             fig_evoked_free,
             fig_evoked_fixed_full,
@@ -317,6 +352,7 @@ if __name__ == "__main__":
             fig_residual_white_free,
             fig_sure_path_fixed,
             fig_sure_path_free,
+            int(age),
         )
 
     generate_report(figs)

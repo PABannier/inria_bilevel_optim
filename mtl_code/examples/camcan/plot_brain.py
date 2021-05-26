@@ -61,12 +61,11 @@ def merge_brain_plot(subject_ids, fixed=True):
         bgcolor=(1, 1, 1),
         fig_name=f"Merged - {orient}",
         opacity=0.1,
-        plot_merged_sources=True,
     )
 
 
 if __name__ == "__main__":
-    # merge_brain_plot(WORKING_EXAMPLES[:4])
+    merge_brain_plot(WORKING_EXAMPLES[:])
 
     # Loading data
     # in_file = f"stcs/sub-{PATIENT}/{ORIENTATION}.pkl"

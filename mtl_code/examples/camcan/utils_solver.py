@@ -17,6 +17,73 @@ from mtl.mtl import ReweightedMultiTaskLasso
 from mtl.sure_warm_start import SUREForReweightedMultiTaskLasso
 from mtl.utils_datasets import compute_alpha_max
 
+from mne.inverse_sparse.mxne_inverse import (
+    _prepare_gain,
+    is_fixed_orient,
+    _reapply_source_weighting,
+    _make_sparse_stc,
+)
+from numpy.core.fromnumeric import argmin
+
+
+def select_time_window(evoked_full, noise_cov, forward, loose):
+    def _solver(M, G, n_orient=1):
+        alpha_max = compute_alpha_max(G, M, n_orient=n_orient)
+        print("Alpha max:", alpha_max)
+
+        alphas = np.geomspace(alpha_max, alpha_max * 0.65, num=15)
+        criterion = SUREForReweightedMultiTaskLasso(
+            1, alphas, n_orient=n_orient
+        )
+        best_sure, _ = criterion.get_val(G, M)
+        return best_sure
+
+    sure_scores = []
+    STEP = 0.2
+
+    for t in np.arange(evoked_full.tmin, evoked_full.tmax, STEP):
+        tmin = t
+        tmax = tmin + STEP
+
+        print("t_min:", tmin)
+        print("t_max:", tmax)
+
+        evoked = evoked_full.copy()
+        evoked = evoked.crop(tmin=tmin, tmax=tmax)
+        evoked = evoked.pick_types(eeg=False, meg=True)
+
+        all_ch_names = evoked.ch_names
+
+        forward, gain, gain_info, whitener, _, _ = _prepare_gain(
+            forward,
+            evoked.info,
+            noise_cov,
+            pca=False,
+            depth=0.8,
+            loose=loose,
+            weights=None,
+            weights_min=None,
+            rank="info",
+        )
+
+        sel = [all_ch_names.index(name) for name in gain_info["ch_names"]]
+        M = evoked.data[sel]
+
+        M = np.dot(whitener, M)
+
+        n_orient = 1 if is_fixed_orient(forward) else 3
+        best_sure = _solver(M, gain, n_orient)
+        best_sure /= np.prod(M.shape)
+        sure_scores.append(best_sure)
+
+    best_t_min = evoked_full.tmin + STEP * np.argmin(sure_scores)
+    best_t_max = evoked_full.tmin + STEP * (np.argmin(sure_scores) + 1)
+
+    print("Best t_min:", best_t_min)
+    print("Best t max:", best_t_max)
+
+    return best_t_min, best_t_max
+
 
 def load_data(folder_name, data_path, orient):
     data_path = Path(data_path)
@@ -40,10 +107,16 @@ def load_data(folder_name, data_path, orient):
         os.mkdir(f"evokeds/{folder_name}")
     joblib.dump(evoked, f"evokeds/{folder_name}/evoked_{orient}_full.pkl")
 
+    forward = mne.read_forward_solution(fwd_fname)
+
+    loose = 0 if orient == "fixed" else "free"
+
+    # best_t_min, best_t_max = select_time_window(
+    #     evoked.copy(), noise_cov, forward, loose
+    # )
+
     evoked.crop(tmin=0.08, tmax=0.15)  # 0.08 - 0.15
     evoked = evoked.pick_types(eeg=False, meg=True)
-
-    forward = mne.read_forward_solution(fwd_fname)
 
     return evoked, forward, noise_cov, subject_dir
 
@@ -76,6 +149,8 @@ def apply_solver(
     M = evoked.data[sel]
 
     M = np.dot(whitener, M)
+
+    orient = "fixed" if loose == 0 else "free"
 
     # Save evoked_full_whitened
     if not os.path.exists(f"evokeds/{folder_name}"):

@@ -1,6 +1,5 @@
 %!TEX root = ../article.tex
 
-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Introduction}
@@ -63,43 +62,74 @@
 \textcolor{red}{DRAFT}
 
 Magneto-/electroencephalography (M/EEG) allows for a non-invasive analysis of
-functional brain imaging. The distributed-source approach models the brain activity
+functional brain imaging (\cite{Baillet_Mosher_Leahy_2001}). The distributed-source approach models the brain activity
 with a fixed number of dipoles distributed over a dense three-dimensional 
-grid within the brain volume. The task in the inverse problem  is to estimate the 
-distribution of dipolar currents that can explain the measured data. Since the 
-number of dipoles is typically much larger than the number of sensors placed on 
-the skull surface of the subject, source localization is an ill-posed inverse problem. 
-This implies that there is not a unique solution and that constraints need to be 
-applied on the solution. Those constraints must enforce biological assumptions 
-made on the brain activity namely, group sparsity and stationarity.
-\\
-Literature exhibits a large number of techniques such as sparse Bayesian modeling 
-(\textcolor{red}{REFERENCE}) and regularized regression (\textcolor{red}{REFERENCE}) 
-to model brain activity. In this paper, we are particularly interested in the 
-high-dimensional regression setting using group-Lasso-like structured sparsity. 
-Those models are usually parametrized by one or multiple hyperparameters to 
-control the level of sparsity induced by the constraint.
-\\
-Hyperparameter selection remains a challenging task, especially in the source 
-localization setting. A naive approach consists in selecting the hyperparameters 
-by cross-validation (CV). However, the CV approach requires the i.i.d. assumption 
-to be fulfilled, which is often not the case when dealing with array of sensors 
-(\textcolor{red}{REFERENCE}). Another approach consists in using a hierarchical 
-Bayesian model and estimating the hyperparameters by maximum-a-posteriori 
-(\textcolor{red}{REFERENCE}). Those approaches still require the tuning of one
-or multiple parameters to parametrize hyperpriors.
-\\
+grid within the brain volume. The task in the inverse problem is to estimate the 
+distribution of dipolar currents over this three-dimensional grid that can explain the 
+measured data. Since the number of dipoles is typically much larger than the number 
+of sensors placed on the skull surface of the subject, source localization is an 
+ill-posed inverse problem having an infinite number of solutions. In order to render
+the solution unique, biologically-plausible constraints must be applied on the optimization
+problem. Literature is awash of inverse methods favoring sparse solutions to explain the
+M/EGG signals including parametric and Bayesian approaches (\cite{Huang_Breheny_Ma_2012};
+\cite{Matsuura_Okabe_1995}; \cite{Uutela_Hamalainen_Somersalo_1999}). 
+Those techniques are suitable for short-term source reconstruction - typically for tens 
+of milliseconds after the cognitive stimulus - but fails for larger time frame when the 
+stationarity assumption needs to be relaxed (\cite{Gramfort_Strohmeier_Haueisen_Hamalainen_Kowalski13}). 
+In recent years, a promising approach has been Mixed Norm Estimate (MxNE) 
+(\cite{Gramfort_Kowalski_Hamalainen12}), that extends the Lasso (\cite{Tibshirani96}), 
+a regularized least-square model that applies a $\ell_1$-norm penalty on the coefficients to yield 
+sparse solutions. More precisely, MxNE is a multi-task Lasso
+model that imposes a block separable convex penalty with a $\ell_{2,1}$-mixed-norm, similar to 
+Group Lasso (\cite{Yuan_Lin06}) or Group Basis Pursuit (\cite{Liao_Li_Carin_2014}). Each block represents the source
+activation over time of a dipole with fixed or free orientation at a specific source location.
+We refer to \cite{Bach_Jenatton_Mairal_Obozinski12} for a comprehensive review of sparsity-inducing
+norms. \cite{Strohmeier_Bekhti_Haueisen_Gramfort_2016} improved MxNe by proposing iterative Mixed Norm Estimate 
+(irMxNE), a M/EEG sparse source imaging approach based on the iterative reweighting of the $\ell_1$-
+norm (\cite{Candes_Wakin_Boyd08}), that showed state-of-the-art results on the source localization
+problem.
+
+All those approaches are parametrized by one hyperparameter $\lambda$ to control the level of 
+sparsity induced by the constraint. Figure 1 shows the critical effect of this regularizing hyperparameter 
+on the sparsity of the yielded solution. The larger $\lambda$, the sparser the solution which translates
+into fewer sources recovered by the model. Hyperparameter selection remains a challenging yet crucial task
+for inverse problems. Various approaches have been proposed to automatically select the regularizing 
+hyperparameter in sparse models. Bayesian approaches consist in setting a prior distribution on the 
+and select the hyperparameter by \textit{maximum-a-posteriori} (MAP) estimation. 
+\cite{Pereyra_BioucasDias_Figueiredo_2015} introduced two hierarchical Bayesian methods to perform MAP 
+inference when the value of the regularization parameter is unknown, by setting a Gamma prior on the 
+unknown hyperparameter. \cite{Bekhti_Badeau_Gramfort_2017} adapted this method to the multi-task Lasso problem
+for source localization and proposed a method to adjust the scale parameters $\alpha$ and $\beta$
+of the Gamma prior. However, both methods require to fine-tune at least one parameter by hand, which is not
+convenient and tedious for non-experts. Hyperparameter selection can also be done using an exhausive
+grid-search using a held-out criterion (\cite{Bergstra_Bengio12}, \cite{BergstraBardenetBengioKegl2011}), 
+the chosen hyperparameter is the one that minimizes this criterion. \cite{Pedregosa16} has 
+showed that cross-validating the hyperparameter on held-out sets is not a suitable approach for inverse 
+problems. Figure 2 shows that cross-validation (CV) consistently performs worse than other 
+hyperparameter selection methods. CV requires the i.i.d. assumption to be fulfilled, which is 
+not the case when dealing with an array of spatio-temporally-correlated sensors. 
+
+
+- SURE-based approach (Vaiter, Sugar) + literature.
+- Mais là non plus ne marche pas bien (regarder des références).
+
+- Dans ce paper nous proposons d'améliorer MxNE, irMxNE (TF-irMxNE ???) avec
+le SURE-based, une méthode qui a prouvé son efficacité sur des jeux de données MEEG.
+- En particulier, nous montrons comment calculer le SURE dans le cas reweighté grâce à
+MCFD.
+
+
 In this paper, we study the multi-task Lasso problem. In particular, we focus 
 our study both on its convex form using a $\ell_{2, 1}$ penalization and its non-convex 
 form using a $\ell_{2, 0.5}$ penalization. First, we review the SURE-based approaches
 for hyperparameter selection in the neuro-imaging context. Then, we propose a 
-procedure based on the Monte-Carlo finite difference SURE \cite{Deledalle_Vaiter_Fadili_Peyre14}
+procedure based on the Monte-Carlo finite difference SURE (\cite{Deledalle_Vaiter_Fadili_Peyre14})
 for M/EEG source localization problem that exhibits good performance while being
-fast. An implementation of our code can be found in MNE software (\textcolor{red}{REFERENCE}).
+fast. An implementation of our code can be found in MNE software (\cite{mne}).
 The different strategies are tested on simulations and multiple source reconstruction 
 problems using public M/EEG data.
-\\
-\\
+
+
 \textit{\textbf{Notation}} The transpose of a matrix $\mathbf{A} \in \mathbb{R}^{M \times N}$ is
 denoted $\bf{A}^\top$. $\mathbf{A}[i,:]$ and $\mathbf{A}[:,j]$ correspond to the $i^{th}$
 row and the $j^{th}$ column respectively. $\norm{A}_{\text{F}}$ indicates the Frobenius norm,
@@ -107,22 +137,6 @@ and $\norm{\mathbf{A}}_{p,q}$ the $\ell_{p,q}$ mixed norm with $\norm{\mathbf{A}
 = \left(\sum_i \left(\sum_j \lvert \mathbf{A}[i,j] \rvert^p\right)^{q/p}\right)^{1/q}$.
 $\mathbf{I}$ denotes the identity matrix.
 
-
-\textcolor{blue}{TODO}
-\begin{itemize}
-    \item Ill-posed MEEG inverse problem
-    \item Prior Lasso Fast solvers for sparse regression
-    \item How to select the hyperparameter?
-    \item Cross-validation? SURE?
-    \item (Fig avec plusieurs valeurs des hyperparams?)
-\end{itemize}
-%
-% \textcolor{blue}{TODO contributions}
-In this paper the propose:
-\begin{itemize}
-    \item New contribution 1
-    \item New contribution 2
-\end{itemize}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \subsection{Background}
@@ -145,7 +159,7 @@ instantaneous mixing matrix also called the gain matrix. This matrix relates the
 to the measurements. $\mathbf{E} \in \mathbb{R}^{N \times T}$ is the noise matrix, which
 is assumed to be additive, white and Gaussian, $\mathbf{E}[:,j] \sim \mathcal{N}(0, \mathbf{I})
 \enspace \forall j$. $\mathbf{X} \in \mathbf{R}^{S \times T}$ is the coefficient matrix to be estimated. 
-It corresponds at every point in time to the estimated current intensity in the dipoles of
+It corresponds at every point in time to the estimated current intensity at the dipoles in
 the brain volumes.
 \\
 Assuming a known regularization parameter $\lambda > 0$, we recall the multi-task
@@ -166,7 +180,7 @@ $\hat{\mathbf{X}}_{\lambda}$ relies heavily on $\lambda$.
 
 The hyperparameter selection problem can be cast in a bi-level optimization framework (see ???
 for a comprehensive review of hyperparameter selection). We will denote $\mathcal{L}$ the cost function
-(e.g. a SURE-based criterion), often referred to as the outer loss. Therefore, we can naturally write
+(e.g. a SURE-based criterion), often referred as the outer loss. Therefore, we can naturally write
 the hyperparameter optimization problem as the nested bi-level optimization problem:
 
 \begin{align*}
@@ -203,5 +217,13 @@ often referred as the inner loss.
 \label{sub:experience}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsection{Implementation details}
+\label{sub:experience}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%
+Free fixed solver
+Warm start
 
 \clearpage

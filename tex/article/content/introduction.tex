@@ -71,7 +71,7 @@ of sensors placed on the skull surface of the subject, source localization is an
 ill-posed inverse problem having an infinite number of solutions. In order to render
 the solution unique, biologically-plausible constraints must be applied on the optimization
 problem. Literature is awash of inverse methods favoring sparse solutions to explain the
-M/EGG signals including parametric and Bayesian approaches (\cite{Huang_Breheny_Ma_2012};
+M/EEG signals including parametric and Bayesian approaches (\cite{Huang_Breheny_Ma_2012};
 \cite{Matsuura_Okabe_1995}; \cite{Uutela_Hamalainen_Somersalo_1999}). 
 Those techniques are suitable for short-term source reconstruction - typically for tens 
 of milliseconds after the cognitive stimulus - but fails for larger time frame when the 
@@ -81,55 +81,48 @@ In recent years, a promising approach has been Mixed Norm Estimate (MxNE)
 a regularized least-square model that applies a $\ell_1$-norm penalty on the coefficients to yield 
 sparse solutions. More precisely, MxNE is a multi-task Lasso
 model that imposes a block separable convex penalty with a $\ell_{2,1}$-mixed-norm, similar to 
-Group Lasso (\cite{Yuan_Lin06}) or Group Basis Pursuit (\cite{Liao_Li_Carin_2014}). Each block represents the source
-activation over time of a dipole with fixed or free orientation at a specific source location.
-We refer to \cite{Bach_Jenatton_Mairal_Obozinski12} for a comprehensive review of sparsity-inducing
-norms. \cite{Strohmeier_Bekhti_Haueisen_Gramfort_2016} improved MxNe by proposing iterative Mixed Norm Estimate 
+Group Lasso (\cite{Yuan_Lin06}) or Group Basis Pursuit (\cite{Liao_Li_Carin_2014}). We refer to 
+\cite{Bach_Jenatton_Mairal_Obozinski12} for a comprehensive review of sparsity-inducing norms. 
+Each block represents the source activation over time of a dipole with fixed or free orientation at a specific source location.
+\cite{Strohmeier_Bekhti_Haueisen_Gramfort_2016} improved MxNe by proposing iteratively reweighted Mixed Norm Estimate 
 (irMxNE), a M/EEG sparse source imaging approach based on the iterative reweighting of the $\ell_1$-
 norm (\cite{Candes_Wakin_Boyd08}), that showed state-of-the-art results on the source localization
 problem.
 
 All those approaches are parametrized by one hyperparameter $\lambda$ to control the level of 
 sparsity induced by the constraint. Figure 1 shows the critical effect of this regularizing hyperparameter 
-on the sparsity of the yielded solution. The larger $\lambda$, the sparser the solution which translates
+on the sparsity of the solution. The larger $\lambda$, the sparser the solution which translates
 into fewer sources recovered by the model. Hyperparameter selection remains a challenging yet crucial task
 for inverse problems. Various approaches have been proposed to automatically select the regularizing 
-hyperparameter in sparse models. Bayesian approaches consist in setting a prior distribution on the 
+hyperparameter in sparse models. Bayesian approaches consist in setting a prior distribution 
 and select the hyperparameter by \textit{maximum-a-posteriori} (MAP) estimation. 
 \cite{Pereyra_BioucasDias_Figueiredo_2015} introduced two hierarchical Bayesian methods to perform MAP 
 inference when the value of the regularization parameter is unknown, by setting a Gamma prior on the 
 unknown hyperparameter. \cite{Bekhti_Badeau_Gramfort_2017} adapted this method to the multi-task Lasso problem
 for source localization and proposed a method to adjust the scale parameters $\alpha$ and $\beta$
-of the Gamma prior. However, both methods require to fine-tune at least one parameter by hand, which is not
-convenient and tedious for non-experts. Hyperparameter selection can also be done using an exhausive
+of the Gamma prior. However, both methods require to fine-tune at least one parameter by hand, which is a
+tedious process for non-experts. Hyperparameter selection can also be done using an exhausive
 grid-search using a held-out criterion (\cite{Bergstra_Bengio12}, \cite{BergstraBardenetBengioKegl2011}), 
 the chosen hyperparameter is the one that minimizes this criterion. \cite{Pedregosa16} has 
 showed that cross-validating the hyperparameter on held-out sets is not a suitable approach for inverse 
 problems. Figure 2 shows that cross-validation (CV) consistently performs worse than other 
 hyperparameter selection methods. CV requires the i.i.d. assumption to be fulfilled, which is 
-not the case when dealing with an array of spatio-temporally-correlated sensors. 
+not the case when dealing with an array of spatially-correlated sensors. The crucial question revolves around
+finding a good estimator of the reconstruction error of a model. \cite{Stein81} proposed an unbiased estimator
+of the quadratic risk of models, called the Stein's Unbiased Risk Estimator (SURE). The SURE has proved to be 
+useful for digital signal and image reconstruction (\cite{Pesquet_Benazza_Chaux_2009}) and for
+parameter selection (\cite{Deledalle_Vaiter_Fadili_Peyre14}).
 
-
-- SURE-based approach (Vaiter, Sugar) + literature.
-- Mais là non plus ne marche pas bien (regarder des références).
-
-- Dans ce paper nous proposons d'améliorer MxNE, irMxNE (TF-irMxNE ???) avec
-le SURE-based, une méthode qui a prouvé son efficacité sur des jeux de données MEEG.
-- En particulier, nous montrons comment calculer le SURE dans le cas reweighté grâce à
-MCFD.
-
-
-In this paper, we study the multi-task Lasso problem. In particular, we focus 
-our study both on its convex form using a $\ell_{2, 1}$ penalization and its non-convex 
-form using a $\ell_{2, 0.5}$ penalization. First, we review the SURE-based approaches
-for hyperparameter selection in the neuro-imaging context. Then, we propose a 
-procedure based on the Monte-Carlo finite difference SURE (\cite{Deledalle_Vaiter_Fadili_Peyre14})
-for M/EEG source localization problem that exhibits good performance while being
-fast. An implementation of our code can be found in MNE software (\cite{mne}).
+In this paper, we propose a procedure based on the Monte-Carlo finite difference SURE (\cite{Deledalle_Vaiter_Fadili_Peyre14})
+that achieves state-of-the-art performance on hyperparameter selection tasks for MxNE and irMxNE,
+both on simulated and real M/EEG data. Then we adapt this procedure to the time-frequency domain
+with TF-irMxNE. An implementation of our code can be found in MNE software (\cite{mne}).
 The different strategies are tested on simulations and multiple source reconstruction 
 problems using public M/EEG data.
-
-
+%
+\newline
+\newline
+%
 \textit{\textbf{Notation}} The transpose of a matrix $\mathbf{A} \in \mathbb{R}^{M \times N}$ is
 denoted $\bf{A}^\top$. $\mathbf{A}[i,:]$ and $\mathbf{A}[:,j]$ correspond to the $i^{th}$
 row and the $j^{th}$ column respectively. $\norm{A}_{\text{F}}$ indicates the Frobenius norm,

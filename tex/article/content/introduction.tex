@@ -64,7 +64,7 @@
 Magneto-/electroencephalography (M/EEG) allows for a non-invasive analysis of
 functional brain imaging (\cite{Baillet_Mosher_Leahy_2001}). The distributed-source approach models the brain activity
 with a fixed number of dipoles distributed over a dense three-dimensional 
-grid within the brain volume. The task in the inverse problem is to estimate the 
+grid within the brain volume (\cite{Dale_Sereno_1993}). The task in the inverse problem is to estimate the 
 distribution of dipolar currents over this three-dimensional grid that can explain the 
 measured data. Since the number of dipoles is typically much larger than the number 
 of sensors placed on the skull surface of the subject, source localization is an 
@@ -95,7 +95,8 @@ on the sparsity of the solution. The larger the hyperparameter, the sparser the 
 into fewer sources recovered by the model. Hyperparameter selection remains a challenging yet crucial task
 for inverse problems. Various approaches have been proposed to automatically select the regularizing 
 hyperparameter in sparse models. Bayesian approaches consist in setting a prior distribution 
-and select the hyperparameter by \textit{maximum-a-posteriori} (MAP) estimation. 
+and select the hyperparameter by \textit{maximum-a-posteriori} (MAP) estimation (\cite{Pereyra_BioucasDias_Figueiredo_2015};
+\cite{Vidal_Bortoli_Pereyra_Durmus_2020}).
 \cite{Pereyra_BioucasDias_Figueiredo_2015} introduced two hierarchical Bayesian methods to perform MAP 
 inference when the value of the regularization parameter is unknown, by setting a Gamma prior on the 
 unknown hyperparameter. \cite{Bekhti_Badeau_Gramfort_2017} adapted this method to the multi-task Lasso problem
@@ -166,15 +167,15 @@ Lasso regression model defined by:
 %
 where $\mathcal{P}(\mathbf{X})$ is a regularization term and $\lambda$ the hyperparameter
 that controls the trade-off between the data-fit and the penalization. In practice, the solution
-$\hat{\mathbf{X}}_{\lambda}$ relies heavily on $\lambda$.
+$\hat{\mathbf{X}}_{\lambda}$ relies heavily on $\lambda$ (see Figure 1).
 
 \subsubsection{The bi-level optimization framework}
 
-The hyperparameter selection problem can be cast in a bi-level optimization framework. We refer 
+The hyperparameter selection problem can be cast into a bi-level optimization framework. We refer 
 to \cite{Pedregosa16} for a comprehensive review of bi-level hyperparameter optimization problems.
 We denote $\mathcal{L}$ the criterion we wish to optimize w.r.t. $\lambda$ (e.g. a SURE-based criterion) 
 referred as the outer loss, and $L$ a cost function of the coefficient matrix $\mathbf{X}$ referred
-as the inner loss. Therefore, we can naturally write the hyperparameter optimization problem as the 
+as the inner loss. Therefore, we can write the hyperparameter optimization problem as the 
 nested bi-level optimization problem:
 
 \begin{align*}

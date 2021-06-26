@@ -249,9 +249,9 @@ which writes:
 %
 where $\text{df}(\widehat{\mathbf{X}})$ is the number of degrees of freedom of $\widehat{\mathbf{X}}$,
 alternatively called the divergence of $\widehat{\mathbf{X}}$ and $\sigma^2$ is the noise variance of the measurements. 
-SURE is a differentiable estimator of $\text{MSE}$ that needs to verify some non-trivial assumptions, 
+SURE is an estimator of $\text{MSE}$ that needs to verify some non-trivial assumptions, 
 the most notable of which being that the estimator must be weakly differentiable with respect to $\mathbf{M}$. 
-In this paper, we assume that this assumption is fulfilled. A detailed proof can be found in \cite{Zou_Hastie_Tibshirani07}
+A detailed proof of this assumption can be found in \cite{Zou_Hastie_Tibshirani07}
 for LASSO-like models. The main difficulty when computing SURE is evaluating the divergence term, which writes:
 %
 \begin{equation*}
@@ -274,12 +274,12 @@ coefficients. First, let's examine the multi-task LASSO fit column-wise (\textit
 $t = 1, \dots, T$:
 
 \begin{equation*}
-    \mathbf{G\widehat{X}}_{:t} 
+    \mathbf{G\widehat{X}}[:, t]
     = \mathbf{G}_A (\mathbf{G}_A^{\top}\mathbf{G}_A)^{-1}
     \left(
-        \mathbf{G}^{\top}_{A}\mathbf{M}_{:t}
+        \mathbf{G}^{\top}_{A}\mathbf{M}[:, t]
         -
-        \mathbf{\Lambda} \mathbf{S}_{A, :t}
+        \mathbf{\Lambda} \mathbf{S}_{A}[:, t]
     \right)
 \end{equation*}
 %
@@ -288,48 +288,142 @@ The degrees of freedom of MxNE writes:
 \begin{align*}
     \text{df}(\widehat{\mathbf{X}}) 
     &= \sum_{i=1}^n \sum_{t=1}^T
-    \frac{\partial (\mathbf{G}\widehat{\mathbf{X}})_{i,t}}{\partial (\mathbf{M})_{i, t}} \\
+    \frac{
+        \partial (\mathbf{G}\widehat{\mathbf{X}})[i, t]
+    }{
+        \partial (\mathbf{M})[i, t]
+    } \\
     &= \sum_{t=1}^T \left(
-        \sum_{i=1}^n \frac{\partial (\mathbf{G}\widehat{\mathbf{X}})_{i,t}}{\partial (\mathbf{M})_{i, t}} 
+        \sum_{i=1}^n \frac{
+            \partial (\mathbf{G}\widehat{\mathbf{X}})[i, t]
+            }{
+                \partial (\mathbf{M})[i, t]
+            } 
     \right) \\
-    &= \sum_{t=1}^T \text{tr}(\mathbf{G}_A (\mathbf{G}_A^{\top}\mathbf{G}_A)^{-1}\mathbf{G}_A^{\top}) \\
+    &= \sum_{t=1}^T \text{tr}(
+        \mathbf{G}_A (\mathbf{G}_A^{\top}\mathbf{G}_A)^{-1}\mathbf{G}_A^{\top}
+    ) \\
     &= T \lvert A \rvert
     \enspace ,
 \end{align*}
 %
 which gives the closed-form formulation of SURE for MxNE:
 
-\begin{align*}
+\begin{equation} \label{eq:8}
     \text{SURE}(\widehat{\mathbf{X}})
-    &= -nT\sigma^2 + \norm{
+    = -nT\sigma^2 + \norm{
         \mathbf{M} - \mathbf{G}\widehat{\mathbf{X}}
     }_{\text{F}}^2
     + 2 \sigma^2 T \lvert A \rvert
     \enspace .
-\end{align*}
-%
-Therefore, we propose the following algorithm to automatically select $\lambda \in \mathbb{R}$ by evaluating SURE on 
-a grid:
-
-???????
+\end{equation}
 
 \subsubsection{Evaluating SURE for irMxNE}
 
-In this section, we show why SURE does not have a closed formula for irMxNE and how to evaluate it numerically. 
-
-The non-convex penalty used at \eqref{eq:5} prevents the derivation of a general closed-form formula for SURE. In the following, 
+The non-convex penalty used at \eqref{eq:5} prevents the derivation of a general closed-form solution for SURE and would make 
+the evaluation of the divergence term very costly. In the following, 
 SURE is evaluated numerically using a combination of Monte-Carlo sampling technique and finite difference methods. 
-A comprehensive review of techniques to evaluate SURE can be found in \cite{Deledalle_Vaiter_Fadili_Peyre14}. This approach is a black-box
-method which only uses the output of irMxNE.
-\\
+We insist on the power of this approach as it is a black-box method which only uses the output of the estimator without neeeding
+any information on its functional form, making it applicable to a wide range of estimators.
+A comprehensive review of techniques to evaluate SURE can be found in \cite{Deledalle_Vaiter_Fadili_Peyre14}.
 The Monte-Carlo sampling technique consists in evaluating the degrees of freedom by randomly sampling $d$ vectors that will 
-serve to compute $d$ direction derivatives of the mapping $\mathbf{Y} \rightarrow \widehat{\mathbf{X}}(\mathbf{Y})$, where 
-$\widehat{\mathbf{X}}$ is irMxNE.
+serve to compute $d$ directional derivatives of the mapping $\mathbf{M} \rightarrow \widehat{\mathbf{X}}(\mathbf{M})$, where 
+$\widehat{\mathbf{X}}$ is irMxNE. More formally, \cite{Deledalle_Vaiter_Fadili_Peyre14} infers that:
 
+\begin{equation} \label{eq:9}
+    \text{df}(\widehat{\mathbf{X}}) = 
+    \sum_{t=1}^T
+    \mathbb{E}_{\Delta_t \sim \mathcal{N}(0, \mathbf{I}_N)}
+    \left\langle
+        \frac{
+            \partial \widehat{\mathbf{X}}[:, t]
+        }{
+            \partial \mathbf{M}[:, t]
+        }[\Delta_t],
+        \mathbf{G}\Delta_t
+    \right\rangle
+\end{equation}
+%
+where $\frac{\partial \widehat{\mathbf{X}}[:, t]}{\partial \mathbf{M}[:, t]}[\Delta_t]$ is the directional derivative of $\widehat{\mathbf{X}}$ w.r.t.
+$\mathbf{M}$ in the direction of $\Delta_t$.
+We observe numerically that for the recovery problems we consider, it provides an accurate estimator of the trace, while it only
+costs in the multi-task case $\mathcal{O}(Td)$. Now, we need to efficiently evaluate the directional derivative 
+$\frac{\partial \widehat{\mathbf{X}}[:, t]}{\partial \mathbf{M}[:, t]}[\Delta_t]$, for $t=1,\dots, T$. A finite difference method reads:
 
+\begin{equation} \label{eq:10}
+    \frac{\partial \widehat{\mathbf{X}}[:, t]}{\partial \mathbf{M}[:, t]} 
+    [\Delta_t]
+    = \lim_{\epsilon \rightarrow 0}
+    \frac{
+        \widehat{\mathbf{X}}(\mathbf{M}[:, t] + \epsilon \Delta_t)[:, t]
+        -
+        \widehat{\mathbf{X}}(\mathbf{M}[:, t])[:, t]
+    }{\epsilon}
+\end{equation}
+%
+This generic method allows us to circument the hurdle of evaluating a closed-form expression for each peanlty
+in the case of irMxNE. \cite{Deledalle_Vaiter_Fadili_Peyre14} observes that in practice this method yields a 
+quasi-unbiased risk estimator and found a heuristic for $\epsilon = 2\sigma / n^{0.3}$. Finally combining equations
+\eqref{eq:9} and \eqref{eq:10}, Finite Difference Monte Carlo (FDMC) SURE applied to irMxNE writes:
 
+\begin{equation} \label{eq:11}
+    \text{df}(\widehat{\mathbf{X}}) = 
+    \lim_{\epsilon \rightarrow 0}
+    \frac{1}{\epsilon}
+    \sum_{t=1}^T
+    \mathbb{E}_{\Delta_t \sim \mathcal{N}(0, \mathbf{I}_N)}
+    \left\langle
+        \widehat{\mathbf{X}}(\mathbf{M}[:, t] + \epsilon \Delta_t)[:, t]
+        -
+        \widehat{\mathbf{X}}(\mathbf{M}[:, t])[:, t]
+        ,
+        \mathbf{G}\Delta_t
+    \right\rangle
+\end{equation}
+%
+In appendix, we prove that this quantity does converge towards the trace of the Jacobian. Based on this method of 
+evaluating SURE, we propose the following algorithm to automatically select $\lambda \in \mathbb{R}$ for irMxNE.
 
-Such an evaluation costs $\mathcal{O}(Tn^2)$.
+\vskip 0.2in
+
+{\fontsize{4}{4}\selectfont
+\begin{algorithm}[h]  % again h stands for here
+\SetKwInOut{Input}{input}
+\SetKwInOut{Init}{init}
+\SetKwInOut{Parameter}{param}
+\caption{\textsc{Automatic hyperparameter selection for irMxNE with SURE MCFD}
+}
+%
+\Input{$
+    \mathbf{G} \in \bbR^{N \times S},
+    \mathbf{M} \in \bbR^{N\times T},
+    \lambda_{\text{max}} \in \bbR^+_,
+    \lambda_{\text{min}} \in \bbR^+_,
+    $}
+    \Init{$
+    \text{SURE}_{\text{best}} = \infty,
+    \lambda_{\text{best}} = \lambda_{\text{max}},
+    \Delta_t \sim \mathcal{N}(0, \mathbf{I}_N),
+    \epsilon > 0
+    $}
+
+    \For{$\lambda = \lambda_{\text{max}},\dots, \lambda_{\text{min}}$}
+    {
+        Solve irMxNE minimization problem for $\lambda$:
+        $\widehat{\mathbf{X}} \leftarrow \text{irMxNE}(\mathbf{G}, \mathbf{M}, \lambda)$
+
+        Compute divergence of SURE with \eqref{eq:11}
+
+        Compute SURE with \eqref{eq:7}
+
+        If $\text{SURE} \leq \text{SURE}_{\text{best}}$:
+        $\text{SURE}_{\text{best}} \leftarrow \text{SURE}$
+        $\lambda_{\text{best}} \leftarrow \lambda$
+    }
+
+\Return{$\mathbf{B}$}
+\end{algorithm}
+}
 
 \subsubsection{Reformulation of SURE in the time-frequency domain}
 

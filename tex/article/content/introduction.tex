@@ -59,15 +59,13 @@
 %     \label{fig:double_example}
 % \end{figure}
 
-\textcolor{red}{DRAFT}
-
 Magneto-/electroencephalography (M/EEG) allows for a non-invasive analysis of
 functional brain imaging (\cite{Baillet_Mosher_Leahy_2001}). The distributed-source approach models the brain activity
 with a fixed number of dipoles distributed over a dense three-dimensional 
 grid within the brain volume (\cite{Dale_Sereno_1993}). The task in the inverse problem is to estimate the 
 distribution of dipolar currents over this three-dimensional grid that can explain the 
 measured data. Since the number of dipoles is typically much larger than the number 
-of sensors placed on the skull surface of the subject, source localization is an 
+of sensors placed on the scalp of the subject, source localization is an 
 ill-posed inverse problem having an infinite number of solutions. In order to render
 the solution unique, biologically-plausible constraints must be applied on the optimization
 problem. Literature is awash of inverse methods favoring sparse solutions to explain the
@@ -86,8 +84,7 @@ Group Lasso (\cite{Yuan_Lin06}) or Group Basis Pursuit (\cite{Liao_Li_Carin_2014
 Each block represents the source activation over time of a dipole with fixed or free orientation at a specific source location.
 \cite{Strohmeier_Bekhti_Haueisen_Gramfort_2016} improved MxNE by proposing iteratively reweighted Mixed Norm Estimate 
 (irMxNE), a M/EEG sparse source imaging approach based on the iterative reweighting of the $\ell_1$-
-norm (\cite{Candes_Wakin_Boyd08}), that showed state-of-the-art results on the source localization
-problem.
+norm (\cite{Candes_Wakin_Boyd08}).
 
 All those approaches are parametrized by one hyperparameter that controls the sparsity level
 induced by the constraint. Figure 1 shows the critical effect of this regularizing hyperparameter 
@@ -96,27 +93,40 @@ into fewer sources recovered by the model. Hyperparameter selection remains a ch
 for inverse problems. Various approaches have been proposed to automatically select the regularizing 
 hyperparameter in sparse models. Bayesian approaches consist in setting a prior distribution 
 and select the hyperparameter by \textit{maximum-a-posteriori} (MAP) estimation (\cite{Pereyra_BioucasDias_Figueiredo_2015};
-\cite{Vidal_Bortoli_Pereyra_Durmus_2020}).
+\cite{Vidal_Bortoli_Pereyra_Durmus_2020}; \cite{Hashemi_Cai_Kutyniok_Muller_2020}).
 \cite{Pereyra_BioucasDias_Figueiredo_2015} introduced two hierarchical Bayesian methods to perform MAP 
 inference when the value of the regularization parameter is unknown, by setting a Gamma prior on the 
 unknown hyperparameter. \cite{Bekhti_Badeau_Gramfort_2017} adapted this method to the multi-task Lasso problem
 for source localization and proposed a method to adjust the scale parameters $\alpha$ and $\beta$
 of the Gamma prior. However, both methods require to fine-tune at least one parameter by hand, which is a
 tedious process for non-experts. Hyperparameter selection can also be done using an exhausive
-grid-search using a held-out criterion (\cite{Bergstra_Bengio12}, \cite{BergstraBardenetBengioKegl2011}), 
-the chosen hyperparameter is the one that minimizes this criterion. \cite{Pedregosa16} has 
-showed that cross-validating the hyperparameter on held-out sets is not a suitable approach for inverse 
+grid-search using a held-out criterion (\cite{Bergstra_Bengio12}, \cite{BergstraBardenetBengioKegl2011}): 
+the model is fitted for a range of possible values of the hyperparameter, which are fixed within each individual optimization. 
+The hyperparameter that maximizes some criterion is then used as an unbiased estimate of the true hyperparameter value.
+\cite{Pedregosa16} has showed that cross-validating the hyperparameter on held-out sets is not a suitable approach for inverse 
 problems. Figure 2 shows that cross-validation (CV) consistently performs worse than other 
 hyperparameter selection methods. CV requires the i.i.d. assumption to be fulfilled, which is 
 not the case when dealing with an array of spatially-correlated sensors. The crucial question revolves around
 finding a good estimator of the reconstruction error of a model. \cite{Stein81} proposed an unbiased estimator
-of the quadratic risk of models, called the Stein's Unbiased Risk Estimator (SURE). The SURE has proved to be 
+of the quadratic risk of models, called Stein's Unbiased Risk Estimator (SURE). SURE has proved to be 
 useful for digital signal and image reconstruction (\cite{Pesquet_Benazza_Chaux_2009}) and for
-parameter selection (\cite{Deledalle_Vaiter_Fadili_Peyre14}). In this paper, we propose a procedure based 
-on the Monte-Carlo finite difference SURE (\cite{Deledalle_Vaiter_Fadili_Peyre14}) that achieves 
-state-of-the-art performance on hyperparameter selection tasks for MxNE and irMxNE,
-both on simulated and real M/EEG data. Then we adapt this procedure to the time-frequency domain
-with TF-irMxNE. An implementation of our code can be found in MNE software (\cite{mne}).
+parameter selection (\cite{Deledalle_Vaiter_Fadili_Peyre14}). 
+\\
+In this paper, we introduce a procedure based on the Monte-Carlo finite difference SURE 
+(\cite{Deledalle_Vaiter_Fadili_Peyre14}; \cite{Ramani_Blu_Unser08}) that achieves state-of-the-art performance on hyperparameter 
+selection tasks for MxNE and irMxNE. The three main contributions of this article are as follows:
+
+\begin{enumerate}
+    \item We derive a closed-form formulation of SURE for MxNE and show how to evaluate it numerically
+    for irMxNE.
+
+    \item We propose two algorithms based on SURE to automatically select regularizing hyperparameter for MxNE and irMxNE
+    in the context of the M/EEG source localization problem.
+
+    \item We show that our hyperparameter selection technique for irMxNE achieves state-of-the-art results on real M/EEG data.
+\end{enumerate}
+
+An implementation of our code can be found in MNE software (\cite{mne}).
 The different strategies are tested on simulations and multiple source reconstruction 
 problems using public M/EEG data.
 %
@@ -137,75 +147,193 @@ $\mathbf{I}$ denotes the identity matrix.
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %
 
-\subsubsection{The multi-task Lasso regression model}
+\subsubsection{The Mixed Norm estimate (MxNE) and its reweighted formulation}
 
-The M/EEG source localization problem can be written as:
+The M/EEG source localization problem can be described by the linear forward model:
 
-\begin{equation}
+\begin{equation} \label{eq:1}
     \mathbf{M = GX + E}
 \end{equation}
 %
 where $\mathbf{M} \in \mathbb{R}^{N \times T}$ is a measurement matrix where $N$ is the
-number of sensors placed on the skull surface and $T$ is the number of time instants.
+number of sensors placed on the scalp and $T$ is the number of time instants of the measurements.
 $\mathbf{G} \in \mathbb{R}^{N \times S}$ is the design matrix, a known 
-instantaneous mixing matrix also called the gain matrix. This matrix relates the source
+instantaneous mixing matrix also called the gain matrix and $S$ is the number of source locations.
+This matrix relates the source
 to the measurements. $\mathbf{E} \in \mathbb{R}^{N \times T}$ is the noise matrix, which
 is assumed to be additive, white and Gaussian, $\mathbf{E}[:,j] \sim \mathcal{N}(0, \mathbf{I})
 \enspace \forall j$. $\mathbf{X} \in \mathbf{R}^{S \times T}$ is the coefficient matrix to be estimated. 
 It corresponds at every point in time to the estimated current intensity at the dipoles in
-the brain volumes.
-\\
-Assuming a known regularization parameter $\lambda > 0$, we recall the multi-task
+the brain volumes. This model can be further extended considering multiple degrees of freedom of the current dipole
+per source location. $\mathbf{X}$ can be partitioned into $S$ blocks $\mathbf{X}_s \in \mathbb{R}^{O \times T}$, where
+each $\mathbf{X}_s$ represents the source activation at a specific source location $s$ and $O$ is the number of 
+degrees of freedom. In the rest of the paper, we shall refer as fixed orientation when $O = 1$ and
+free orientation when $O = 3$. Assuming a known regularization parameter $\lambda > 0$, we recall the multi-task
 Lasso regression model defined by:
 
-\begin{equation}
-    \mathbf{X}_{\lambda}^* \in \argmin_{\mathbf{X}}
+\begin{equation} \label{eq:2}
+    \widehat{\mathbf{X}} \in \argmin_{\mathbf{X}}
     \frac{1}{2}\norm{\mathbf{M - GX}}^2_{\text{F}}
     + \lambda \mathcal{P}(\mathbf{X})
     \enspace ,
 \end{equation}
 %
-where $\mathcal{P}(\mathbf{X})$ is a regularization term and $\lambda$ the hyperparameter
-that controls the trade-off between the data-fit and the penalization. In practice, the solution
-$\hat{\mathbf{X}}_{\lambda}$ relies heavily on $\lambda$ (see Figure 1).
+where $\mathcal{P}(\mathbf{X})$ is a regularization term and $\lambda \in \mathbb{R}$ the hyperparameter
+that controls the trade-off between the data-fit and the penalization. \cite{Gramfort_Kowalski_Hamalainen12}
+introduced MxNE where $\mathcal{P}(\mathbf{X}) = \norm{\mathbf{X}}_{2, 1}$ to promote spatially focal sources with
+smooth temporal estimates:
 
-\subsubsection{The bi-level optimization framework}
+\begin{align} \label{eq:3}
+    \widehat{\mathbf{X}} 
+    &\in 
+    \argmin_{\mathbf{X}}
+    \frac{1}{2}\norm{\mathbf{M - GX}}^2_{\text{F}}
+    + \lambda \norm{\mathbf{X}}_{2, 1}
+    \\
+    \widehat{\mathbf{X}} 
+    &\in
+    \argmin_{\mathbf{X}}
+    \frac{1}{2}\norm{\mathbf{M - GX}}^2_{\text{F}}
+    + \lambda \sum_{i=1}^{S} \norm{\mathbf{X}[i,:]}_2
+    \enspace .
+\end{align}
+%
+MxNE is a convex optimization problem that can be solved using proximal gradient descent (\cite{Nesterov05}; \cite{Nesterov09}; \cite{Beck_Teboulle09})
+or block coordinate descent. \cite{Strohmeier_Bekhti_Haueisen_Gramfort_2016} built upon MxNE to propose the iterative reweighted MxNE (irMxNE) optmization
+scheme:
 
-The hyperparameter selection problem can be cast into a bi-level optimization framework. We refer 
-to \cite{Pedregosa16} for a comprehensive review of bi-level hyperparameter optimization problems.
-We denote $\mathcal{L}$ the criterion we wish to optimize w.r.t. $\lambda$ (e.g. a SURE-based criterion) 
-referred as the outer loss, and $L$ a cost function of the coefficient matrix $\mathbf{X}$ referred
-as the inner loss. Therefore, we can write the hyperparameter optimization problem as the 
-nested bi-level optimization problem:
+\begin{equation} \label{eq:5}
+    \widehat{\mathbf{X}}^{(k)}
+    \in
+    \argmin_{\mathbf{X}}
+    \frac{1}{2}\norm{\mathbf{M - GX}}^2_{\text{F}}
+    + \lambda \sum_{i=1}^{S} 
+    \frac{\norm{\mathbf{X}[i,:]}_2}
+    {2 \sqrt{\norm{\widehat{\mathbf{X}}^{(k-1)}[i,:]}_2}}
+    \enspace .
+\end{equation}
+%
+irMxNE consists in minimizing a concave objective by iteratively solving convex surrogate problems. Therefore, we are not guaranteed to
+converge to a global minimum, the results depend on the initialization of the weights used. As a rule of thumb, \cite{Candes_Wakin_Boyd08} argues
+that the weights should relate inversely to the true signal magnitude. \cite{Strohmeier_Bekhti_Haueisen_Gramfort_2016} proposed to initialize
+the weights at 1, which is tantamount at the first iteration to solve a standard MxNE problem.
+
+\subsubsection{Stein's unbiased risk estimate (SURE) for MxNE}
+
+We now explain how to automatically select $\lambda \in \mathbb{R}$ in MxNE. Considering, the solution of 
+\eqref{eq:3} $\widehat{\mathbf{X}}$ and the unknown true parameter $\mathbf{X}^*$, the quadratic risk of $\widehat{\mathbf{X}}$
+reads:
+
+\begin{equation} \label{eq:6}
+    \text{MSE}(\widehat{\mathbf{X}})
+    = \mathbb{E}_{\mathbf{E}}
+    \left[
+        \norm{
+            \mathbf{X}^* - \widehat{\mathbf{X}}
+        }_{\text{F}}^2
+    \right]
+    \enspace .
+\end{equation}
+%
+Since MSE is unknown, \cite{Stein81} proposed an unbiased estimator of $\text{MSE}(\widehat{\mathbf{X}})$,
+which writes:
+
+\begin{align} \label{eq:7}
+    \text{SURE}(\widehat{\mathbf{X}})
+    &= -nT\sigma^2 + \norm{
+        \mathbf{M} - \mathbf{G}\widehat{\mathbf{X}}
+    }_{\text{F}}^2
+    + 2 \sigma^2 \text{df}(\widehat{\mathbf{X}})
+    \enspace ,
+\end{align}
+%
+where $\text{df}(\widehat{\mathbf{X}})$ is the number of degrees of freedom of $\widehat{\mathbf{X}}$,
+alternatively called the divergence of $\widehat{\mathbf{X}}$ and $\sigma^2$ is the noise variance of the measurements. 
+SURE is a differentiable estimator of $\text{MSE}$ that needs to verify some non-trivial assumptions, 
+the most notable of which being that the estimator must be weakly differentiable with respect to $\mathbf{M}$. 
+In this paper, we assume that this assumption is fulfilled. A detailed proof can be found in \cite{Zou_Hastie_Tibshirani07}
+for LASSO-like models. The main difficulty when computing SURE is evaluating the divergence term, which writes:
+%
+\begin{equation*}
+    \text{df}(\widehat{\mathbf{X}}) 
+    = 
+    \frac{
+        \partial \mathbf{G} \widehat{\mathbf{X}}
+    }{
+        \partial \mathbf{M}
+    }
+\end{equation*}
+%
+In the following, we derive the closed-form divergence of SURE for MxNE. Let $A$ be the active set 
+of the MxNE and $\mathbf{S}_A$ a matrix filled at every time instant with the signs of the coefficients of the active set. 
+Besides, we denote by $\mathbf{G}_A$ (respectively $\mathbf{X}_A$) the restriction of $\mathbf{G}$ (respectively $\mathbf{X}$) to its activated
+columns (respectively rows). Finally, let $\mathbf{\Lambda} = \text{diag}(\lambda)$.
+To derive a closed-form solution of SURE for MxNE, we make the reasonable assumption that the active set $A$ and $\mathbf{S}_A$ are locally constant, 
+meaning that a small change in $\mathbf{M}$ does not change the active set nor the signs of the active 
+coefficients. First, let's examine the multi-task LASSO fit column-wise (\textit{i.e.} task by task), for 
+$t = 1, \dots, T$:
+
+\begin{equation*}
+    \mathbf{G\widehat{X}}_{:t} 
+    = \mathbf{G}_A (\mathbf{G}_A^{\top}\mathbf{G}_A)^{-1}
+    \left(
+        \mathbf{G}^{\top}_{A}\mathbf{M}_{:t}
+        -
+        \mathbf{\Lambda} \mathbf{S}_{A, :t}
+    \right)
+\end{equation*}
+%
+The degrees of freedom of MxNE writes:
 
 \begin{align*}
-    &\lambda^* \in \argmin_{\lambda} 
-    \Biggl\{
-        \mathcal{L}(\lambda) 
-        \triangleq 
-        \mathcal{C}(\mathbf{X}_{\lambda}^*)
-    \Biggr\} \\
-    &\text{s.t.} \quad 
-    \mathbf{X}_{\lambda}^* 
-    \in 
-    \argmin_{\mathbf{X}} L(\mathbf{X}, \lambda)
+    \text{df}(\widehat{\mathbf{X}}) 
+    &= \sum_{i=1}^n \sum_{t=1}^T
+    \frac{\partial (\mathbf{G}\widehat{\mathbf{X}})_{i,t}}{\partial (\mathbf{M})_{i, t}} \\
+    &= \sum_{t=1}^T \left(
+        \sum_{i=1}^n \frac{\partial (\mathbf{G}\widehat{\mathbf{X}})_{i,t}}{\partial (\mathbf{M})_{i, t}} 
+    \right) \\
+    &= \sum_{t=1}^T \text{tr}(\mathbf{G}_A (\mathbf{G}_A^{\top}\mathbf{G}_A)^{-1}\mathbf{G}_A^{\top}) \\
+    &= T \lvert A \rvert
+    \enspace ,
+\end{align*}
+%
+which gives the closed-form formulation of SURE for MxNE:
+
+\begin{align*}
+    \text{SURE}(\widehat{\mathbf{X}})
+    &= -nT\sigma^2 + \norm{
+        \mathbf{M} - \mathbf{G}\widehat{\mathbf{X}}
+    }_{\text{F}}^2
+    + 2 \sigma^2 T \lvert A \rvert
     \enspace .
 \end{align*}
 %
+Therefore, we propose the following algorithm to automatically select $\lambda \in \mathbb{R}$ by evaluating SURE on 
+a grid:
+
+???????
+
+\subsubsection{Evaluating SURE for irMxNE}
+
+In this section, we show why SURE does not have a closed formula for irMxNE and how to evaluate it numerically. 
+
+The non-convex penalty used at \eqref{eq:5} prevents the derivation of a general closed-form formula for SURE. In the following, 
+SURE is evaluated numerically using a combination of Monte-Carlo sampling technique and finite difference methods. 
+A comprehensive review of techniques to evaluate SURE can be found in \cite{Deledalle_Vaiter_Fadili_Peyre14}. This approach is a black-box
+method which only uses the output of irMxNE.
+\\
+The Monte-Carlo sampling technique consists in evaluating the degrees of freedom by randomly sampling $d$ vectors that will 
+serve to compute $d$ direction derivatives of the mapping $\mathbf{Y} \rightarrow \widehat{\mathbf{X}}(\mathbf{Y})$, where 
+$\widehat{\mathbf{X}}$ is irMxNE.
 
 
-\subsubsection{SURE, a surrogate of the quadratic risk}
 
-\begin{itemize}
-    \item Optimization problems (non-convex)
-    \item Problem bilevel de la crossval
-    \item Dire en detail pq la crossval "c'est pas bien", donner un exemple
-    \item SURE: expliquer pourquoi le SURE et les différentes techniques d'approx du SURE
-\end{itemize}
-%
-%
-%
-%
+
+Such an evaluation costs $\mathcal{O}(Tn^2)$.
+
+\subsubsection{Reformulation of SURE in the time-frequency domain}
+
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \subsection{Experience}
 \label{sub:experience}

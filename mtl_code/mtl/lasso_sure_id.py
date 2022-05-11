@@ -22,9 +22,6 @@ supp = clf.coef_ != 0
 dof_cf = np.sum(supp != 0)
 
 # Analytical solution via implicit differentiation
-# beta = clf.coef_
-# z = beta - (1 / L) * X.T @ (X @ beta - y)
-# supp = np.abs(z) >= alpha
 jacob_prox_z = np.ones(supp.sum())  # to be modified for other penalties
 
 id_feat = np.eye(supp.sum())

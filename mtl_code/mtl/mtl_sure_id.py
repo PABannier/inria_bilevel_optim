@@ -9,7 +9,7 @@ def build_jacob_prox_z(Z, supp, alpha):
     # Z : array, shape (n_supp, n_times)
     n_times = Z.shape[1]
     jacob_prox_z = np.zeros((supp.sum(), n_times, n_times))
-    for j in range(supp):
+    for j in range(supp.sum()):
         z_j = Z[j, :]
         nrm = norm(z_j)
         if nrm <= alpha:
@@ -45,7 +45,7 @@ jacob_prox_z = build_jacob_prox_z(Z, supp, alpha)
 
 id_feat = np.eye(supp.sum())
 import ipdb; ipdb.set_trace()
-J = np.linalg.inv(id_feat - jacob_prox_z * (id_feat - X_supp.T @ X_supp / L)) @ (jacob_prox_z[:, None] * X_supp.T / L)
+J = np.linalg.inv(id_feat - jacob_prox_z * (id_feat - X_supp.T @ X_supp / L)) @ (jacob_prox_z * X_supp.T / L)
 dof_id = np.trace(X_supp @ J)
 
 print("DOF")
